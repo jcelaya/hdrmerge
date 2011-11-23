@@ -138,9 +138,11 @@ void MainWindow::loadImages() {
 		rt = new RenderThread(images, 2.2f, this);
 		connect(rt, SIGNAL(renderedImage(QImage)), this, SLOT(updateImage(QImage)));
 		rt->start();
-		for (unsigned int i = 0; i < images->size(); i++) {
+		for (unsigned int i = 0; i < numImages; i++) {
 			// Create ImageControl widgets
 			ImageControl * ic = new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
+			if (i == numImages - 1)
+				ic->disableREV();
 			connect(ic, SIGNAL(propertiesChanged(int, float, int)), this, SLOT(exposureChange(int, float, int)));
 			imageTabs->addTab(ic, tr("Exposure") + " " + QString::number(i));
 		}

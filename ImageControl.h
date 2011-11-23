@@ -21,6 +21,7 @@ class ImageControl : public QWidget {
 
 public:
 	ImageControl(QWidget * parent, int i, float re, int th);
+	void disableREV() { relativeEVSpinBox->setEnabled(false); }
 
 signals:
 	void propertiesChanged(int i, float re, int th);

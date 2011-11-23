@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <string>
 #include <iostream>
 #include <cmath>
 #include <algorithm>
@@ -17,6 +18,7 @@ static float max3(float a, float b, float c) {
 
 
 ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, unsigned int & height) {
+	string name(fileName);
 	TIFF* file = TIFFOpen(fileName, "r");
 	if (file == NULL)
 		throw std::runtime_error("unable to open image file");
@@ -40,16 +42,17 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 		throw std::runtime_error( "expected 16-bit linear color channels" );
 
 	unsigned int bytes = TIFFScanlineSize(file);
-	cerr << "Loading image " << fileName << ", with" << (bytes < width * 8 ? "out" : "") << " alpha channel." << endl;
 
 	unsigned int size = height * width;
-	cerr << "    " << width << 'x' << height << endl;
 	r.resize(size);
 	g.resize(size);
 	b.resize(size);
 	a.resize(size, true);   // Initially opaque
 	ag.resize(size, true);
-	cerr << "    " << (r.capacity() * sizeof(float) * 3 + a.capacity() / 4) << " bytes allocated." << endl;
+	cerr << "Loaded image " << name << ", with" << (bytes < width * 8 ? "out" : "") << " alpha channel, "
+		<< width << 'x' << height << ", "
+		<< (r.capacity() * sizeof(float) * 3 + a.capacity() / 4) << " bytes allocated" << endl;
+
 
 	tdata_t buffer = _TIFFmalloc(bytes);
 	bn = 0.0;
@@ -68,8 +71,8 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 		}
 	}
 	bn /= 3 * size;
-	cerr << "    Brightness " << bn << endl;
 	th = 0.8 * 65536.0f;
+	cerr << "  Brightness " << bn << endl;
 
 	_TIFFfree(buffer);
 	TIFFClose(file);

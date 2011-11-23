@@ -22,7 +22,7 @@ void PreviewWidget::setPixmap(const QPixmap & pixmap) {
 }
 
 
-void PreviewWidget::wheelEvent(QWheelEvent *event) {
+void PreviewWidget::wheelEvent(QWheelEvent * event) {
 	if (previewLabel->pixmap()) {
 		int steps = event->delta() / 120;
 		double zoomFactor = pow(2.0, steps);
@@ -33,11 +33,9 @@ void PreviewWidget::wheelEvent(QWheelEvent *event) {
 			newScale = 1.0/16.0;
 		zoomFactor = newScale / scale;
 		scale = newScale;
+		QPoint pos = zoomFactor * previewLabel->mapFromParent(event->pos());
 		previewLabel->resize(scale * previewLabel->pixmap()->size());
-		horizontalScrollBar()->setValue(int(zoomFactor * horizontalScrollBar()->value()
-			+ ((zoomFactor - 1) * horizontalScrollBar()->pageStep()/2)));
-		verticalScrollBar()->setValue(int(zoomFactor * verticalScrollBar()->value()
-			+ ((zoomFactor - 1) * verticalScrollBar()->pageStep()/2)));
+		ensureVisible(pos.x(), pos.y(), viewport()->width() / 2, viewport()->height() / 2);
 	}
 }
 

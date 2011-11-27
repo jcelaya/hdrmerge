@@ -1,5 +1,6 @@
 TEMPLATE	= app
-CONFIG		+= qt
+CONFIG		+= qt debug
+QMAKE_CXXFLAGS_DEBUG	+= -O3
 INCLUDEPATH	+= /usr/include/OpenEXR
 LIBS		+= -ltiff -lpfs-1.2
 HEADERS		+= Exposure.h

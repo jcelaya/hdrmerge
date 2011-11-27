@@ -11,12 +11,6 @@
 using namespace std;
 
 
-static float max3(float a, float b, float c) {
-	float tmp = a > b ? a : b;
-	return tmp > c ? tmp : c;
-}
-
-
 ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, unsigned int & height) {
 	string name(fileName);
 	TIFF* file = TIFFOpen(fileName, "r");
@@ -44,34 +38,35 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 	unsigned int bytes = TIFFScanlineSize(file);
 
 	unsigned int size = height * width;
-	r.resize(size);
-	g.resize(size);
-	b.resize(size);
-	a.resize(size, true);   // Initially opaque
-	ag.resize(size, true);
+	p.resize(size);
 	cerr << "Loaded image " << name << ", with" << (bytes < width * 8 ? "out" : "") << " alpha channel, "
 		<< width << 'x' << height << ", "
-		<< (r.capacity() * sizeof(float) * 3 + a.capacity() / 4) << " bytes allocated" << endl;
+		<< (p.capacity() * sizeof(Pixel)) << " bytes allocated" << endl;
 
 
 	tdata_t buffer = _TIFFmalloc(bytes);
 	bn = 0.0;
+	Pixel * pix = &p[0];
 	for (unsigned int row = 0; row < height; ++row) {
 		TIFFReadScanline(file, buffer, row);
 		uint16_t const * i = static_cast< uint16_t const * >(buffer);
-		for (unsigned int column = 0; column < width; column++) {
-			unsigned int pos = row * width + column;
-			r[pos] = *i++;
-			g[pos] = *i++;
-			b[pos] = *i++;
+		for (unsigned int column = 0; column < width; column++, pix++) {
+			pix->r = *i++;
+			pix->g = *i++;
+			pix->b = *i++;
+			pix->l = pix->r > pix->g ? pix->r : pix->g;
+			pix->l = pix->l > pix->b ? pix->l >> 1 : pix->b >> 1;
 			if (bytes == width * 8)
-				a[pos] = *i++ >= 1 << 15;
-			if (a[pos])
-				bn += r[pos] + g[pos] + b[pos];
+				if (*i++ < Pixel::transparent)
+					pix->l += Pixel::transparent;
+			if (pix->l < Pixel::transparent)
+				//bn += (float)pix->r + pix->g + pix->b;
+				bn += (float)pix->g;
 		}
 	}
-	bn /= 3 * size;
-	th = 0.8 * 65536.0f;
+	//bn /= 3 * size;
+	bn /= size;
+	th = 25600;
 	cerr << "  Brightness " << bn << endl;
 
 	_TIFFfree(buffer);
@@ -85,39 +80,25 @@ void ExposureStack::Exposure::setRelativeExposure(const Exposure * ref) {
 		return;
 	}
 	// Calculate median relative exposure
-	const float min = 0.05f * 65536.0f, max = 0.8 * 65536.0f;
+	const uint16_t min = 3275, max = 52430;
 	vector<float> samples;
-	unsigned int size = r.size();
-	for (unsigned int i = 0; i < size; i++) {
-		if (!ref->a[i] || !a[i])
+	const Pixel * rpix = &ref->p[0], * pix = &p[0];
+	const Pixel * size = pix + p.size();
+	for (; pix < size; rpix++, pix++) {
+		if (rpix->l >= Pixel::transparent)
 			continue;
 		// Only sample those pixels that are in the linear zone
-		if (ref->r[i] < max && ref->r[i] > min && r[i] < max && r[i] > min)
-			samples.push_back(ref->r[i] / r[i]);
-		if (ref->g[i] < max && ref->g[i] > min && g[i] < max && g[i] > min)
-			samples.push_back(ref->g[i] / g[i]);
-		if (ref->b[i] < max && ref->b[i] > min && b[i] < max && b[i] > min)
-			samples.push_back(ref->b[i] / b[i]);
+		if (rpix->r < max && rpix->r > min && pix->r < max && pix->r > min)
+			samples.push_back((float)rpix->r / pix->r);
+		if (rpix->g < max && rpix->g > min && pix->g < max && pix->g > min)
+			samples.push_back((float)rpix->g / pix->g);
+		if (rpix->b < max && rpix->b > min && pix->b < max && pix->b > min)
+			samples.push_back((float)rpix->b / pix->b);
 	}
 	std::sort(samples.begin(), samples.end());
 	relExp = samples[samples.size() / 2] * ref->relExp;
 	cerr << "Relative exposure: " << (1.0/relExp) << '(' << (log(1.0/relExp) / log(2.0)) << " EV)" << endl;
 }
-
-
-/*
-void Exposure::setThreshold(float th) {
-	for (unsigned int i = 0; i < size; i++) {
-		// Calculate maximum value among three channels
-		float lum = max3(r[i], g[i], b[i]);
-		// If it is under threshold, this is the correctly exposed pixel
-		if (lum < th)
-			m[i] = 1.0;
-		else
-			m[i] = 0.0;
-	}
-}
-*/
 
 
 void ExposureStack::sort() {
@@ -126,29 +107,6 @@ void ExposureStack::sort() {
 		for (vector<Exposure *>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
 			(*n)->setRelativeExposure(*p);
 	}
-}
-
-
-void ExposureStack::rgb(unsigned int x, unsigned int y, float & r, float & g, float & b) const {
-	unsigned int pos = y * width + x;
-	for (unsigned int i = 0; i < imgs.size() - 1; i++) {
-		Exposure * e = imgs[i];
-		if (imgs[i]->a[pos] && imgs[i]->ag[pos]) {
-			// Calculate maximum value among three channels
-			float lum = max3(e->r[pos], e->g[pos], e->b[pos]);
-			// If it is under threshold, this is the correctly exposed pixel
-			if (lum < e->th) {
-				r = e->r[pos] * e->relExp * wbr;
-				g = e->g[pos] * e->relExp * wbg;
-				b = e->b[pos] * e->relExp * wbb;
-				return;
-			}
-		}
-	}
-	Exposure * e = imgs.back();
-	r = e->r[pos] * e->relExp * wbr;
-	g = e->g[pos] * e->relExp * wbg;
-	b = e->b[pos] * e->relExp * wbb;
 }
 
 
@@ -191,10 +149,8 @@ void ExposureStack::savePFS(const char * filename) {
 	for (unsigned int j = 0; j < size; j++) {
 		// For each exposure...
 		for (unsigned int i = 0; i < N; i++) {
-			// Calculate maximum value among three channels
-			float lum = max3(imgs[i]->r[j], imgs[i]->g[j], imgs[i]->b[j]);
 			// If it is under threshold, this is the correctly exposed pixel
-			if (i == N - 1 || lum < imgs[i]->th) {
+			if (i == N - 1 || imgs[i]->p[j].l < imgs[i]->th) {
 				map[j] = i;
 				break;
 			}
@@ -213,15 +169,19 @@ void ExposureStack::savePFS(const char * filename) {
 	// Apply map
 	for (unsigned int j = 0; j < size; j++) {
 		int i = ceil(map[j]);
+		Pixel * pix = &imgs[i]->p[j];
+		float relExp = imgs[i]->relExp;
 		if (i == 0) {
-			(*r)(j) = imgs[i]->r[j] * imgs[i]->relExp;
-			(*g)(j) = imgs[i]->g[j] * imgs[i]->relExp;
-			(*b)(j) = imgs[i]->b[j] * imgs[i]->relExp;
+			(*r)(j) = pix->r * relExp * wbr;
+			(*g)(j) = pix->g * relExp * wbg;
+			(*b)(j) = pix->b * relExp * wbb;
 		} else {
 			float p = i - map[j];
-			(*r)(j) = imgs[i]->r[j] * imgs[i]->relExp * (1.0f - p) + imgs[i - 1]->r[j] * imgs[i - 1]->relExp * p;
-			(*g)(j) = imgs[i]->g[j] * imgs[i]->relExp * (1.0f - p) + imgs[i - 1]->g[j] * imgs[i - 1]->relExp * p;
-			(*b)(j) = imgs[i]->b[j] * imgs[i]->relExp * (1.0f - p) + imgs[i - 1]->b[j] * imgs[i - 1]->relExp * p;
+			Pixel * ppix = &imgs[i - 1]->p[j];
+			float prelExp = imgs[i - 1]->relExp;
+			(*r)(j) = (pix->r * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbr;
+			(*g)(j) = (pix->g * relExp * (1.0f - p) + ppix->g * prelExp * p) * wbg;
+			(*b)(j) = (pix->b * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbb;
 		}
 	}
 

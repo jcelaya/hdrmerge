@@ -15,7 +15,7 @@ public:
 	RenderThread(const ExposureStack * es, float gamma = 1.0f, QObject *parent = 0);
 	~RenderThread();
 
-	void render();
+	void render(QPoint viewportMin, QPoint viewportMax);
 	void setGamma(float g);
 
 signals:
@@ -25,12 +25,14 @@ protected:
 	void run();
 
 private:
+	void doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image);
+
 	QMutex mutex;
 	QWaitCondition condition;
 	bool restart;
 	bool abort;
 	const ExposureStack * imgs;
-	QImage image;
+	QPoint vpmin, vpmax;
 	int gamma[65536];
 };
 

@@ -137,9 +137,9 @@ void MainWindow::loadImages() {
 		// Paint and create GUI
 		rt = new RenderThread(images, 2.2f, this);
 		connect(rt, SIGNAL(renderedImage(QImage)), this, SLOT(updateImage(QImage)));
-		rt->start();
-		for (unsigned int i = 0; i < numImages; i++) {
-			// Create ImageControl widgets
+		rt->start(QThread::LowPriority);
+		for (unsigned int i = 0; i < numImages - 1; i++) {
+			// Create ImageControl widgets for every exposure except the last one
 			ImageControl * ic = new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
 			if (i == numImages - 1)
 				ic->disableREV();
@@ -168,6 +168,8 @@ void MainWindow::updateImage(const QImage & image) {
 void MainWindow::exposureChange(int i, float re, int th) {
 	images->setRelativeExposure(i, re);
 	images->setThreshold(i, th);
-	rt->render();
+	QPoint min, max;
+	preview->getViewRect(min, max);
+	rt->render(min, max);
 }
 

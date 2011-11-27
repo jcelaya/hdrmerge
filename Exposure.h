@@ -8,15 +8,18 @@
 
 
 class ExposureStack {
+	struct Pixel {
+		uint16_t r, g, b;
+		uint16_t l;
+
+		static const uint16_t transparent = 1 << 15;
+	};
+
 	struct Exposure {
-		std::vector<float> r;   ///< Red channel
-		std::vector<float> g;   ///< Green channel
-		std::vector<float> b;   ///< Blue channel
-		std::vector<bool> a;    ///< Alpha channel, only opaque/transparent
-		std::vector<bool> ag;   ///< Antighosting mask
+		std::vector<Pixel> p;   ///< Image data
 		float bn;               ///< Brightness
 		float relExp;           ///< Relative exposure
-		float th;               ///< Exposure threshold
+		uint16_t th;            ///< Exposure threshold
 	
 		/// Create an exposure from a linear 16 bit TIFF file
 		Exposure(const char * fileName, unsigned int & width, unsigned int & height);
@@ -66,15 +69,25 @@ public:
 		imgs[i]->relExp = re;
 	}
 
-	int getThreshold(int i) const {
-		return (int)(imgs[i]->th / 655.36f);
+	uint16_t getThreshold(int i) const {
+		return imgs[i]->th << 1;
 	}
 
-	void setThreshold(int i, int th) {
-		imgs[i]->th = th * 655.36f;
+	void setThreshold(int i, uint16_t th) {
+		imgs[i]->th = th >> 1;
 	}
 
-	void rgb(unsigned int x, unsigned int y, float & r, float & g, float & b) const;
+	void rgb(unsigned int x, unsigned int y, float & r, float & g, float & b) const {
+		unsigned int pos = y * width + x;
+		Exposure * const * e = &imgs.front();
+		while (e != &imgs.back() && (*e)->p[pos].l >= (*e)->th) e++;
+		Pixel * pix = &(*e)->p[pos];
+		float relExp = (*e)->relExp;
+		r = pix->r * relExp * wbr;
+		g = pix->g * relExp * wbg;
+		b = pix->b * relExp * wbb;
+	}
+
 
 	/// Sort images and calculate relative exposure
 	void sort();

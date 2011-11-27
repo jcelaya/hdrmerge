@@ -14,6 +14,7 @@ ImageControl::ImageControl(QWidget * parent, int i, float re, int th) : QWidget(
 	gridLayout->addWidget(relativeEVLabel, 0, 0, 1, 1);
 
 	relativeEVSpinBox = new QDoubleSpinBox(this);
+	relativeEVSpinBox->setDecimals(3);
 	relativeEVSpinBox->setMaximum(1.0);
 	relativeEVSpinBox->setSingleStep(0.001);
 	relativeEVSpinBox->setValue(re);
@@ -23,13 +24,13 @@ ImageControl::ImageControl(QWidget * parent, int i, float re, int th) : QWidget(
 	gridLayout->addWidget(thresholdLabel, 1, 0, 1, 1);
 
 	thresholdSpinBox = new QSpinBox(this);
-	thresholdSpinBox->setMaximum(100);
-	thresholdSpinBox->setValue(th);
+	thresholdSpinBox->setMaximum(256);
+	thresholdSpinBox->setValue(th / 256);
 	gridLayout->addWidget(thresholdSpinBox, 1, 1, 1, 1);
 
 	thresholdSlider = new QSlider(this);
-	thresholdSlider->setMaximum(100);
-	thresholdSlider->setValue(th);
+	thresholdSlider->setMaximum(256);
+	thresholdSlider->setValue(th / 256);
 	thresholdSlider->setOrientation(Qt::Horizontal);
 	gridLayout->addWidget(thresholdSlider, 1, 2, 1, 1);
 
@@ -42,7 +43,7 @@ ImageControl::ImageControl(QWidget * parent, int i, float re, int th) : QWidget(
 
 
 void ImageControl::changedEvent() {
-	emit propertiesChanged(imageNumber, relativeEVSpinBox->value(), thresholdSpinBox->value());
+	emit propertiesChanged(imageNumber, relativeEVSpinBox->value(), thresholdSpinBox->value() * 256);
 }
 
 

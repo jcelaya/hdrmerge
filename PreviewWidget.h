@@ -10,7 +10,6 @@ class PreviewWidget : public QScrollArea {
         Q_OBJECT
         
 	QLabel * previewLabel;
-	//QPixmap image;
 	double scale;
 	QPoint lastDragPos;
 	QPoint lastScrollPos;
@@ -18,6 +17,9 @@ class PreviewWidget : public QScrollArea {
 public:
 	PreviewWidget(QWidget * parent);
 
+	void getViewRect(QPoint & min, QPoint & max);
+
+public slots:
 	void setPixmap(const QPixmap & pixmap);
 
 protected:

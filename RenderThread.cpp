@@ -1,12 +1,13 @@
 #include <cmath>
 #include "RenderThread.h"
 #include <iostream>
+#include <QTime>
 
 
 RenderThread::RenderThread(const ExposureStack * es, float gamma, QObject * parent)
-	: QThread(parent), restart(false), abort(false), imgs(es) {
+	: QThread(parent), restart(false), abort(false), imgs(es), vpmin(0, 0), vpmax(0, 0) {
 	setGamma(gamma);
-	image = QImage(imgs->getWidth(), imgs->getHeight(), QImage::Format_RGB32);
+	//image = QImage(imgs->getWidth(), imgs->getHeight(), QImage::Format_RGB32);
 }
 
 
@@ -17,9 +18,11 @@ RenderThread::~RenderThread() {
 }
 
 
-void RenderThread::render() {
+void RenderThread::render(QPoint viewportMin, QPoint viewportMax) {
 	mutex.lock();
 	restart = true;
+	vpmin = viewportMin;
+	vpmax = viewportMax;
 	mutex.unlock();
 	condition.wakeOne();
 }
@@ -28,42 +31,60 @@ void RenderThread::render() {
 void RenderThread::setGamma(float g) {
 	g = 1.0f / g;
 	for (int i = 0; i < 65536; i++)
-		gamma[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g));
+		gamma[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g)) >> 8;
+}
+
+
+void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image) {
+	QTime t;
+	t.start();
+	// Iterate through pixels
+	for (unsigned int row = miny; !restart && row < maxy; row++) {
+		if (abort) return;
+
+		QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row));
+		scanLine += minx;
+		for (unsigned int col = minx; col < maxx; col++) {
+			float rr, gg, bb;
+			imgs->rgb(col, row, rr, gg, bb);
+			int r = (int)rr, g = (int)gg, b = (int)bb;
+			if (r >= 65536 || r < 0) std::cerr << "RValue " << r << " out of range at " << col << "x" << row << std::endl;
+			if (g >= 65536 || g < 0) std::cerr << "GValue " << g << " out of range at " << col << "x" << row << std::endl;
+			if (b >= 65536 || b < 0) std::cerr << "BValue " << b << " out of range at " << col << "x" << row << std::endl;
+			// Apply gamma correction
+			*scanLine++ = qRgb(gamma[r], gamma[g], gamma[b]);
+		}
+	}
+	std::cerr << "Render time " << t.elapsed() << " ms at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData() << std::endl;
 }
 
 
 void RenderThread::run() {
+	unsigned int minx = 0, miny = 0, maxx = 0, maxy = 0;
 	forever {
 		if (abort) return;
 
-		// Iterate through pixels
-		for (unsigned int row = 0; row < imgs->getHeight(); row++) {
-			if (restart) break;
-			if (abort) return;
-
-			QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row));
-			for (unsigned int col = 0; col < imgs->getWidth(); col++) {
-				float rr, gg, bb;
-				imgs->rgb(col, row, rr, gg, bb);
-				int r = (int)std::floor(rr), g = (int)std::floor(gg), b = (int)std::floor(bb);
-				// Apply contrast compression and gamma correction
-				if (r >= 65536 || r < 0) std::cerr << "RValue " << r << " out of range at " << col << "x" << row << std::endl;
-				if (g >= 65536 || g < 0) std::cerr << "GValue " << g << " out of range at " << col << "x" << row << std::endl;
-				if (b >= 65536 || b < 0) std::cerr << "BValue " << b << " out of range at " << col << "x" << row << std::endl;
-				r = gamma[r] >> 8;
-				g = gamma[g] >> 8;
-				b = gamma[b] >> 8;
-				*scanLine++ = qRgb(r, g, b);
-			}
+		QImage a(imgs->getWidth(), imgs->getHeight(), QImage::Format_RGB32);
+		doRender(minx, miny, maxx, maxy, a);
+		if (!restart && maxy > 0) {
+			emit renderedImage(a);
+			yieldCurrentThread();
 		}
-
-		// Wait until render is called
+		
+		QImage b(imgs->getWidth(), imgs->getHeight(), QImage::Format_RGB32);
+		doRender(0, 0, imgs->getWidth(), imgs->getHeight(), b);
          	mutex.lock();
 		if (!restart) {
-			emit renderedImage(image);
+			emit renderedImage(b);
+			// Wait until render is called
 			condition.wait(&mutex);
 		}
 		restart = false;
+		// Check limits, due to roundings in preview label scale
+		minx = vpmin.x() < 0 ? 0 : vpmin.x();
+		miny = vpmin.y() < 0 ? 0 : vpmin.y();
+		maxx = vpmax.x() > imgs->getWidth() ? imgs->getWidth() : vpmax.x();
+		maxy = vpmax.y() > imgs->getHeight() ? imgs->getHeight() : vpmax.y();
 		mutex.unlock();
 	}
 }

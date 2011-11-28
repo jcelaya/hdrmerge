@@ -10,12 +10,14 @@
 #include "ImageControl.h"
 #include <iostream>
 
-MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags) : QMainWindow(parent, flags), images(NULL), rt(NULL) {
+MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
+	: QMainWindow(parent, flags), images(NULL), rt(NULL), isGettingWB(false) {
 	centralwidget = new QWidget(this);
 	setCentralWidget(centralwidget);
 	QVBoxLayout * layout = new QVBoxLayout(centralwidget);
 
 	preview = new PreviewWidget(centralwidget);
+	connect(preview, SIGNAL(imageClicked(QPoint, bool)), this, SLOT(clickImage(QPoint, bool)));
 	layout->addWidget(preview);
 
 	imageTabs = new QTabWidget(centralwidget);
@@ -146,6 +148,10 @@ void MainWindow::loadImages() {
 			connect(ic, SIGNAL(propertiesChanged(int, float, int)), this, SLOT(exposureChange(int, float, int)));
 			imageTabs->addTab(ic, tr("Exposure") + " " + QString::number(i));
 		}
+		// Add white balance widget
+		wbw = new WhiteBalanceWidget(images->getWBR(), images->getWBG(), images->getWBB(), imageTabs);
+		connect(wbw, SIGNAL(pickerPushed()), this, SLOT(pickWB()));
+		imageTabs->addTab(wbw, tr("White Balance"));
 	}
 }
 
@@ -171,5 +177,28 @@ void MainWindow::exposureChange(int i, float re, int th) {
 	QPoint min, max;
 	preview->getViewRect(min, max);
 	rt->render(min, max);
+}
+
+
+void MainWindow::pickWB() {
+	isGettingWB = true;
+	preview->toggleCrossCursor(true);
+}
+
+
+void MainWindow::clickImage(QPoint pos, bool left) {
+	if (left && isGettingWB) {
+		preview->toggleCrossCursor(false);
+		isGettingWB = false;
+		unsigned int x = pos.x() > 5 ? pos.x() - 5 : 0;
+		unsigned int y = pos.y() > 5 ? pos.y() - 5 : 0;
+		unsigned int w = images->getWidth() - pos.x() > 10 ? 10 : images->getWidth() - pos.x();
+		unsigned int h = images->getHeight() - pos.y() > 10 ? 10 : images->getHeight() - pos.y();
+		images->calculateWB(x, y, w, h);
+		QPoint min, max;
+		preview->getViewRect(min, max);
+		rt->render(min, max);
+		wbw->changeFactors(images->getWBR(), images->getWBG(), images->getWBB());
+	}
 }
 

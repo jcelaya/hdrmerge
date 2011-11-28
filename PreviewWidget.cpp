@@ -1,5 +1,6 @@
 #include "PreviewWidget.h"
 #include <QWheelEvent>
+#include <QCursor>
 #include <cmath>
 #include <iostream>
 #include <QTime>
@@ -13,6 +14,15 @@ PreviewWidget::PreviewWidget(QWidget * parent) : QScrollArea(parent) {
 	setWidget(previewLabel);
 	setAlignment(Qt::AlignCenter);
 	scale = 1.0;
+	toggleCrossCursor(false);
+}
+
+
+void PreviewWidget::toggleCrossCursor(bool toggle) {
+	if (toggle)
+		previewLabel->setCursor(Qt::CrossCursor);
+	else
+		previewLabel->setCursor(Qt::OpenHandCursor);
 }
 
 
@@ -56,7 +66,7 @@ void PreviewWidget::wheelEvent(QWheelEvent * event) {
 }
 
 
-void PreviewWidget::mousePressEvent(QMouseEvent *event) {
+void PreviewWidget::mousePressEvent(QMouseEvent * event) {
 	if (event->button() == Qt::LeftButton) {
 		lastDragPos = event->pos();
 		lastScrollPos.setX(horizontalScrollBar()->value());
@@ -65,7 +75,7 @@ void PreviewWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 
-void PreviewWidget::mouseMoveEvent(QMouseEvent *event) {
+void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
 	if (event->buttons() & Qt::LeftButton) {
 		int deltax = event->pos().x() - lastDragPos.x();
 		int deltay = event->pos().y() - lastDragPos.y();
@@ -75,6 +85,8 @@ void PreviewWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 
-void PreviewWidget::mouseReleaseEvent(QMouseEvent *event) {
+void PreviewWidget::mouseReleaseEvent(QMouseEvent * event) {
+	emit imageClicked(previewLabel->mapFromParent(viewport()->mapFromParent(event->pos())) / scale,
+		event->button() == Qt::LeftButton);
 }
 

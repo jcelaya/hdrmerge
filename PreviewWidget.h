@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QPixmap>
 
+
 class PreviewWidget : public QScrollArea {
         Q_OBJECT
         
@@ -18,6 +19,10 @@ public:
 	PreviewWidget(QWidget * parent);
 
 	void getViewRect(QPoint & min, QPoint & max);
+	void toggleCrossCursor(bool toggle);
+
+signals:
+	void imageClicked(QPoint pos, bool left);
 
 public slots:
 	void setPixmap(const QPixmap & pixmap);

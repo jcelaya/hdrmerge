@@ -60,11 +60,9 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 				if (*i++ < Pixel::transparent)
 					pix->l += Pixel::transparent;
 			if (pix->l < Pixel::transparent)
-				//bn += (float)pix->r + pix->g + pix->b;
-				bn += (float)pix->g;
+				bn += pix->g;
 		}
 	}
-	//bn /= 3 * size;
 	bn /= size;
 	th = 25600;
 	cerr << "  Brightness " << bn << endl;
@@ -107,6 +105,34 @@ void ExposureStack::sort() {
 		for (vector<Exposure *>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
 			(*n)->setRelativeExposure(*p);
 	}
+	// Calculate auto white balance, with gray world
+	calculateWB(0, 0, width, height);
+}
+
+
+void ExposureStack::calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
+	// Calculate white balance
+	wbr = 0.0;
+	wbg = 0.0;
+	wbb = 0.0;
+	for (unsigned int i = x; i < x + w; i++) {
+		for (unsigned int j = y; j < y + h; j++) {
+			unsigned int pos = j * width + i;
+			Exposure * const * e = &imgs.front();
+			while (e != &imgs.back() && (*e)->p[pos].l >= (*e)->th) e++;
+			Pixel * pix = &(*e)->p[pos];
+			double relExp = (*e)->relExp;
+			wbr += pix->r * relExp;
+			wbg += pix->g * relExp;
+			wbb += pix->b * relExp;
+		}
+	}
+	double min = wbr < wbg ? wbr : wbg;
+	min = wbb < min ? wbb : min;
+	wbr = min / wbr;
+	wbg = min / wbg;
+	wbb = min / wbb;
+	cerr << "White balance R:" << wbr << " G:" << wbg << " B:" << wbb << endl;
 }
 
 
@@ -170,15 +196,15 @@ void ExposureStack::savePFS(const char * filename) {
 	for (unsigned int j = 0; j < size; j++) {
 		int i = ceil(map[j]);
 		Pixel * pix = &imgs[i]->p[j];
-		float relExp = imgs[i]->relExp;
+		double relExp = imgs[i]->relExp;
 		if (i == 0) {
 			(*r)(j) = pix->r * relExp * wbr;
 			(*g)(j) = pix->g * relExp * wbg;
 			(*b)(j) = pix->b * relExp * wbb;
 		} else {
-			float p = i - map[j];
+			double p = i - map[j];
 			Pixel * ppix = &imgs[i - 1]->p[j];
-			float prelExp = imgs[i - 1]->relExp;
+			double prelExp = imgs[i - 1]->relExp;
 			(*r)(j) = (pix->r * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbr;
 			(*g)(j) = (pix->g * relExp * (1.0f - p) + ppix->g * prelExp * p) * wbg;
 			(*b)(j) = (pix->b * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbb;

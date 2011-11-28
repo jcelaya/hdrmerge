@@ -5,8 +5,6 @@
 #include <boost/cstdint.hpp>
 
 
-
-
 class ExposureStack {
 	struct Pixel {
 		uint16_t r, g, b;
@@ -17,8 +15,8 @@ class ExposureStack {
 
 	struct Exposure {
 		std::vector<Pixel> p;   ///< Image data
-		float bn;               ///< Brightness
-		float relExp;           ///< Relative exposure
+		double bn;              ///< Brightness
+		double relExp;          ///< Relative exposure
 		uint16_t th;            ///< Exposure threshold
 	
 		/// Create an exposure from a linear 16 bit TIFF file
@@ -32,14 +30,14 @@ class ExposureStack {
 	};
 
 	std::vector<Exposure *> imgs;   ///< Exposures, from top to bottom
-	float wbr;              ///< White balance red component
-	float wbg;              ///< White balance green component
-	float wbb;              ///< White balance blue component
+	double wbr;             ///< White balance red component
+	double wbg;             ///< White balance green component
+	double wbb;             ///< White balance blue component
 	unsigned int width;     ///< Size of a row
 	unsigned int height;    ///< Size of a row
 
 public:
-	ExposureStack() : wbr(1.0f), wbg(1.0f), wbb(1.0f), width(0), height(0) {}
+	ExposureStack() : wbr(1.0), wbg(1.0), wbb(1.0), width(0), height(0) {}
 
 	~ExposureStack() {
 		for (std::vector<Exposure *>::iterator it = imgs.begin(); it != imgs.end(); it++)
@@ -77,12 +75,24 @@ public:
 		imgs[i]->th = th >> 1;
 	}
 
+	void setWhiteBalance(double r, double g, double b) {
+		wbr = r; wbg = g; wbb = b;
+	}
+
+	void calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
+
+	double getWBR() const { return wbr; }
+
+	double getWBG() const { return wbg; }
+
+	double getWBB() const { return wbb; }
+
 	void rgb(unsigned int x, unsigned int y, float & r, float & g, float & b) const {
 		unsigned int pos = y * width + x;
 		Exposure * const * e = &imgs.front();
 		while (e != &imgs.back() && (*e)->p[pos].l >= (*e)->th) e++;
 		Pixel * pix = &(*e)->p[pos];
-		float relExp = (*e)->relExp;
+		double relExp = (*e)->relExp;
 		r = pix->r * relExp * wbr;
 		g = pix->g * relExp * wbg;
 		b = pix->b * relExp * wbb;

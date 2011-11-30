@@ -1,20 +1,19 @@
 #ifndef _HDRMERGEMAINWINDOW_H
 #define _HDRMERGEMAINWINDOW_H
 
-#include <QtGui/QAction>
-#include <QtGui/QLabel>
-#include <QtGui/QMainWindow>
-#include <QtGui/QMenu>
-#include <QtGui/QScrollArea>
-#include <QtGui/QStatusBar>
-#include <QtGui/QTabWidget>
-#include <QtGui/QWidget>
+#include <QAction>
+#include <QLabel>
+#include <QMainWindow>
+#include <QMenu>
+#include <QStatusBar>
+#include <QTabWidget>
 #include <QEvent>
 #include <QMutex>
 #include "Exposure.h"
 #include "RenderThread.h"
 #include "PreviewWidget.h"
 #include "WhiteBalanceWidget.h"
+#include "DraggableScrollArea.h"
 
 
 class MainWindow : public QMainWindow {
@@ -31,6 +30,7 @@ class MainWindow : public QMainWindow {
 	QMenu * helpMenu;
 
 	QWidget * centralwidget;
+	DraggableScrollArea * previewArea;
 	PreviewWidget * preview;
 	QTabWidget * imageTabs;
 	QStatusBar * statusbar;
@@ -39,7 +39,7 @@ class MainWindow : public QMainWindow {
 	RenderThread * rt;
 	WhiteBalanceWidget * wbw;
 
-	bool isGettingWB;
+	bool isPickingWB;
 
 	void createActions();
 	void createMenus();
@@ -48,9 +48,8 @@ private slots:
 	void about();
 	void loadImages();
 	void saveResult();
-	void updateImage(const QImage & image);
-	void exposureChange(int i, float re, int th);
-	void pickWB();
+	void setExposureParams(int i, float re, int th);
+	void setPickingWB();
 	void clickImage(QPoint pos, bool left);
 
 public:

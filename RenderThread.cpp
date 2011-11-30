@@ -7,7 +7,6 @@
 RenderThread::RenderThread(const ExposureStack * es, float gamma, QObject * parent)
 	: QThread(parent), restart(false), abort(false), imgs(es), vpmin(0, 0), vpmax(0, 0) {
 	setGamma(gamma);
-	//image = QImage(imgs->getWidth(), imgs->getHeight(), QImage::Format_RGB32);
 }
 
 
@@ -18,11 +17,12 @@ RenderThread::~RenderThread() {
 }
 
 
-void RenderThread::render(QPoint viewportMin, QPoint viewportMax) {
+//void RenderThread::render(QPoint viewportMin, QPoint viewportMax) {
+void RenderThread::render() {
 	mutex.lock();
 	restart = true;
-	vpmin = viewportMin;
-	vpmax = viewportMax;
+	//vpmin = viewportMin;
+	//vpmax = viewportMax;
 	mutex.unlock();
 	condition.wakeOne();
 }
@@ -64,27 +64,30 @@ void RenderThread::run() {
 	forever {
 		if (abort) return;
 
-		QImage a(imgs->getWidth(), imgs->getHeight(), QImage::Format_RGB32);
+		/*
+		QImage a(maxx - minx, maxy - miny, QImage::Format_RGB32);
 		doRender(minx, miny, maxx, maxy, a);
 		if (!restart && maxy > 0) {
-			emit renderedImage(a);
+			emit renderedImage(minx, miny, a);
 			yieldCurrentThread();
 		}
+		*/
 		
 		QImage b(imgs->getWidth(), imgs->getHeight(), QImage::Format_RGB32);
 		doRender(0, 0, imgs->getWidth(), imgs->getHeight(), b);
          	mutex.lock();
 		if (!restart) {
+			//emit renderedImage(0, 0, b);
 			emit renderedImage(b);
 			// Wait until render is called
 			condition.wait(&mutex);
 		}
 		restart = false;
 		// Check limits, due to roundings in preview label scale
-		minx = vpmin.x() < 0 ? 0 : vpmin.x();
-		miny = vpmin.y() < 0 ? 0 : vpmin.y();
-		maxx = vpmax.x() > imgs->getWidth() ? imgs->getWidth() : vpmax.x();
-		maxy = vpmax.y() > imgs->getHeight() ? imgs->getHeight() : vpmax.y();
+		//minx = vpmin.x() < 0 ? 0 : vpmin.x();
+		//miny = vpmin.y() < 0 ? 0 : vpmin.y();
+		//maxx = vpmax.x() > imgs->getWidth() ? imgs->getWidth() : vpmax.x();
+		//maxy = vpmax.y() > imgs->getHeight() ? imgs->getHeight() : vpmax.y();
 		mutex.unlock();
 	}
 }

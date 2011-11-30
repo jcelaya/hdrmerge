@@ -11,14 +11,19 @@
 #include <iostream>
 
 MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
-	: QMainWindow(parent, flags), images(NULL), rt(NULL), isGettingWB(false) {
+	: QMainWindow(parent, flags), images(NULL), rt(NULL), isPickingWB(false) {
 	centralwidget = new QWidget(this);
 	setCentralWidget(centralwidget);
 	QVBoxLayout * layout = new QVBoxLayout(centralwidget);
 
-	preview = new PreviewWidget(centralwidget);
+	previewArea = new DraggableScrollArea(centralwidget);
+	previewArea->setAlignment(Qt::AlignCenter);
+	layout->addWidget(previewArea);
+
+	preview = new PreviewWidget(previewArea);
+	previewArea->setWidget(preview);
+	connect(preview, SIGNAL(focus(int, int)), previewArea, SLOT(center(int, int)));
 	connect(preview, SIGNAL(imageClicked(QPoint, bool)), this, SLOT(clickImage(QPoint, bool)));
-	layout->addWidget(preview);
 
 	imageTabs = new QTabWidget(centralwidget);
 	QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -138,19 +143,19 @@ void MainWindow::loadImages() {
 
 		// Paint and create GUI
 		rt = new RenderThread(images, 2.2f, this);
-		connect(rt, SIGNAL(renderedImage(QImage)), this, SLOT(updateImage(QImage)));
+		connect(rt, SIGNAL(renderedImage(QImage)), preview, SLOT(paintImage(QImage)));
 		rt->start(QThread::LowPriority);
 		for (unsigned int i = 0; i < numImages - 1; i++) {
 			// Create ImageControl widgets for every exposure except the last one
-			ImageControl * ic = new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
-			if (i == numImages - 1)
-				ic->disableREV();
-			connect(ic, SIGNAL(propertiesChanged(int, float, int)), this, SLOT(exposureChange(int, float, int)));
+			ImageControl * ic =
+				new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
+			connect(ic, SIGNAL(propertiesChanged(int, float, int)),
+				this, SLOT(setExposureParams(int, float, int)));
 			imageTabs->addTab(ic, tr("Exposure") + " " + QString::number(i));
 		}
 		// Add white balance widget
 		wbw = new WhiteBalanceWidget(images->getWBR(), images->getWBG(), images->getWBB(), imageTabs);
-		connect(wbw, SIGNAL(pickerPushed()), this, SLOT(pickWB()));
+		connect(wbw, SIGNAL(pickerPushed()), this, SLOT(setPickingWB()));
 		imageTabs->addTab(wbw, tr("White Balance"));
 	}
 }
@@ -166,38 +171,35 @@ void MainWindow::saveResult() {
 }
 
 
-void MainWindow::updateImage(const QImage & image) {
-	preview->setPixmap(QPixmap::fromImage(image));
-}
-
-
-void MainWindow::exposureChange(int i, float re, int th) {
+void MainWindow::setExposureParams(int i, float re, int th) {
 	images->setRelativeExposure(i, re);
 	images->setThreshold(i, th);
-	QPoint min, max;
-	preview->getViewRect(min, max);
-	rt->render(min, max);
+	//QPoint min, max;
+	//preview->getViewRect(min, max);
+	//rt->render(min, max);
+	rt->render();
 }
 
 
-void MainWindow::pickWB() {
-	isGettingWB = true;
+void MainWindow::setPickingWB() {
+	isPickingWB = true;
 	preview->toggleCrossCursor(true);
 }
 
 
 void MainWindow::clickImage(QPoint pos, bool left) {
-	if (left && isGettingWB) {
+	if (left && isPickingWB) {
 		preview->toggleCrossCursor(false);
-		isGettingWB = false;
+		isPickingWB = false;
 		unsigned int x = pos.x() > 5 ? pos.x() - 5 : 0;
 		unsigned int y = pos.y() > 5 ? pos.y() - 5 : 0;
 		unsigned int w = images->getWidth() - pos.x() > 10 ? 10 : images->getWidth() - pos.x();
 		unsigned int h = images->getHeight() - pos.y() > 10 ? 10 : images->getHeight() - pos.y();
 		images->calculateWB(x, y, w, h);
-		QPoint min, max;
-		preview->getViewRect(min, max);
-		rt->render(min, max);
+		//QPoint min, max;
+		//preview->getViewRect(min, max);
+		//rt->render(min, max);
+		rt->render();
 		wbw->changeFactors(images->getWBR(), images->getWBG(), images->getWBB());
 	}
 }

@@ -15,10 +15,12 @@ public:
 	RenderThread(const ExposureStack * es, float gamma = 1.0f, QObject *parent = 0);
 	~RenderThread();
 
-	void render(QPoint viewportMin, QPoint viewportMax);
+	//void render(QPoint viewportMin, QPoint viewportMax);
+	void render();
 	void setGamma(float g);
 
 signals:
+	//void renderedImage(unsigned int x, unsigned int y, const QImage & image);
 	void renderedImage(const QImage & image);
 
 protected:

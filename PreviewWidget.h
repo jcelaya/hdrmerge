@@ -1,19 +1,13 @@
 #ifndef _PREVIEWWIDGET_H_
 #define _PREVIEWWIDGET_H_
 
-#include <QScrollArea>
-#include <QScrollBar>
 #include <QLabel>
-#include <QPixmap>
 
 
-class PreviewWidget : public QScrollArea {
+class PreviewWidget : public QLabel {
         Q_OBJECT
         
-	QLabel * previewLabel;
 	double scale;
-	QPoint lastDragPos;
-	QPoint lastScrollPos;
 
 public:
 	PreviewWidget(QWidget * parent);
@@ -23,14 +17,13 @@ public:
 
 signals:
 	void imageClicked(QPoint pos, bool left);
+	void focus(int x, int y);
 
 public slots:
-	void setPixmap(const QPixmap & pixmap);
+	void paintImage(const QImage & image);
 
 protected:
 	void wheelEvent(QWheelEvent *event);
-	void mousePressEvent(QMouseEvent *event);
-	void mouseMoveEvent(QMouseEvent *event);
 	void mouseReleaseEvent(QMouseEvent *event);
 };
 

@@ -1,53 +1,39 @@
 #include "PreviewWidget.h"
+#include <QImage>
 #include <QWheelEvent>
 #include <QCursor>
+#include <QTime>
 #include <cmath>
 #include <iostream>
-#include <QTime>
 
 
-PreviewWidget::PreviewWidget(QWidget * parent) : QScrollArea(parent) {
-	previewLabel = new QLabel(this);
-	previewLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-	previewLabel->setScaledContents(true);
-	previewLabel->setAlignment(Qt::AlignCenter);
-	setWidget(previewLabel);
-	setAlignment(Qt::AlignCenter);
-	scale = 1.0;
-	toggleCrossCursor(false);
+PreviewWidget::PreviewWidget(QWidget * parent) : QLabel(parent), scale(1.0) {
+	setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+	setScaledContents(true);
 }
 
 
 void PreviewWidget::toggleCrossCursor(bool toggle) {
 	if (toggle)
-		previewLabel->setCursor(Qt::CrossCursor);
+		setCursor(Qt::CrossCursor);
 	else
-		previewLabel->setCursor(Qt::OpenHandCursor);
+		unsetCursor();
 }
 
 
-void PreviewWidget::setPixmap(const QPixmap & pixmap) {
-	std::cerr << "Seting pixmap at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData() << std::endl;
-	previewLabel->setPixmap(pixmap);
-	previewLabel->resize(scale * pixmap.size());
-	previewLabel->repaint();
-}
-
-
-void PreviewWidget::getViewRect(QPoint & min, QPoint & max) {
-	min = previewLabel->mapFromParent(QPoint(0, 0));
-	max = min + QPoint(viewport()->width(), viewport()->height());
-	if (min.x() < 0) min.setX(0);
-	if (min.y() < 0) min.setY(0);
-	if (max.x() > previewLabel->width()) max.setX(previewLabel->width());
-	if (max.y() > previewLabel->height()) max.setY(previewLabel->height());
-	min /= scale;
-	max /= scale;
+void PreviewWidget::paintImage(const QImage & image) {
+	QTime t;
+	t.start();
+	setPixmap(QPixmap::fromImage(image));
+	resize(scale * image.size());
+	update();
+	std::cerr << "Setting pixmap at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData() << ", "
+		<< t.elapsed() << " ms elapsed" << std::endl;
 }
 
 
 void PreviewWidget::wheelEvent(QWheelEvent * event) {
-	if (previewLabel->pixmap()) {
+	if (pixmap()) {
 		int steps = event->delta() / 120;
 		double zoomFactor = pow(2.0, steps);
 		double newScale = scale * zoomFactor;
@@ -58,35 +44,14 @@ void PreviewWidget::wheelEvent(QWheelEvent * event) {
 		zoomFactor = newScale / scale;
 		if (zoomFactor != 1.0) {
 			scale = newScale;
-			QPoint pos = zoomFactor * previewLabel->mapFromParent(viewport()->mapFromParent(event->pos()));
-			previewLabel->resize(scale * previewLabel->pixmap()->size());
-			ensureVisible(pos.x(), pos.y(), viewport()->width() / 2, viewport()->height() / 2);
+			resize(scale * pixmap()->size());
+			emit focus(event->pos().x() * zoomFactor, event->pos().y() * zoomFactor);
 		}
 	}
 }
 
 
-void PreviewWidget::mousePressEvent(QMouseEvent * event) {
-	if (event->button() == Qt::LeftButton) {
-		lastDragPos = event->pos();
-		lastScrollPos.setX(horizontalScrollBar()->value());
-		lastScrollPos.setY(verticalScrollBar()->value());
-	}
-}
-
-
-void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
-	if (event->buttons() & Qt::LeftButton) {
-		int deltax = event->pos().x() - lastDragPos.x();
-		int deltay = event->pos().y() - lastDragPos.y();
-		horizontalScrollBar()->setValue(lastScrollPos.x() - deltax);
-		verticalScrollBar()->setValue(lastScrollPos.y() - deltay);
-	}
-}
-
-
 void PreviewWidget::mouseReleaseEvent(QMouseEvent * event) {
-	emit imageClicked(previewLabel->mapFromParent(viewport()->mapFromParent(event->pos())) / scale,
-		event->button() == Qt::LeftButton);
+	emit imageClicked(event->pos() / scale, event->button() == Qt::LeftButton);
 }
 

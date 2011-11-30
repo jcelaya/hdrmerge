@@ -198,16 +198,16 @@ void ExposureStack::savePFS(const char * filename) {
 		Pixel * pix = &imgs[i]->p[j];
 		double relExp = imgs[i]->relExp;
 		if (i == 0) {
-			(*r)(j) = pix->r * relExp * wbr;
-			(*g)(j) = pix->g * relExp * wbg;
-			(*b)(j) = pix->b * relExp * wbb;
+			(*r)(j) = pix->r * relExp * wbr / 65536.0;
+			(*g)(j) = pix->g * relExp * wbg / 65536.0;
+			(*b)(j) = pix->b * relExp * wbb / 65536.0;
 		} else {
 			double p = i - map[j];
 			Pixel * ppix = &imgs[i - 1]->p[j];
 			double prelExp = imgs[i - 1]->relExp;
-			(*r)(j) = (pix->r * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbr;
-			(*g)(j) = (pix->g * relExp * (1.0f - p) + ppix->g * prelExp * p) * wbg;
-			(*b)(j) = (pix->b * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbb;
+			(*r)(j) = (pix->r * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbr / 65536.0;
+			(*g)(j) = (pix->g * relExp * (1.0f - p) + ppix->g * prelExp * p) * wbg / 65536.0;
+			(*b)(j) = (pix->b * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbb / 65536.0;
 		}
 	}
 

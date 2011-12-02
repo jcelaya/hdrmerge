@@ -22,6 +22,9 @@ WhiteBalanceWidget::WhiteBalanceWidget(double r, double g, double b, QWidget * p
 	pickerButton = new QPushButton(tr("Select WB"), buttonsContainer);
 	buttonsLayout->addWidget(pickerButton);
 
+	autoWB = new QPushButton(tr("Auto WB"), buttonsContainer);
+	buttonsLayout->addWidget(autoWB);
+
 	buttonsLayout->addStretch(1);
 
 	redLabel = new QLabel(tr("Red:"), valuesContainer);
@@ -60,6 +63,7 @@ WhiteBalanceWidget::WhiteBalanceWidget(double r, double g, double b, QWidget * p
 	connect(greenValue, SIGNAL(valueChanged(double)), this, SLOT(changeValues()));
 	connect(blueValue, SIGNAL(valueChanged(double)), this, SLOT(changeValues()));
 	connect(pickerButton, SIGNAL(clicked()), this, SLOT(pushPicker()));
+	connect(autoWB, SIGNAL(clicked()), this, SLOT(pushAutoWB()));
 }
 
 
@@ -67,15 +71,5 @@ void WhiteBalanceWidget::changeFactors(double r, double g, double b) {
 	redValue->setValue(r);
 	greenValue->setValue(g);
 	blueValue->setValue(b);
-}
-
-
-void WhiteBalanceWidget::changeValues() {
-	emit factorsChanged(redValue->value(), greenValue->value(), blueValue->value());
-}
-
-
-void WhiteBalanceWidget::pushPicker() {
-	emit pickerPushed();
 }
 

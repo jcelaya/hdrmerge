@@ -156,6 +156,7 @@ void MainWindow::loadImages() {
 		// Add white balance widget
 		wbw = new WhiteBalanceWidget(images->getWBR(), images->getWBG(), images->getWBB(), imageTabs);
 		connect(wbw, SIGNAL(pickerPushed()), this, SLOT(setPickingWB()));
+		connect(wbw, SIGNAL(autoWBPushed()), this, SLOT(setAutoWB()));
 		imageTabs->addTab(wbw, tr("White Balance"));
 	}
 }
@@ -202,5 +203,12 @@ void MainWindow::clickImage(QPoint pos, bool left) {
 		rt->render();
 		wbw->changeFactors(images->getWBR(), images->getWBG(), images->getWBB());
 	}
+}
+
+
+void MainWindow::setAutoWB() {
+	images->calculateWB(0, 0, images->getWidth(), images->getHeight());
+	rt->render();
+	wbw->changeFactors(images->getWBR(), images->getWBG(), images->getWBB());
 }
 

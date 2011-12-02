@@ -104,9 +104,16 @@ void ExposureStack::sort() {
 		std::sort(imgs.begin(), imgs.end(), sortExposurePointer);
 		for (vector<Exposure *>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
 			(*n)->setRelativeExposure(*p);
+		// Calculate auto white balance, with gray world
+		calculateWB(0, 0, width, height);
+		// Calculate fusion map
+		unsigned int N = imgs.size();
+		for (unsigned int j = 0; j < width * height; j++) {
+			unsigned int i;
+			for (i = 0; i < N - 1 && imgs[i]->p[j].l >= imgs[i]->th; i++);
+			map[j] = i;
+		}
 	}
-	// Calculate auto white balance, with gray world
-	calculateWB(0, 0, width, height);
 }
 
 

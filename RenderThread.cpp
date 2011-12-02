@@ -5,7 +5,7 @@
 
 
 RenderThread::RenderThread(const ExposureStack * es, float gamma, QObject * parent)
-	: QThread(parent), restart(false), abort(false), imgs(es), vpmin(0, 0), vpmax(0, 0) {
+	: QThread(parent), restart(false), abort(false), images(es), vpmin(0, 0), vpmax(0, 0) {
 	setGamma(gamma);
 }
 
@@ -14,6 +14,7 @@ RenderThread::~RenderThread() {
 	abort = true;
 	condition.wakeOne();
 	wait();
+	delete images;
 }
 
 
@@ -35,6 +36,19 @@ void RenderThread::setGamma(float g) {
 }
 
 
+void MainWindow::setExposureParams(int i, float re, int th) {
+	images->setRelativeExposure(i, re);
+	images->setThreshold(i, th);
+	//QPoint min, max;
+	//preview->getViewRect(min, max);
+	//rt->render(min, max);
+	render();
+}
+
+
+void RenderThread::calculateWB(int x, int y, int w, int h);
+
+
 void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image) {
 	QTime t;
 	t.start();
@@ -46,7 +60,7 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 		scanLine += minx;
 		for (unsigned int col = minx; col < maxx; col++) {
 			float rr, gg, bb;
-			imgs->rgb(col, row, rr, gg, bb);
+			images->rgb(col, row, rr, gg, bb);
 			int r = (int)rr, g = (int)gg, b = (int)bb;
 			if (r >= 65536 || r < 0) std::cerr << "RValue " << r << " out of range at " << col << "x" << row << std::endl;
 			if (g >= 65536 || g < 0) std::cerr << "GValue " << g << " out of range at " << col << "x" << row << std::endl;
@@ -73,8 +87,8 @@ void RenderThread::run() {
 		}
 		*/
 		
-		QImage b(imgs->getWidth(), imgs->getHeight(), QImage::Format_RGB32);
-		doRender(0, 0, imgs->getWidth(), imgs->getHeight(), b);
+		QImage b(images->getWidth(), images->getHeight(), QImage::Format_RGB32);
+		doRender(0, 0, images->getWidth(), images->getHeight(), b);
          	mutex.lock();
 		if (!restart) {
 			//emit renderedImage(0, 0, b);
@@ -86,7 +100,7 @@ void RenderThread::run() {
 		// Check limits, due to roundings in preview label scale
 		//minx = vpmin.x() < 0 ? 0 : vpmin.x();
 		//miny = vpmin.y() < 0 ? 0 : vpmin.y();
-		//maxx = vpmax.x() > imgs->getWidth() ? imgs->getWidth() : vpmax.x();
+		//maxx = vpmax.x() > images->getWidth() ? imgs->getWidth() : vpmax.x();
 		//maxy = vpmax.y() > imgs->getHeight() ? imgs->getHeight() : vpmax.y();
 		mutex.unlock();
 	}

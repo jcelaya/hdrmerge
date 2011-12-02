@@ -30,6 +30,7 @@ class ExposureStack {
 	};
 
 	std::vector<Exposure *> imgs;   ///< Exposures, from top to bottom
+	std::vector<unsigned char> map;   ///< Fusion map
 	double wbr;             ///< White balance red component
 	double wbg;             ///< White balance green component
 	double wbb;             ///< White balance blue component
@@ -63,29 +64,23 @@ public:
 		return imgs[i]->relExp;
 	}
 
-	void setRelativeExposure(int i, float re) {
-		imgs[i]->relExp = re;
-	}
-
 	uint16_t getThreshold(int i) const {
 		return imgs[i]->th << 1;
 	}
-
-	void setThreshold(int i, uint16_t th) {
-		imgs[i]->th = th >> 1;
-	}
-
-	void setWhiteBalance(double r, double g, double b) {
-		wbr = r; wbg = g; wbb = b;
-	}
-
-	void calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 
 	double getWBR() const { return wbr; }
 
 	double getWBG() const { return wbg; }
 
 	double getWBB() const { return wbb; }
+
+	void setRelativeExposure(int i, float re);
+
+	void setThreshold(int i, uint16_t th);
+
+	void setWhiteBalance(double r, double g, double b);
+
+	void calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 
 	void rgb(unsigned int x, unsigned int y, float & r, float & g, float & b) const {
 		unsigned int pos = y * width + x;
@@ -98,12 +93,8 @@ public:
 		b = pix->b * relExp * wbb;
 	}
 
-
 	/// Sort images and calculate relative exposure
 	void sort();
-
-	/// Render the image on a vector of double
-	void render(std::vector<float> & r);
 
 	/// Merge stack and save as EXR
 	void saveEXR(const char * filename);

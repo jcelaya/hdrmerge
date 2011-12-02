@@ -48,8 +48,8 @@ private slots:
 	void about();
 	void loadImages();
 	void saveResult();
-	void setExposureParams(int i, float re, int th);
 	void setPickingWB();
+	void setAutoWB();
 	void clickImage(QPoint pos, bool left);
 
 public:

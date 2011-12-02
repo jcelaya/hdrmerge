@@ -122,8 +122,6 @@ void MainWindow::loadImages() {
 		}
 		if (rt != NULL)
 			delete rt;
-		if (images != NULL)
-			delete images;
 
 		// Load and sort images
 		images = new ExposureStack();
@@ -141,21 +139,28 @@ void MainWindow::loadImages() {
 			QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
 		progress.setValue(numImages + 1);
 
-		// Paint and create GUI
+		// Render
 		rt = new RenderThread(images, 2.2f, this);
 		connect(rt, SIGNAL(renderedImage(QImage)), preview, SLOT(paintImage(QImage)));
 		rt->start(QThread::LowPriority);
+
+		// Create GUI
 		for (unsigned int i = 0; i < numImages - 1; i++) {
 			// Create ImageControl widgets for every exposure except the last one
 			ImageControl * ic =
 				new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
-			connect(ic, SIGNAL(propertiesChanged(int, float, int)),
-				this, SLOT(setExposureParams(int, float, int)));
+			connect(ic, SIGNAL(relativeEVChanged(int, double)),
+				rt, SLOT(setExposureRelativeEV(int, double)));
+			connect(ic, SIGNAL(thresholdChanged(int, int)),
+				rt, SLOT(setExposureThreshold(int, int)));
 			imageTabs->addTab(ic, tr("Exposure") + " " + QString::number(i));
 		}
 		// Add white balance widget
 		wbw = new WhiteBalanceWidget(images->getWBR(), images->getWBG(), images->getWBB(), imageTabs);
 		connect(wbw, SIGNAL(pickerPushed()), this, SLOT(setPickingWB()));
+		connect(wbw, SIGNAL(autoWBPushed()), this, SLOT(setAutoWB()));
+		connect(rt, SIGNAL(whiteBalanceChanged(double, double, double)),
+			wbw, SLOT(changeFactors(double, double, double)));
 		imageTabs->addTab(wbw, tr("White Balance"));
 	}
 }
@@ -168,16 +173,6 @@ void MainWindow::saveResult() {
 		while (result.isRunning())
 			QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
 	}
-}
-
-
-void MainWindow::setExposureParams(int i, float re, int th) {
-	images->setRelativeExposure(i, re);
-	images->setThreshold(i, th);
-	//QPoint min, max;
-	//preview->getViewRect(min, max);
-	//rt->render(min, max);
-	rt->render();
 }
 
 
@@ -195,12 +190,12 @@ void MainWindow::clickImage(QPoint pos, bool left) {
 		unsigned int y = pos.y() > 5 ? pos.y() - 5 : 0;
 		unsigned int w = images->getWidth() - pos.x() > 10 ? 10 : images->getWidth() - pos.x();
 		unsigned int h = images->getHeight() - pos.y() > 10 ? 10 : images->getHeight() - pos.y();
-		images->calculateWB(x, y, w, h);
-		//QPoint min, max;
-		//preview->getViewRect(min, max);
-		//rt->render(min, max);
-		rt->render();
-		wbw->changeFactors(images->getWBR(), images->getWBG(), images->getWBB());
+		rt->calculateWB(x, y, w, h);
 	}
+}
+
+
+void MainWindow::setAutoWB() {
+	rt->calculateWB(0, 0, images->getWidth(), images->getHeight());
 }
 

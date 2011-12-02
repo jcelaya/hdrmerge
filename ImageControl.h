@@ -20,14 +20,20 @@ class ImageControl : public QWidget {
 	int imageNumber;
 
 public:
-	ImageControl(QWidget * parent, int i, float re, int th);
-	void disableREV() { relativeEVSpinBox->setEnabled(false); }
+	ImageControl(QWidget * parent, int i, double re, int th);
 
 signals:
-	void propertiesChanged(int i, float re, int th);
+	void relativeEVChanged(int i, double re);
+	void thresholdChanged(int i, int th);
 
 private slots:
-	void changedEvent();
+	void thresholdEvent(int th) {
+		emit thresholdChanged(imageNumber, th);
+	}
+
+	void relativeEVEvent(double re) {
+		emit relativeEVChanged(imageNumber, re);
+	}
 };
 
 #endif // _IMAGECONTROL_H

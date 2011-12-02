@@ -37,13 +37,8 @@ ImageControl::ImageControl(QWidget * parent, int i, float re, int th) : QWidget(
 	//retranslateUi(imageControl);
 	connect(thresholdSlider, SIGNAL(valueChanged(int)), thresholdSpinBox, SLOT(setValue(int)));
 	connect(thresholdSpinBox, SIGNAL(valueChanged(int)), thresholdSlider, SLOT(setValue(int)));
-	connect(thresholdSpinBox, SIGNAL(valueChanged(int)), this, SLOT(changedEvent()));
-	connect(relativeEVSpinBox, SIGNAL(valueChanged(double)), this, SLOT(changedEvent()));
-}
-
-
-void ImageControl::changedEvent() {
-	emit propertiesChanged(imageNumber, relativeEVSpinBox->value(), thresholdSpinBox->value() * 256);
+	connect(thresholdSpinBox, SIGNAL(valueChanged(int)), this, SLOT(thresholdEvent(int)));
+	connect(relativeEVSpinBox, SIGNAL(valueChanged(double)), this, SLOT(relativeEVEvent(double)));
 }
 
 

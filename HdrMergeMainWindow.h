@@ -56,6 +56,7 @@ public:
 	MainWindow(QWidget * parent = 0, Qt::WindowFlags flags = 0);
 
 	void changeEvent(QEvent * e);
+	void closeEvent(QCloseEvent * event);
 };
 
 #endif // UI_HDRMERGEMAINWINDOW_H

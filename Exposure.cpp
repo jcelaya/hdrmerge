@@ -38,15 +38,15 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 	unsigned int bytes = TIFFScanlineSize(file);
 
 	unsigned int size = height * width;
-	p.resize(size);
+	p.reset(new Pixel[size]);
 	cerr << "Loaded image " << name << ", with" << (bytes < width * 8 ? "out" : "") << " alpha channel, "
 		<< width << 'x' << height << ", "
-		<< (p.capacity() * sizeof(Pixel)) << " bytes allocated" << endl;
+		<< (size * sizeof(Pixel)) << " bytes allocated" << endl;
 
 
 	tdata_t buffer = _TIFFmalloc(bytes);
 	bn = 0.0;
-	Pixel * pix = &p[0];
+	Pixel * pix = p.get();
 	for (unsigned int row = 0; row < height; ++row) {
 		TIFFReadScanline(file, buffer, row);
 		uint16_t const * i = static_cast< uint16_t const * >(buffer);
@@ -72,45 +72,68 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 }
 
 
-void ExposureStack::Exposure::setRelativeExposure(const Exposure * ref) {
-	if (ref == this) {
-		relExp = 1.0;
+void ExposureStack::Exposure::setRelativeExposure(const Exposure & ref, unsigned int size) {
+	if (&ref == this) {
+		relExp = immExp = 1.0;
 		return;
 	}
 	// Calculate median relative exposure
 	const uint16_t min = 3275, max = 52430;
 	vector<float> samples;
-	const Pixel * rpix = &ref->p[0], * pix = &p[0];
-	const Pixel * size = pix + p.size();
-	for (; pix < size; rpix++, pix++) {
+	const Pixel * rpix = ref.p.get(), * pix = p.get();
+	const Pixel * end = pix + size;
+	for (; pix < end; rpix++, pix++) {
 		if (rpix->l >= Pixel::transparent)
 			continue;
 		// Only sample those pixels that are in the linear zone
-		if (rpix->r < max && rpix->r > min && pix->r < max && pix->r > min)
-			samples.push_back((float)rpix->r / pix->r);
+		//if (rpix->r < max && rpix->r > min && pix->r < max && pix->r > min)
+		//	samples.push_back((float)rpix->r / pix->r);
 		if (rpix->g < max && rpix->g > min && pix->g < max && pix->g > min)
 			samples.push_back((float)rpix->g / pix->g);
-		if (rpix->b < max && rpix->b > min && pix->b < max && pix->b > min)
-			samples.push_back((float)rpix->b / pix->b);
+		//if (rpix->b < max && rpix->b > min && pix->b < max && pix->b > min)
+		//	samples.push_back((float)rpix->b / pix->b);
 	}
 	std::sort(samples.begin(), samples.end());
-	relExp = samples[samples.size() / 2] * ref->relExp;
+	immExp = samples[samples.size() / 2];
+	relExp = immExp * ref.relExp;
 	cerr << "Relative exposure: " << (1.0/relExp) << '(' << (log(1.0/relExp) / log(2.0)) << " EV)" << endl;
+}
+
+
+void ExposureStack::setRelativeExposure(int i, double re) {
+	imgs[i].immExp = re;
+	// Recalculate relExp
+	for (int j = i; j >= 0; j--) {
+		imgs[j].relExp = imgs[j + 1].relExp * imgs[j].immExp;
+	}
+}
+
+
+void ExposureStack::setThreshold(int i, uint16_t th) {
+	imgs[i].th = th >> 1;
+}
+
+
+void ExposureStack::setWhiteBalance(double r, double g, double b) {
+	wbr = r;
+	wbg = g;
+	wbb = b;
 }
 
 
 void ExposureStack::sort() {
 	if (!imgs.empty()) {
-		std::sort(imgs.begin(), imgs.end(), sortExposurePointer);
-		for (vector<Exposure *>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
-			(*n)->setRelativeExposure(*p);
+		std::sort(imgs.begin(), imgs.end());
+		for (vector<Exposure>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
+			n->setRelativeExposure(*p, width * height);
 		// Calculate auto white balance, with gray world
 		calculateWB(0, 0, width, height);
 		// Calculate fusion map
+		map.resize(width * height);
 		unsigned int N = imgs.size();
 		for (unsigned int j = 0; j < width * height; j++) {
 			unsigned int i;
-			for (i = 0; i < N - 1 && imgs[i]->p[j].l >= imgs[i]->th; i++);
+			for (i = 0; i < N - 1 && imgs[i].p[j].l >= imgs[i].th; i++);
 			map[j] = i;
 		}
 	}
@@ -125,10 +148,10 @@ void ExposureStack::calculateWB(unsigned int x, unsigned int y, unsigned int w, 
 	for (unsigned int i = x; i < x + w; i++) {
 		for (unsigned int j = y; j < y + h; j++) {
 			unsigned int pos = j * width + i;
-			Exposure * const * e = &imgs.front();
-			while (e != &imgs.back() && (*e)->p[pos].l >= (*e)->th) e++;
-			Pixel * pix = &(*e)->p[pos];
-			double relExp = (*e)->relExp;
+			const Exposure * e = &imgs.front();
+			while (e != &imgs.back() && e->p[pos].l >= e->th) e++;
+			Pixel * pix = &e->p[pos];
+			double relExp = e->relExp;
 			wbr += pix->r * relExp;
 			wbg += pix->g * relExp;
 			wbb += pix->b * relExp;
@@ -183,7 +206,7 @@ void ExposureStack::savePFS(const char * filename) {
 		// For each exposure...
 		for (unsigned int i = 0; i < N; i++) {
 			// If it is under threshold, this is the correctly exposed pixel
-			if (i == N - 1 || imgs[i]->p[j].l < imgs[i]->th) {
+			if (i == N - 1 || imgs[i].p[j].l < imgs[i].th) {
 				map[j] = i;
 				break;
 			}
@@ -202,16 +225,16 @@ void ExposureStack::savePFS(const char * filename) {
 	// Apply map
 	for (unsigned int j = 0; j < size; j++) {
 		int i = ceil(map[j]);
-		Pixel * pix = &imgs[i]->p[j];
-		double relExp = imgs[i]->relExp;
+		Pixel * pix = &imgs[i].p[j];
+		double relExp = imgs[i].relExp;
 		if (i == 0) {
 			(*r)(j) = pix->r * relExp * wbr / 65536.0;
 			(*g)(j) = pix->g * relExp * wbg / 65536.0;
 			(*b)(j) = pix->b * relExp * wbb / 65536.0;
 		} else {
 			double p = i - map[j];
-			Pixel * ppix = &imgs[i - 1]->p[j];
-			double prelExp = imgs[i - 1]->relExp;
+			Pixel * ppix = &imgs[i - 1].p[j];
+			double prelExp = imgs[i - 1].relExp;
 			(*r)(j) = (pix->r * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbr / 65536.0;
 			(*g)(j) = (pix->g * relExp * (1.0f - p) + ppix->g * prelExp * p) * wbg / 65536.0;
 			(*b)(j) = (pix->b * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbb / 65536.0;

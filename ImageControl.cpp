@@ -2,7 +2,7 @@
 #include <iostream>
 
 
-ImageControl::ImageControl(QWidget * parent, int i, float re, int th) : QWidget(parent), imageNumber(i) {
+ImageControl::ImageControl(QWidget * parent, int i, double re, int th) : QWidget(parent), imageNumber(i) {
 	QSizePolicy sp(QSizePolicy::Expanding, QSizePolicy::Minimum);
 	sp.setHorizontalStretch(0);
 	sp.setVerticalStretch(0);

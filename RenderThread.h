@@ -15,7 +15,7 @@ class RenderThread : public QThread {
 	QWaitCondition condition;
 	bool restart;
 	bool abort;
-	const ExposureStack * images;
+	ExposureStack * images;
 	QPoint vpmin, vpmax;
 	int gamma[65536];
 
@@ -25,7 +25,7 @@ protected:
 	void run();
 
 public:
-	RenderThread(const ExposureStack * es, float gamma = 1.0f, QObject *parent = 0);
+	RenderThread(ExposureStack * es, float gamma = 1.0f, QObject *parent = 0);
 	~RenderThread();
 
 public slots:

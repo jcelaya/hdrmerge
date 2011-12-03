@@ -7,6 +7,7 @@
 #include <QFileDialog>
 #include <QMenuBar>
 #include <QProgressDialog>
+#include <QSettings>
 #include "ImageControl.h"
 #include <iostream>
 
@@ -39,9 +40,22 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
 	//retranslateUi(HdrMergeMainWindow);
 	statusbar = new QStatusBar(this);
 	setStatusBar(statusbar);
-	resize(640, 480);
+	//resize(640, 480);
 	setWindowTitle(tr("HDRMerge - High dynamic range image fussion"));
+
+	QSettings settings;
+	restoreGeometry(settings.value("windowGeometry").toByteArray());
+	restoreState(settings.value("windowState").toByteArray());
 }
+
+
+void MainWindow::closeEvent(QCloseEvent * event) {
+	QSettings settings;
+	settings.setValue("windowGeometry", saveGeometry());
+	settings.setValue("windowState", saveState());
+	QMainWindow::closeEvent(event);
+}
+
 
 
 /*
@@ -111,9 +125,17 @@ void MainWindow::about() {
 
 
 void MainWindow::loadImages() {
-	QStringList files = QFileDialog::getOpenFileNames(this,
-		tr("Load images"), QDir::currentPath(), tr("Linear TIFF images (*.tif *.tiff)"));
+	QSettings settings;
+	QVariant lastDirSetting = settings.value("lastOpenDirectory");
+	QStringList files = QFileDialog::getOpenFileNames(this, tr("Load images"),
+		lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
+		tr("Linear TIFF images (*.tif *.tiff)"));
 	if (!files.empty()) {
+		// Save last dir
+		QString lastDir = QDir(files.front()).absolutePath();
+		lastDir.truncate(lastDir.lastIndexOf('/'));
+		settings.setValue("lastOpenDirectory", lastDir);
+
 		unsigned int numImages = files.size();
 		// Clean previous state
 		while (imageTabs->count() > 0) {
@@ -129,7 +151,8 @@ void MainWindow::loadImages() {
 		progress.setMinimumDuration(0);
 		for (unsigned int i = 0; i < numImages; i++) {
 			progress.setValue(i);
-			QFuture<void> result = QtConcurrent::run(images, &ExposureStack::loadImage, files[i].toUtf8().constData());
+			QByteArray fileName = QDir::toNativeSeparators(files[i]).toUtf8();
+			QFuture<void> result = QtConcurrent::run(images, &ExposureStack::loadImage, fileName.constData());
 			while (result.isRunning())
 				QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
@@ -169,9 +192,13 @@ void MainWindow::loadImages() {
 void MainWindow::saveResult() {
 	QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), QDir::currentPath(), tr("PFS stream files (*.pfs)"));
 	if (!file.isEmpty()) {
+		QProgressDialog progress(tr("Saving ") + file, QString(), 0, 1, this);
+		progress.setMinimumDuration(0);
+		progress.setValue(0);
 		QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, file.toUtf8().constData());
 		while (result.isRunning())
 			QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+		progress.setValue(1);
 	}
 }
 

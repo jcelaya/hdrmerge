@@ -4,7 +4,7 @@
 #include <QTime>
 
 
-RenderThread::RenderThread(const ExposureStack * es, float gamma, QObject * parent)
+RenderThread::RenderThread(ExposureStack * es, float gamma, QObject * parent)
 	: QThread(parent), restart(false), abort(false), images(es), vpmin(0, 0), vpmax(0, 0) {
 	setGamma(gamma);
 }
@@ -36,17 +36,22 @@ void RenderThread::setGamma(float g) {
 }
 
 
-void MainWindow::setExposureParams(int i, float re, int th) {
-	images->setRelativeExposure(i, re);
+void RenderThread::setExposureThreshold(int i, int th) {
 	images->setThreshold(i, th);
-	//QPoint min, max;
-	//preview->getViewRect(min, max);
-	//rt->render(min, max);
 	render();
 }
 
 
-void RenderThread::calculateWB(int x, int y, int w, int h);
+void RenderThread::setExposureRelativeEV(int i, double re) {
+	images->setRelativeExposure(i, re);
+	render();
+}
+
+
+void RenderThread::calculateWB(int x, int y, int w, int h) {
+	images->calculateWB(x, y, w, h);
+	render();
+}
 
 
 void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image) {

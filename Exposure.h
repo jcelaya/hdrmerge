@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <boost/cstdint.hpp>
+#include <boost/shared_array.hpp>
 
 
 class ExposureStack {
@@ -14,40 +15,39 @@ class ExposureStack {
 	};
 
 	struct Exposure {
-		std::vector<Pixel> p;   ///< Image data
+		boost::shared_array<Pixel> p;   ///< Image data
 		double bn;              ///< Brightness
 		double relExp;          ///< Relative exposure
+		double immExp;          ///< Exposure relative to the next image
 		uint16_t th;            ///< Exposure threshold
 	
 		/// Create an exposure from a linear 16 bit TIFF file
 		Exposure(const char * fileName, unsigned int & width, unsigned int & height);
 
 		/// Calculate relExp relative to a reference image
-		void setRelativeExposure(const Exposure * ref);
+		void setRelativeExposure(const Exposure & ref, unsigned int size);
 
 		/// Order by brightness
 		bool operator<(const Exposure & r) const { return bn > r.bn; }
 	};
 
-	std::vector<Exposure *> imgs;   ///< Exposures, from top to bottom
+	std::vector<Exposure> imgs;   ///< Exposures, from top to bottom
 	double wbr;             ///< White balance red component
 	double wbg;             ///< White balance green component
 	double wbb;             ///< White balance blue component
 	unsigned int width;     ///< Size of a row
-	unsigned int height;    ///< Size of a row
+	unsigned int height;    ///< Size of a column
 
 public:
 	ExposureStack() : wbr(1.0), wbg(1.0), wbb(1.0), width(0), height(0) {}
 
-	~ExposureStack() {
-		for (std::vector<Exposure *>::iterator it = imgs.begin(); it != imgs.end(); it++)
-			delete *it;
-	}
-
 	/// Load an image into the stack
 	void loadImage(const char * fileName) {
-		imgs.push_back(new Exposure(fileName, width, height));
+		imgs.push_back(Exposure(fileName, width, height));
 	}
+
+	/// Sort images and calculate relative exposure
+	void sort();
 
 	unsigned int size() const { return imgs.size(); }
 
@@ -60,26 +60,12 @@ public:
 	}
 
 	float getRelativeExposure(int i) const {
-		return imgs[i]->relExp;
-	}
-
-	void setRelativeExposure(int i, float re) {
-		imgs[i]->relExp = re;
+		return imgs[i].immExp;
 	}
 
 	uint16_t getThreshold(int i) const {
-		return imgs[i]->th << 1;
+		return imgs[i].th << 1;
 	}
-
-	void setThreshold(int i, uint16_t th) {
-		imgs[i]->th = th >> 1;
-	}
-
-	void setWhiteBalance(double r, double g, double b) {
-		wbr = r; wbg = g; wbb = b;
-	}
-
-	void calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 
 	double getWBR() const { return wbr; }
 
@@ -87,20 +73,25 @@ public:
 
 	double getWBB() const { return wbb; }
 
+	void setRelativeExposure(int i, float re);
+
+	void setThreshold(int i, uint16_t th);
+
+	void setWhiteBalance(double r, double g, double b);
+
+	void calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
+
 	void rgb(unsigned int x, unsigned int y, float & r, float & g, float & b) const {
 		unsigned int pos = y * width + x;
-		Exposure * const * e = &imgs.front();
-		while (e != &imgs.back() && (*e)->p[pos].l >= (*e)->th) e++;
-		Pixel * pix = &(*e)->p[pos];
-		double relExp = (*e)->relExp;
+		const Exposure * e = &imgs.front();
+		while (e != &imgs.back() && e->p[pos].l >= e->th) e++;
+		Pixel * pix = &e->p[pos];
+		double relExp = e->relExp;
 		r = pix->r * relExp * wbr;
 		g = pix->g * relExp * wbg;
 		b = pix->b * relExp * wbb;
 	}
 
-
-	/// Sort images and calculate relative exposure
-	void sort();
 
 	/// Render the image on a vector of double
 	void render(std::vector<float> & r);
@@ -113,8 +104,6 @@ public:
 
 	/// Apply a gaussian blur on a mask
 	static void gaussianBlur(std::vector<float> & m, int width, int radius, float sigma);
-
-	static bool sortExposurePointer(const Exposure * l, const Exposure * r) { return *l < *r; }
 };
 
 

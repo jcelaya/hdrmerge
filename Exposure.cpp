@@ -86,12 +86,12 @@ void ExposureStack::Exposure::setRelativeExposure(const Exposure & ref, unsigned
 		if (rpix->l >= Pixel::transparent)
 			continue;
 		// Only sample those pixels that are in the linear zone
-		if (rpix->r < max && rpix->r > min && pix->r < max && pix->r > min)
-			samples.push_back((float)rpix->r / pix->r);
+		//if (rpix->r < max && rpix->r > min && pix->r < max && pix->r > min)
+		//	samples.push_back((float)rpix->r / pix->r);
 		if (rpix->g < max && rpix->g > min && pix->g < max && pix->g > min)
 			samples.push_back((float)rpix->g / pix->g);
-		if (rpix->b < max && rpix->b > min && pix->b < max && pix->b > min)
-			samples.push_back((float)rpix->b / pix->b);
+		//if (rpix->b < max && rpix->b > min && pix->b < max && pix->b > min)
+		//	samples.push_back((float)rpix->b / pix->b);
 	}
 	std::sort(samples.begin(), samples.end());
 	immExp = samples[samples.size() / 2];

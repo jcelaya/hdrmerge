@@ -24,7 +24,7 @@ ImageControl::ImageControl(QWidget * parent, int i, double re, int th) : QWidget
 	gridLayout->addWidget(thresholdLabel, 1, 0, 1, 1);
 
 	thresholdSpinBox = new QSpinBox(this);
-	thresholdSpinBox->setMaximum(256);
+	thresholdSpinBox->setMaximum(255);
 	thresholdSpinBox->setValue(th / 256);
 	gridLayout->addWidget(thresholdSpinBox, 1, 1, 1, 1);
 

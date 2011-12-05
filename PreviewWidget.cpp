@@ -8,9 +8,9 @@
 #include <iostream>
 
 
-PreviewWidget::PreviewWidget(QWidget * parent) : QLabel(parent), scale(1.0) {
+PreviewWidget::PreviewWidget(QWidget * parent) : QLabel(parent) {
 	setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-	setScaledContents(true);
+	setScaledContents(false);
 }
 
 
@@ -34,11 +34,10 @@ void PreviewWidget::paintImage(unsigned int x, unsigned int y, const QImage & im
 		painter.drawImage(x, y, image);
 		setPixmap(pix);
 	}
-	resize(scale * pixmap()->size());
+	resize(pixmap()->size());
 	update();
 	QPoint min = mapFromParent(QPoint(0, 0));
-	emit imageViewport(min.x() / scale, min.y() / scale,
-		parentWidget()->width() / scale, parentWidget()->height() / scale);
+	emit imageViewport(min.x(), min.y(), parentWidget()->width(), parentWidget()->height());
 	std::cerr << "Setting pixmap at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData() << ", "
 		<< t.elapsed() << " ms elapsed" << std::endl;
 }
@@ -47,6 +46,8 @@ void PreviewWidget::paintImage(unsigned int x, unsigned int y, const QImage & im
 void PreviewWidget::wheelEvent(QWheelEvent * event) {
 	if (pixmap()) {
 		int steps = event->delta() / 120;
+		emit scaleBy(steps);
+		/*
 		double zoomFactor = pow(2.0, steps);
 		double newScale = scale * zoomFactor;
 		if (newScale > 1.0)
@@ -59,20 +60,18 @@ void PreviewWidget::wheelEvent(QWheelEvent * event) {
 			resize(scale * pixmap()->size());
 			emit focus(event->pos().x() * zoomFactor, event->pos().y() * zoomFactor);
 		}
+		*/
 	}
 }
 
 
 void PreviewWidget::mouseReleaseEvent(QMouseEvent * event) {
-	emit imageClicked(event->pos() / scale, event->button() == Qt::LeftButton);
+	emit imageClicked(event->pos(), event->button() == Qt::LeftButton);
 }
 
 
 void PreviewWidget::moveEvent(QMoveEvent * event) {
 	QPoint min = mapFromParent(QPoint(0, 0));
-	std::cout << "PreviewWidget: Image viewport changed to " << (min.x() / scale) << ',' << (min.y() / scale)
-		<< ':' << (parentWidget()->width() / scale) << 'x' << (parentWidget()->height() / scale) << std::endl;
-	emit imageViewport(min.x() / scale, min.y() / scale,
-		parentWidget()->width() / scale, parentWidget()->height() / scale);
+	emit imageViewport(min.x(), min.y(), parentWidget()->width(), parentWidget()->height());
 }
 

@@ -7,8 +7,6 @@
 class PreviewWidget : public QLabel {
         Q_OBJECT
         
-	double scale;
-
 public:
 	PreviewWidget(QWidget * parent);
 
@@ -18,6 +16,7 @@ signals:
 	void imageClicked(QPoint pos, bool left);
 	void focus(int x, int y);
 	void imageViewport(int x, int y, int w, int h);
+	void scaleBy(int steps);
 
 public slots:
 	void paintImage(unsigned int x, unsigned int y, const QImage & image);

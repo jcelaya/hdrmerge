@@ -30,7 +30,7 @@ void RenderThread::setGamma(float g) {
 
 void RenderThread::setExposureThreshold(int i, int th) {
 	mutex.lock();
-	images->setThreshold(i, th);
+	images->setThreshold(i, ((th + 1) << 8) - 1);
 	restart = true;
 	mutex.unlock();
 	condition.wakeOne();
@@ -46,8 +46,12 @@ void RenderThread::setExposureRelativeEV(int i, double re) {
 }
 
 
-void RenderThread::calculateWB(int x, int y, int w, int h) {
+void RenderThread::calculateWB(int x, int y, int radius) {
 	mutex.lock();
+	unsigned int w = images->getWidth() - x > 2*radius ? 2*radius : images->getWidth() - x;
+	unsigned int h = images->getHeight() - y > 2*radius ? 2*radius : images->getHeight() - y;
+	x = x > radius ? x - radius : 0;
+	y = y > radius ? y - radius : 0;
 	images->calculateWB(x, y, w, h);
 	restart = true;
 	mutex.unlock();
@@ -62,7 +66,6 @@ void RenderThread::setImageViewport(int x, int y, int w, int h) {
 	miny = y > 0 ? y : 0;
 	maxx = x + w <= images->getWidth() ? x + w : images->getWidth();
 	maxy = y + h <= images->getHeight() ? y + h : images->getHeight();
-	qDebug() << "Image viewport set to " << minx << ',' << miny << ':' << (maxx - minx) << 'x' << (maxy - miny);
 	mutex.unlock();
 }
 

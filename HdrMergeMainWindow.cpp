@@ -216,16 +216,12 @@ void MainWindow::clickImage(QPoint pos, bool left) {
 	if (left && isPickingWB) {
 		preview->toggleCrossCursor(false);
 		isPickingWB = false;
-		unsigned int x = pos.x() > 5 ? pos.x() - 5 : 0;
-		unsigned int y = pos.y() > 5 ? pos.y() - 5 : 0;
-		unsigned int w = images->getWidth() - pos.x() > 10 ? 10 : images->getWidth() - pos.x();
-		unsigned int h = images->getHeight() - pos.y() > 10 ? 10 : images->getHeight() - pos.y();
-		rt->calculateWB(x, y, w, h);
+		rt->calculateWB(pos.x(), pos.y(), 5);
 	}
 }
 
 
 void MainWindow::setAutoWB() {
-	rt->calculateWB(0, 0, images->getWidth(), images->getHeight());
+	rt->calculateWB(0, 0, 2000000000);
 }
 

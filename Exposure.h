@@ -85,7 +85,7 @@ public:
 	void rgb(unsigned int x, unsigned int y, float & r, float & g, float & b) const {
 		unsigned int pos = y * width + x;
 		const Exposure * e = &imgs.front();
-		while (e != &imgs.back() && e->p[pos].l >= e->th) e++;
+		while (e != &imgs.back() && e->p[pos].l > e->th) e++;
 		Pixel * pix = &e->p[pos];
 		double relExp = e->relExp;
 		r = pix->r * relExp * wbr;

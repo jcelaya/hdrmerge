@@ -32,7 +32,7 @@ public slots:
 	void setExposureThreshold(int i, int th);
 	void setExposureRelativeEV(int i, double re);
 	void setGamma(float g);
-	void calculateWB(int x, int y, int w, int h);
+	void calculateWB(int x, int y, int radius);
 	void setImageViewport(int x, int y, int w, int h);
 
 signals:

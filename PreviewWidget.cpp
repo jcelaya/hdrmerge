@@ -2,6 +2,7 @@
 #include <QImage>
 #include <QWheelEvent>
 #include <QCursor>
+#include <QPainter>
 #include <QTime>
 #include <cmath>
 #include <iostream>
@@ -21,12 +22,23 @@ void PreviewWidget::toggleCrossCursor(bool toggle) {
 }
 
 
-void PreviewWidget::paintImage(const QImage & image) {
+void PreviewWidget::paintImage(unsigned int x, unsigned int y, const QImage & image) {
 	QTime t;
 	t.start();
-	setPixmap(QPixmap::fromImage(image));
-	resize(scale * image.size());
+	if (!pixmap()) {
+		setPixmap(QPixmap::fromImage(image));
+	} else {
+		QPixmap pix(pixmap()->width(), pixmap()->height());
+		pix.fill();
+		QPainter painter(&pix);
+		painter.drawImage(x, y, image);
+		setPixmap(pix);
+	}
+	resize(scale * pixmap()->size());
 	update();
+	QPoint min = mapFromParent(QPoint(0, 0));
+	emit imageViewport(min.x() / scale, min.y() / scale,
+		parentWidget()->width() / scale, parentWidget()->height() / scale);
 	std::cerr << "Setting pixmap at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData() << ", "
 		<< t.elapsed() << " ms elapsed" << std::endl;
 }
@@ -53,5 +65,14 @@ void PreviewWidget::wheelEvent(QWheelEvent * event) {
 
 void PreviewWidget::mouseReleaseEvent(QMouseEvent * event) {
 	emit imageClicked(event->pos() / scale, event->button() == Qt::LeftButton);
+}
+
+
+void PreviewWidget::moveEvent(QMoveEvent * event) {
+	QPoint min = mapFromParent(QPoint(0, 0));
+	std::cout << "PreviewWidget: Image viewport changed to " << (min.x() / scale) << ',' << (min.y() / scale)
+		<< ':' << (parentWidget()->width() / scale) << 'x' << (parentWidget()->height() / scale) << std::endl;
+	emit imageViewport(min.x() / scale, min.y() / scale,
+		parentWidget()->width() / scale, parentWidget()->height() / scale);
 }
 

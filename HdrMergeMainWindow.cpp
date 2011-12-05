@@ -164,7 +164,10 @@ void MainWindow::loadImages() {
 
 		// Render
 		rt = new RenderThread(images, 2.2f, this);
-		connect(rt, SIGNAL(renderedImage(QImage)), preview, SLOT(paintImage(QImage)));
+		connect(rt, SIGNAL(renderedImage(unsigned int, unsigned int, QImage)),
+			preview, SLOT(paintImage(unsigned int, unsigned int, QImage)));
+		connect(preview, SIGNAL(imageViewport(int, int, int, int)),
+			rt, SLOT(setImageViewport(int, int, int, int)));
 		rt->start(QThread::LowPriority);
 
 		// Create GUI

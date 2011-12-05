@@ -16,7 +16,7 @@ class RenderThread : public QThread {
 	bool restart;
 	bool abort;
 	ExposureStack * images;
-	QPoint vpmin, vpmax;
+	unsigned int minx, miny, maxx, maxy;
 	int gamma[65536];
 
 	void doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image);
@@ -29,16 +29,14 @@ public:
 	~RenderThread();
 
 public slots:
-	//void render(QPoint viewportMin, QPoint viewportMax);
-	void render();
 	void setExposureThreshold(int i, int th);
 	void setExposureRelativeEV(int i, double re);
 	void setGamma(float g);
 	void calculateWB(int x, int y, int w, int h);
+	void setImageViewport(int x, int y, int w, int h);
 
 signals:
-	//void renderedImage(unsigned int x, unsigned int y, const QImage & image);
-	void renderedImage(const QImage & image);
+	void renderedImage(unsigned int x, unsigned int y, const QImage & image);
 	void whiteBalanceChanged(double wbr, double wbg, double wbb);
 };
 

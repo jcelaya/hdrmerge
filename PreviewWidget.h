@@ -12,19 +12,20 @@ class PreviewWidget : public QLabel {
 public:
 	PreviewWidget(QWidget * parent);
 
-	void getViewRect(QPoint & min, QPoint & max);
 	void toggleCrossCursor(bool toggle);
 
 signals:
 	void imageClicked(QPoint pos, bool left);
 	void focus(int x, int y);
+	void imageViewport(int x, int y, int w, int h);
 
 public slots:
-	void paintImage(const QImage & image);
+	void paintImage(unsigned int x, unsigned int y, const QImage & image);
 
 protected:
-	void wheelEvent(QWheelEvent *event);
-	void mouseReleaseEvent(QMouseEvent *event);
+	void wheelEvent(QWheelEvent * event);
+	void mouseReleaseEvent(QMouseEvent * event);
+	void moveEvent(QMoveEvent * event);
 };
 
 

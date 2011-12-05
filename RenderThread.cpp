@@ -2,10 +2,11 @@
 #include "RenderThread.h"
 #include <iostream>
 #include <QTime>
+#include <QDebug>
 
 
 RenderThread::RenderThread(ExposureStack * es, float gamma, QObject * parent)
-	: QThread(parent), restart(false), abort(false), images(es), vpmin(0, 0), vpmax(0, 0) {
+	: QThread(parent), restart(false), abort(false), images(es), minx(0), miny(0), maxx(0), maxy(0) {
 	setGamma(gamma);
 }
 
@@ -18,39 +19,51 @@ RenderThread::~RenderThread() {
 }
 
 
-//void RenderThread::render(QPoint viewportMin, QPoint viewportMax) {
-void RenderThread::render() {
+void RenderThread::setGamma(float g) {
 	mutex.lock();
+	g = 1.0f / g;
+	for (int i = 0; i < 65536; i++)
+		gamma[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g)) >> 8;
+	mutex.unlock();
+}
+
+
+void RenderThread::setExposureThreshold(int i, int th) {
+	mutex.lock();
+	images->setThreshold(i, th);
 	restart = true;
-	//vpmin = viewportMin;
-	//vpmax = viewportMax;
 	mutex.unlock();
 	condition.wakeOne();
 }
 
 
-void RenderThread::setGamma(float g) {
-	g = 1.0f / g;
-	for (int i = 0; i < 65536; i++)
-		gamma[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g)) >> 8;
-}
-
-
-void RenderThread::setExposureThreshold(int i, int th) {
-	images->setThreshold(i, th);
-	render();
-}
-
-
 void RenderThread::setExposureRelativeEV(int i, double re) {
+	mutex.lock();
 	images->setRelativeExposure(i, re);
-	render();
+	restart = true;
+	mutex.unlock();
+	condition.wakeOne();
 }
 
 
 void RenderThread::calculateWB(int x, int y, int w, int h) {
+	mutex.lock();
 	images->calculateWB(x, y, w, h);
-	render();
+	restart = true;
+	mutex.unlock();
+	condition.wakeOne();
+}
+
+
+void RenderThread::setImageViewport(int x, int y, int w, int h) {
+	mutex.lock();
+	// Check limits, due to roundings in preview label scale
+	minx = x > 0 ? x : 0;
+	miny = y > 0 ? y : 0;
+	maxx = x + w <= images->getWidth() ? x + w : images->getWidth();
+	maxy = y + h <= images->getHeight() ? y + h : images->getHeight();
+	qDebug() << "Image viewport set to " << minx << ',' << miny << ':' << (maxx - minx) << 'x' << (maxy - miny);
+	mutex.unlock();
 }
 
 
@@ -61,8 +74,7 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 	for (unsigned int row = miny; !restart && row < maxy; row++) {
 		if (abort) return;
 
-		QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row));
-		scanLine += minx;
+		QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - miny));
 		for (unsigned int col = minx; col < maxx; col++) {
 			float rr, gg, bb;
 			images->rgb(col, row, rr, gg, bb);
@@ -72,6 +84,7 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 			if (b >= 65536 || b < 0) std::cerr << "BValue " << b << " out of range at " << col << "x" << row << std::endl;
 			// Apply gamma correction
 			*scanLine++ = qRgb(gamma[r], gamma[g], gamma[b]);
+			//*scanLine++ = qRgb(r, g, b);
 		}
 	}
 	std::cerr << "Render time " << t.elapsed() << " ms at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData() << std::endl;
@@ -79,36 +92,31 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 
 
 void RenderThread::run() {
-	unsigned int minx = 0, miny = 0, maxx = 0, maxy = 0;
+	unsigned int _minx = 0, _miny = 0, _maxx = 0, _maxy = 0;
 	forever {
 		if (abort) return;
 
-		/*
-		QImage a(maxx - minx, maxy - miny, QImage::Format_RGB32);
-		doRender(minx, miny, maxx, maxy, a);
-		if (!restart && maxy > 0) {
-			emit renderedImage(minx, miny, a);
+		QImage a(_maxx - _minx, _maxy - _miny, QImage::Format_RGB32);
+		doRender(_minx, _miny, _maxx, _maxy, a);
+		if (!restart && _maxy > 0) {
+			emit renderedImage(_minx, _miny, a);
 			yieldCurrentThread();
 		}
-		*/
 		
 		QImage b(images->getWidth(), images->getHeight(), QImage::Format_RGB32);
 		doRender(0, 0, images->getWidth(), images->getHeight(), b);
          	mutex.lock();
 		if (!restart) {
-			//emit renderedImage(0, 0, b);
-			emit renderedImage(b);
+			emit renderedImage(0, 0, b);
 			// Wait until render is called
 			condition.wait(&mutex);
 		}
 		restart = false;
-		// Check limits, due to roundings in preview label scale
-		//minx = vpmin.x() < 0 ? 0 : vpmin.x();
-		//miny = vpmin.y() < 0 ? 0 : vpmin.y();
-		//maxx = vpmax.x() > images->getWidth() ? imgs->getWidth() : vpmax.x();
-		//maxy = vpmax.y() > imgs->getHeight() ? imgs->getHeight() : vpmax.y();
+		_minx = minx;
+		_miny = miny;
+		_maxx = maxx;
+		_maxy = maxy;
 		mutex.unlock();
 	}
 }
-
 

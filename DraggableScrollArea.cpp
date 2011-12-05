@@ -9,20 +9,6 @@ DraggableScrollArea::DraggableScrollArea(QWidget * parent) : QScrollArea(parent)
 }
 
 
-/*
-void PreviewWidget::getViewRect(QPoint & min, QPoint & max) {
-	min = mapFromParent(QPoint(0, 0));
-	max = min + QPoint(area->viewport()->width(), area->viewport()->height());
-	if (min.x() < 0) min.setX(0);
-	if (min.y() < 0) min.setY(0);
-	if (max.x() > width()) max.setX(width());
-	if (max.y() > height()) max.setY(height());
-	min /= scale;
-	max /= scale;
-}
-*/
-
-
 void DraggableScrollArea::center(int x, int y) {
 	ensureVisible(x, y, viewport()->width() / 2, viewport()->height() / 2);
 }

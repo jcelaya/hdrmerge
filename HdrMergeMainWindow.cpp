@@ -189,11 +189,11 @@ void MainWindow::loadImages() {
 			imageTabs->addTab(ic, tr("Exposure") + " " + QString::number(i));
 		}
 		// Add white balance widget
-		wbw = new WhiteBalanceWidget(images->getWBR(), images->getWBG(), images->getWBB(), imageTabs);
+		wbw = new WhiteBalanceWidget(images->getWBRG(), images->getWBRB(), imageTabs);
 		connect(wbw, SIGNAL(pickerPushed()), this, SLOT(setPickingWB()));
 		connect(wbw, SIGNAL(autoWBPushed()), this, SLOT(setAutoWB()));
-		connect(rt, SIGNAL(whiteBalanceChanged(double, double, double)),
-			wbw, SLOT(changeFactors(double, double, double)));
+		connect(rt, SIGNAL(whiteBalanceChanged(double, double)),
+			wbw, SLOT(changeFactors(double, double)));
 		imageTabs->addTab(wbw, tr("White Balance"));
 	}
 }

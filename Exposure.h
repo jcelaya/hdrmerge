@@ -22,6 +22,7 @@ class ExposureStack {
 	struct Exposure {
 		boost::shared_array<Pixel> p;   ///< Image data
 		std::vector<boost::shared_array<Pixel> > scaledData;
+		uint16_t maxR, maxG, maxB;
 		double bn;              ///< Brightness
 		double relExp;          ///< Relative exposure
 		double immExp;          ///< Exposure relative to the next image
@@ -82,17 +83,15 @@ public:
 		return imgs[i].th << 1;
 	}
 
-	double getWBR() const { return wbr; }
+	double getWBRG() const { return wbr / wbg; }
 
-	double getWBG() const { return wbg; }
-
-	double getWBB() const { return wbb; }
+	double getWBRB() const { return wbr / wbb; }
 
 	void setRelativeExposure(int i, double re);
 
 	void setThreshold(int i, uint16_t th);
 
-	void setWhiteBalance(double r, double g, double b);
+	//void setWhiteBalance(double rg, double rb);
 
 	void calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 

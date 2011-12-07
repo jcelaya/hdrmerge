@@ -39,7 +39,7 @@ public slots:
 
 signals:
 	void renderedImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
-	void whiteBalanceChanged(double wbr, double wbg, double wbb);
+	void whiteBalanceChanged(double rg, double rb);
 };
 
 #endif // _RENDERTHREAD_H_

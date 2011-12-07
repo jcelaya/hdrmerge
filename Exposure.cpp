@@ -46,6 +46,7 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 
 	tdata_t buffer = _TIFFmalloc(bytes);
 	bn = 0.0;
+	maxR = maxB = maxG = 0;
 	Pixel * pix = p.get();
 	for (unsigned int row = 0; row < height; ++row) {
 		TIFFReadScanline(file, buffer, row);
@@ -61,6 +62,9 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 					pix->l += Pixel::transparent;
 			if (pix->l < Pixel::transparent)
 				bn += pix->g;
+			if (pix->r > maxR) maxR = pix->r;
+			if (pix->g > maxG) maxG = pix->g;
+			if (pix->b > maxB) maxB = pix->b;
 		}
 	}
 	bn /= size;
@@ -128,8 +132,6 @@ void ExposureStack::sort() {
 		std::sort(imgs.begin(), imgs.end());
 		for (vector<Exposure>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
 			n->setRelativeExposure(*p, width * height);
-		// Calculate auto white balance, with gray world
-		calculateWB(0, 0, width, height);
 		// Calculate fusion map
 		map.resize(width * height);
 		unsigned int N = imgs.size();
@@ -145,6 +147,8 @@ void ExposureStack::sort() {
 void ExposureStack::preScale() {
 	for (vector<Exposure>::iterator it = imgs.begin(); it != imgs.end(); it++)
 		it->scaled(5, width, height);
+	// Calculate auto white balance, with gray world
+	calculateWB(0, 0, width, height);
 }
 
 
@@ -169,14 +173,21 @@ void ExposureStack::setThreshold(int i, uint16_t th) {
 }
 
 
+/*
 void ExposureStack::setWhiteBalance(double r, double g, double b) {
 	wbr = r;
 	wbg = g;
 	wbb = b;
 }
+*/
 
 
 void ExposureStack::calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
+	x <<= scale;
+	y <<= scale;
+	w <<= scale;
+	h <<= scale;
+	cerr << "Calculating white balance in " << x << ',' << y << ':' << w << 'x' << h << endl;
 	// Calculate white balance
 	wbr = 0.0;
 	wbg = 0.0;
@@ -185,19 +196,31 @@ void ExposureStack::calculateWB(unsigned int x, unsigned int y, unsigned int w, 
 		for (unsigned int j = y; j < y + h; j++) {
 			unsigned int pos = j * width + i;
 			const Exposure * e = &imgs.front();
-			while (e != &imgs.back() && e->p[pos].l >= e->th) e++;
-			Pixel * pix = &e->p[pos];
+			while (e != &imgs.back() && (e->scaledData[0])[pos].l >= e->th) e++;
+			Pixel * pix = &(e->scaledData[0])[pos];
 			double relExp = e->relExp;
 			wbr += pix->r * relExp;
 			wbg += pix->g * relExp;
 			wbb += pix->b * relExp;
 		}
 	}
+	// TODO: What if min == 0 ??????????
 	double min = wbr < wbg ? wbr : wbg;
 	min = wbb < min ? wbb : min;
 	wbr = min / wbr;
 	wbg = min / wbg;
 	wbb = min / wbb;
+	// Optimize white point
+	double wp = 0;
+	for (vector<Exposure>::iterator it = imgs.begin(); it != imgs.end(); it++) {
+		if (wp < it->maxR * it->relExp * wbr) wp = it->maxR * it->relExp * wbr;
+		if (wp < it->maxG * it->relExp * wbg) wp = it->maxG * it->relExp * wbg;
+		if (wp < it->maxB * it->relExp * wbb) wp = it->maxB * it->relExp * wbb;
+	}
+	wp = 65536.0 / wp;
+	wbr *= wp;
+	wbg *= wp;
+	wbb *= wp;
 	cerr << "White balance R:" << wbr << " G:" << wbg << " B:" << wbb << endl;
 }
 
@@ -225,6 +248,8 @@ void ExposureStack::saveEXR(const char * filename) {
 void ExposureStack::savePFS(const char * filename) {
 	unsigned int size = width * height;
 	unsigned int N = imgs.size();
+	unsigned int tmpScale = scale;
+	setScale(0);
 
 	pfs::DOMIO pfsio;
 	pfs::Frame * frame = pfsio.createFrame(width, height);
@@ -271,9 +296,9 @@ void ExposureStack::savePFS(const char * filename) {
 			double p = i - map[j];
 			Pixel * ppix = &imgs[i - 1].p[j];
 			double prelExp = imgs[i - 1].relExp;
-			(*r)(j) = (pix->r * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbr / 65536.0;
-			(*g)(j) = (pix->g * relExp * (1.0f - p) + ppix->g * prelExp * p) * wbg / 65536.0;
-			(*b)(j) = (pix->b * relExp * (1.0f - p) + ppix->r * prelExp * p) * wbb / 65536.0;
+			(*r)(j) = (pix->r * relExp * (1.0 - p) + ppix->r * prelExp * p) * wbr / 65536.0;
+			(*g)(j) = (pix->g * relExp * (1.0 - p) + ppix->g * prelExp * p) * wbg / 65536.0;
+			(*b)(j) = (pix->b * relExp * (1.0 - p) + ppix->b * prelExp * p) * wbb / 65536.0;
 		}
 	}
 
@@ -283,6 +308,8 @@ void ExposureStack::savePFS(const char * filename) {
 	pfsio.writeFrame(frame, file);
 	fclose(file);
 	pfsio.freeFrame(frame);
+
+	setScale(tmpScale);
 }
 
 

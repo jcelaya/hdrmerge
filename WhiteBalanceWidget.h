@@ -9,24 +9,24 @@
 class WhiteBalanceWidget : public QWidget {
 	Q_OBJECT
 
-	QLabel * redLabel, * greenLabel, * blueLabel;
-	QDoubleSpinBox * redValue, * greenValue, * blueValue;
+	QLabel * redToGreenLabel, * redToBlueLabel;
+	QDoubleSpinBox * redToGreenValue, * redToBlueValue;
 	QPushButton * pickerButton, * autoWB;
 
 public:
-	WhiteBalanceWidget(double r, double g, double b, QWidget * parent = 0);
+	WhiteBalanceWidget(double rg, double rb, QWidget * parent = 0);
 
 signals:
-	void factorsChanged(double r, double g, double b);
+	void factorsChanged(double rg, double rb);
 	void pickerPushed();
 	void autoWBPushed();
 
 public slots:
-	void changeFactors(double r, double g, double b);
+	void changeFactors(double rg, double rb);
 
 private slots:
 	void changeValues() {
-		emit factorsChanged(redValue->value(), greenValue->value(), blueValue->value());
+		emit factorsChanged(redToGreenValue->value(), redToBlueValue->value());
 	}
 
 	void pushPicker() { emit pickerPushed(); }

@@ -53,6 +53,7 @@ void RenderThread::calculateWB(int x, int y, int radius) {
 	y = y > radius ? y - radius : 0;
 	images->calculateWB(x, y, w, h);
 	restart = true;
+	emit whiteBalanceChanged(images->getWBRG(), images->getWBRB());
 	mutex.unlock();
 	condition.wakeOne();
 }
@@ -72,7 +73,7 @@ void RenderThread::setImageViewport(int x, int y, int w, int h) {
 
 void RenderThread::stepScale(int steps) {
 	mutex.lock();
-	int newScale = scale + steps;
+	int newScale = scale - steps;
 	if (newScale < 0) newScale = 0;
 	else if (newScale > 4) newScale = 4;
 	if (newScale != scale) {

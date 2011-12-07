@@ -4,7 +4,7 @@
 #include "WhiteBalanceWidget.h"
 
 
-WhiteBalanceWidget::WhiteBalanceWidget(double r, double g, double b, QWidget * parent) : QWidget(parent) {
+WhiteBalanceWidget::WhiteBalanceWidget(double rg, double rb, QWidget * parent) : QWidget(parent) {
 	QSizePolicy sp(QSizePolicy::Expanding, QSizePolicy::Minimum);
 	sp.setHorizontalStretch(0);
 	sp.setVerticalStretch(0);
@@ -27,49 +27,37 @@ WhiteBalanceWidget::WhiteBalanceWidget(double r, double g, double b, QWidget * p
 
 	buttonsLayout->addStretch(1);
 
-	redLabel = new QLabel(tr("Red:"), valuesContainer);
-	valuesLayout->addWidget(redLabel);
+	redToGreenLabel = new QLabel(tr("Red/Green:"), valuesContainer);
+	valuesLayout->addWidget(redToGreenLabel);
 
-	redValue = new QDoubleSpinBox(valuesContainer);
-	redValue->setDecimals(3);
-	redValue->setMaximum(1.0);
-	redValue->setSingleStep(0.001);
-	redValue->setValue(r);
-	valuesLayout->addWidget(redValue);
+	redToGreenValue = new QDoubleSpinBox(valuesContainer);
+	redToGreenValue->setDecimals(3);
+	redToGreenValue->setMaximum(10.0);
+	redToGreenValue->setSingleStep(0.001);
+	redToGreenValue->setValue(rg);
+	valuesLayout->addWidget(redToGreenValue);
 
-	greenLabel = new QLabel(tr("Green:"), valuesContainer);
-	valuesLayout->addWidget(greenLabel);
+	redToBlueLabel = new QLabel(tr("Red/Blue:"), valuesContainer);
+	valuesLayout->addWidget(redToBlueLabel);
 
-	greenValue = new QDoubleSpinBox(valuesContainer);
-	greenValue->setDecimals(3);
-	greenValue->setMaximum(1.0);
-	greenValue->setSingleStep(0.001);
-	greenValue->setValue(g);
-	valuesLayout->addWidget(greenValue);
-
-	blueLabel = new QLabel(tr("Blue:"), valuesContainer);
-	valuesLayout->addWidget(blueLabel);
-
-	blueValue = new QDoubleSpinBox(valuesContainer);
-	blueValue->setDecimals(3);
-	blueValue->setMaximum(1.0);
-	blueValue->setSingleStep(0.001);
-	blueValue->setValue(b);
-	valuesLayout->addWidget(blueValue);
+	redToBlueValue = new QDoubleSpinBox(valuesContainer);
+	redToBlueValue->setDecimals(3);
+	redToBlueValue->setMaximum(10.0);
+	redToBlueValue->setSingleStep(0.001);
+	redToBlueValue->setValue(rb);
+	valuesLayout->addWidget(redToBlueValue);
 
 	valuesLayout->addStretch(1);
 
-	connect(redValue, SIGNAL(valueChanged(double)), this, SLOT(changeValues()));
-	connect(greenValue, SIGNAL(valueChanged(double)), this, SLOT(changeValues()));
-	connect(blueValue, SIGNAL(valueChanged(double)), this, SLOT(changeValues()));
+	connect(redToGreenValue, SIGNAL(valueChanged(double)), this, SLOT(changeValues()));
+	connect(redToBlueValue, SIGNAL(valueChanged(double)), this, SLOT(changeValues()));
 	connect(pickerButton, SIGNAL(clicked()), this, SLOT(pushPicker()));
 	connect(autoWB, SIGNAL(clicked()), this, SLOT(pushAutoWB()));
 }
 
 
-void WhiteBalanceWidget::changeFactors(double r, double g, double b) {
-	redValue->setValue(r);
-	greenValue->setValue(g);
-	blueValue->setValue(b);
+void WhiteBalanceWidget::changeFactors(double rg, double rb) {
+	redToGreenValue->setValue(rg);
+	redToBlueValue->setValue(rb);
 }
 

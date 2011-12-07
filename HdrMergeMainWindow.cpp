@@ -40,7 +40,6 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
 	//retranslateUi(HdrMergeMainWindow);
 	statusbar = new QStatusBar(this);
 	setStatusBar(statusbar);
-	//resize(640, 480);
 	setWindowTitle(tr("HDRMerge - High dynamic range image fussion"));
 
 	QSettings settings;
@@ -147,27 +146,35 @@ void MainWindow::loadImages() {
 
 		// Load and sort images
 		images = new ExposureStack();
-		QProgressDialog progress(tr("Loading files..."), QString(), 0, numImages + 1, this);
+		QFuture<void> result;
+		QProgressDialog progress(tr("Loading files..."), QString(), 0, numImages + 2, this);
 		progress.setMinimumDuration(0);
 		for (unsigned int i = 0; i < numImages; i++) {
 			progress.setValue(i);
 			QByteArray fileName = QDir::toNativeSeparators(files[i]).toUtf8();
-			QFuture<void> result = QtConcurrent::run(images, &ExposureStack::loadImage, fileName.constData());
+			result = QtConcurrent::run(images, &ExposureStack::loadImage, fileName.constData());
 			while (result.isRunning())
 				QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
 		}
 		progress.setValue(numImages);
-		QFuture<void> result = QtConcurrent::run(images, &ExposureStack::sort);
+		progress.setLabelText(tr("Sorting..."));
+		result = QtConcurrent::run(images, &ExposureStack::sort);
 		while (result.isRunning())
 			QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
 		progress.setValue(numImages + 1);
+		progress.setLabelText(tr("Prescaling..."));
+		result = QtConcurrent::run(images, &ExposureStack::preScale);
+		while (result.isRunning())
+			QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+		progress.setValue(numImages + 2);
 
 		// Render
 		rt = new RenderThread(images, 2.2f, this);
-		connect(rt, SIGNAL(renderedImage(unsigned int, unsigned int, QImage)),
-			preview, SLOT(paintImage(unsigned int, unsigned int, QImage)));
+		connect(rt, SIGNAL(renderedImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)),
+			preview, SLOT(paintImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)));
 		connect(preview, SIGNAL(imageViewport(int, int, int, int)),
 			rt, SLOT(setImageViewport(int, int, int, int)));
+		connect(preview, SIGNAL(scaleBy(int)), rt, SLOT(stepScale(int)));
 		rt->start(QThread::LowPriority);
 
 		// Create GUI

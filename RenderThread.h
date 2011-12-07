@@ -18,6 +18,7 @@ class RenderThread : public QThread {
 	ExposureStack * images;
 	unsigned int minx, miny, maxx, maxy;
 	int gamma[65536];
+	int scale;
 
 	void doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image);
 
@@ -34,9 +35,10 @@ public slots:
 	void setGamma(float g);
 	void calculateWB(int x, int y, int radius);
 	void setImageViewport(int x, int y, int w, int h);
+	void stepScale(int steps);
 
 signals:
-	void renderedImage(unsigned int x, unsigned int y, const QImage & image);
+	void renderedImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
 	void whiteBalanceChanged(double wbr, double wbg, double wbb);
 };
 

@@ -22,22 +22,25 @@ void PreviewWidget::toggleCrossCursor(bool toggle) {
 }
 
 
-void PreviewWidget::paintImage(unsigned int x, unsigned int y, const QImage & image) {
+void PreviewWidget::paintImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image) {
 	QTime t;
 	t.start();
 	if (!pixmap()) {
 		setPixmap(QPixmap::fromImage(image));
+		resize(pixmap()->size());
 	} else {
-		QPixmap pix(pixmap()->width(), pixmap()->height());
+		// Calculate center point
+		QPoint min = mapFromParent(QPoint(0, 0));
+		double scale = width / pixmap()->width();
+		QPixmap pix(width, height);
 		pix.fill();
 		QPainter painter(&pix);
 		painter.drawImage(x, y, image);
 		setPixmap(pix);
+		resize(pixmap()->size());
+		emit focus((min.x() + parentWidget()->width() / 2) * scale, (min.y() + parentWidget()->height() / 2) * scale);
 	}
-	resize(pixmap()->size());
 	update();
-	QPoint min = mapFromParent(QPoint(0, 0));
-	emit imageViewport(min.x(), min.y(), parentWidget()->width(), parentWidget()->height());
 	std::cerr << "Setting pixmap at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData() << ", "
 		<< t.elapsed() << " ms elapsed" << std::endl;
 }
@@ -47,20 +50,6 @@ void PreviewWidget::wheelEvent(QWheelEvent * event) {
 	if (pixmap()) {
 		int steps = event->delta() / 120;
 		emit scaleBy(steps);
-		/*
-		double zoomFactor = pow(2.0, steps);
-		double newScale = scale * zoomFactor;
-		if (newScale > 1.0)
-			newScale = 1.0;
-		else if (newScale < 1.0/16.0)
-			newScale = 1.0/16.0;
-		zoomFactor = newScale / scale;
-		if (zoomFactor != 1.0) {
-			scale = newScale;
-			resize(scale * pixmap()->size());
-			emit focus(event->pos().x() * zoomFactor, event->pos().y() * zoomFactor);
-		}
-		*/
 	}
 }
 

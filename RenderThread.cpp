@@ -1,12 +1,11 @@
 #include <cmath>
 #include "RenderThread.h"
-#include <iostream>
 #include <QTime>
 #include <QDebug>
 
 
 RenderThread::RenderThread(ExposureStack * es, float gamma, QObject * parent)
-	: QThread(parent), restart(false), abort(false), images(es), minx(0), miny(0), maxx(0), maxy(0) {
+	: QThread(parent), restart(false), abort(false), images(es), minx(0), miny(0), maxx(0), maxy(0), scale(0) {
 	setGamma(gamma);
 }
 
@@ -66,7 +65,63 @@ void RenderThread::setImageViewport(int x, int y, int w, int h) {
 	miny = y > 0 ? y : 0;
 	maxx = x + w <= images->getWidth() ? x + w : images->getWidth();
 	maxy = y + h <= images->getHeight() ? y + h : images->getHeight();
+	qDebug() << "Viewport set to " << minx << ',' << miny << ':' << maxx << ',' << maxy ;
 	mutex.unlock();
+}
+
+
+void RenderThread::stepScale(int steps) {
+	mutex.lock();
+	int newScale = scale + steps;
+	if (newScale < 0) newScale = 0;
+	else if (newScale > 4) newScale = 4;
+	if (newScale != scale) {
+		images->setScale(newScale);
+
+		// Recalculate viewport
+		unsigned int w = maxx - minx;
+		if (w > images->getWidth()) {
+			minx = 0;
+			maxx = images->getWidth();
+		} else {
+			unsigned int centerx = minx + maxx;
+			if (newScale > scale) {
+				centerx >>= (newScale - scale + 1);
+			} else {
+				centerx <<= (scale - newScale - 1);
+			}
+			int x = centerx - w / 2;
+			minx = x > 0 ? x : 0;
+			if (minx + w > images->getWidth()) {
+				maxx = images->getWidth();
+				minx = maxx - w;
+			} else maxx = minx + w;
+		}
+		unsigned int h = maxy - miny;
+		if (h > images->getHeight()) {
+			miny = 0;
+			maxy = images->getHeight();
+		} else {
+			unsigned int centery = miny + maxy;
+			if (newScale > scale) {
+				centery >>= (newScale - scale + 1);
+			} else {
+				centery <<= (scale - newScale - 1);
+			}
+			int y = centery - h / 2;
+			miny = y > 0 ? y : 0;
+			if (miny + h > images->getHeight()) {
+				maxy = images->getHeight();
+				miny = maxy - h;
+			} else maxy = miny + h;
+		}
+		qDebug() << "New viewport set to " << minx << ',' << miny << ':' << maxx << ',' << maxy ;
+
+		restart = true;
+		scale = newScale;
+		mutex.unlock();
+		condition.wakeOne();
+	} else mutex.unlock();
 }
 
 
@@ -90,7 +145,7 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 			//*scanLine++ = qRgb(r, g, b);
 		}
 	}
-	std::cerr << "Render time " << t.elapsed() << " ms at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData() << std::endl;
+	qDebug() << "Render time " << t.elapsed() << " ms at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData();
 }
 
 
@@ -102,7 +157,7 @@ void RenderThread::run() {
 		QImage a(_maxx - _minx, _maxy - _miny, QImage::Format_RGB32);
 		doRender(_minx, _miny, _maxx, _maxy, a);
 		if (!restart && _maxy > 0) {
-			emit renderedImage(_minx, _miny, a);
+			emit renderedImage(_minx, _miny, images->getWidth(), images->getHeight(), a);
 			yieldCurrentThread();
 		}
 		
@@ -110,7 +165,7 @@ void RenderThread::run() {
 		doRender(0, 0, images->getWidth(), images->getHeight(), b);
          	mutex.lock();
 		if (!restart) {
-			emit renderedImage(0, 0, b);
+			emit renderedImage(0, 0, images->getWidth(), images->getHeight(), b);
 			// Wait until render is called
 			condition.wait(&mutex);
 		}

@@ -72,6 +72,29 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 }
 
 
+void ExposureStack::Exposure::scaled(unsigned int steps, unsigned int width, unsigned int height) {
+	scaledData.reserve(steps);
+	scaledData.clear();
+	scaledData.push_back(p);
+	for (unsigned int s = 1; s < steps; s++) {
+		unsigned int width2 = width;
+		width >>= 1;
+		height >>= 1;
+		boost::shared_array<Pixel> r(new Pixel[width * height]), r2 = scaledData.back();
+		for (unsigned int i = 0, i2 = 0; i < height; i++, i2 += 2)
+			for (unsigned int j = 0, j2 = 0; j < width; j++, j2 += 2) {
+				r[i*width + j].r = ((uint32_t)r2[i2*width2 + j2].r + r2[i2*width2 + j2 + 1].r
+                                        + r2[(i2 + 1)*width2 + j2].r + r2[(i2 + 1)*width2 + j2 + 1].r) >> 2;
+				r[i*width + j].g = ((uint32_t)r2[i2*width2 + j2].g + r2[i2*width2 + j2 + 1].g
+                                        + r2[(i2 + 1)*width2 + j2].g + r2[(i2 + 1)*width2 + j2 + 1].g) >> 2;
+				r[i*width + j].b = ((uint32_t)r2[i2*width2 + j2].b + r2[i2*width2 + j2 + 1].b
+                                        + r2[(i2 + 1)*width2 + j2].b + r2[(i2 + 1)*width2 + j2 + 1].b) >> 2;
+			}
+		scaledData.push_back(r);
+	}
+}
+
+
 void ExposureStack::Exposure::setRelativeExposure(const Exposure & ref, unsigned int size) {
 	if (&ref == this) {
 		relExp = immExp = 1.0;
@@ -100,6 +123,38 @@ void ExposureStack::Exposure::setRelativeExposure(const Exposure & ref, unsigned
 }
 
 
+void ExposureStack::sort() {
+	if (!imgs.empty()) {
+		std::sort(imgs.begin(), imgs.end());
+		for (vector<Exposure>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
+			n->setRelativeExposure(*p, width * height);
+		// Calculate auto white balance, with gray world
+		calculateWB(0, 0, width, height);
+		// Calculate fusion map
+		map.resize(width * height);
+		unsigned int N = imgs.size();
+		for (unsigned int j = 0; j < width * height; j++) {
+			unsigned int i;
+			for (i = 0; i < N - 1 && imgs[i].p[j].l >= imgs[i].th; i++);
+			map[j] = i;
+		}
+	}
+}
+
+
+void ExposureStack::preScale() {
+	for (vector<Exposure>::iterator it = imgs.begin(); it != imgs.end(); it++)
+		it->scaled(5, width, height);
+}
+
+
+void ExposureStack::setScale(unsigned int i) {
+	scale = i;
+	for (vector<Exposure>::iterator it = imgs.begin(); it != imgs.end(); it++)
+		it->p = it->scaledData[scale];
+}
+
+
 void ExposureStack::setRelativeExposure(int i, double re) {
 	imgs[i].immExp = re;
 	// Recalculate relExp
@@ -118,25 +173,6 @@ void ExposureStack::setWhiteBalance(double r, double g, double b) {
 	wbr = r;
 	wbg = g;
 	wbb = b;
-}
-
-
-void ExposureStack::sort() {
-	if (!imgs.empty()) {
-		std::sort(imgs.begin(), imgs.end());
-		for (vector<Exposure>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
-			n->setRelativeExposure(*p, width * height);
-		// Calculate auto white balance, with gray world
-		calculateWB(0, 0, width, height);
-		// Calculate fusion map
-		map.resize(width * height);
-		unsigned int N = imgs.size();
-		for (unsigned int j = 0; j < width * height; j++) {
-			unsigned int i;
-			for (i = 0; i < N - 1 && imgs[i].p[j].l >= imgs[i].th; i++);
-			map[j] = i;
-		}
-	}
 }
 
 

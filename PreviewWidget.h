@@ -19,7 +19,7 @@ signals:
 	void scaleBy(int steps);
 
 public slots:
-	void paintImage(unsigned int x, unsigned int y, const QImage & image);
+	void paintImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
 
 protected:
 	void wheelEvent(QWheelEvent * event);

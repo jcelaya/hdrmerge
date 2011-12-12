@@ -97,9 +97,9 @@ public:
 		return imgs[i].filename;
 	}
 
-	double getWBRG() const { return wbr / wbg; }
+	double getWBGR() const { return wbg / wbr; }
 
-	double getWBRB() const { return wbr / wbb; }
+	double getWBBR() const { return wbb / wbr; }
 
 	void setRelativeExposure(int i, double re);
 

@@ -53,7 +53,7 @@ void RenderThread::calculateWB(int x, int y, int radius) {
 	y = y > radius ? y - radius : 0;
 	images->calculateWB(x, y, w, h);
 	restart = true;
-	emit whiteBalanceChanged(images->getWBRG(), images->getWBRB());
+	emit whiteBalanceChanged(images->getWBGR(), images->getWBBR());
 	mutex.unlock();
 	condition.wakeOne();
 }

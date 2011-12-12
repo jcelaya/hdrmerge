@@ -14,15 +14,15 @@ class WhiteBalanceWidget : public QWidget {
 	QPushButton * pickerButton, * autoWB;
 
 public:
-	WhiteBalanceWidget(double rg, double rb, QWidget * parent = 0);
+	WhiteBalanceWidget(double gr, double br, QWidget * parent = 0);
 
 signals:
-	void factorsChanged(double rg, double rb);
+	void factorsChanged(double gr, double br);
 	void pickerPushed();
 	void autoWBPushed();
 
 public slots:
-	void changeFactors(double rg, double rb);
+	void changeFactors(double gr, double br);
 
 private slots:
 	void changeValues() {

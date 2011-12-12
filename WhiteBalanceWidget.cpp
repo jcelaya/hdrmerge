@@ -4,7 +4,7 @@
 #include "WhiteBalanceWidget.h"
 
 
-WhiteBalanceWidget::WhiteBalanceWidget(double rg, double rb, QWidget * parent) : QWidget(parent) {
+WhiteBalanceWidget::WhiteBalanceWidget(double gr, double br, QWidget * parent) : QWidget(parent) {
 	QSizePolicy sp(QSizePolicy::Expanding, QSizePolicy::Minimum);
 	sp.setHorizontalStretch(0);
 	sp.setVerticalStretch(0);
@@ -34,7 +34,7 @@ WhiteBalanceWidget::WhiteBalanceWidget(double rg, double rb, QWidget * parent) :
 	redToGreenValue->setDecimals(3);
 	redToGreenValue->setMaximum(10.0);
 	redToGreenValue->setSingleStep(0.001);
-	redToGreenValue->setValue(rg);
+	redToGreenValue->setValue(gr);
 	valuesLayout->addWidget(redToGreenValue);
 
 	redToBlueLabel = new QLabel(tr("Red/Blue:"), valuesContainer);
@@ -44,7 +44,7 @@ WhiteBalanceWidget::WhiteBalanceWidget(double rg, double rb, QWidget * parent) :
 	redToBlueValue->setDecimals(3);
 	redToBlueValue->setMaximum(10.0);
 	redToBlueValue->setSingleStep(0.001);
-	redToBlueValue->setValue(rb);
+	redToBlueValue->setValue(br);
 	valuesLayout->addWidget(redToBlueValue);
 
 	valuesLayout->addStretch(1);
@@ -56,8 +56,8 @@ WhiteBalanceWidget::WhiteBalanceWidget(double rg, double rb, QWidget * parent) :
 }
 
 
-void WhiteBalanceWidget::changeFactors(double rg, double rb) {
-	redToGreenValue->setValue(rg);
-	redToBlueValue->setValue(rb);
+void WhiteBalanceWidget::changeFactors(double gr, double br) {
+	redToGreenValue->setValue(gr);
+	redToBlueValue->setValue(br);
 }
 

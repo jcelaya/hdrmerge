@@ -11,9 +11,8 @@
 using namespace std;
 
 
-ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, unsigned int & height) {
-	string name(fileName);
-	TIFF* file = TIFFOpen(fileName, "r");
+ExposureStack::Exposure::Exposure(const char * f, unsigned int & width, unsigned int & height) : filename(f) {
+	TIFF* file = TIFFOpen(filename.c_str(), "r");
 	if (file == NULL)
 		throw std::runtime_error("unable to open image file");
 
@@ -39,7 +38,7 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 
 	unsigned int size = height * width;
 	p.reset(new Pixel[size]);
-	cerr << "Loaded image " << name << ", with" << (bytes < width * 8 ? "out" : "") << " alpha channel, "
+	cerr << "Loaded image " << filename << ", with" << (bytes < width * 8 ? "out" : "") << " alpha channel, "
 		<< width << 'x' << height << ", "
 		<< (size * sizeof(Pixel)) << " bytes allocated" << endl;
 
@@ -77,8 +76,8 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 
 
 void ExposureStack::Exposure::scaled(unsigned int steps, unsigned int width, unsigned int height) {
-	scaledData.reserve(steps);
 	scaledData.clear();
+	scaledData.reserve(steps);
 	scaledData.push_back(p);
 	for (unsigned int s = 1; s < steps; s++) {
 		unsigned int width2 = width;
@@ -93,6 +92,10 @@ void ExposureStack::Exposure::scaled(unsigned int steps, unsigned int width, uns
                                         + r2[(i2 + 1)*width2 + j2].g + r2[(i2 + 1)*width2 + j2 + 1].g) >> 2;
 				r[i*width + j].b = ((uint32_t)r2[i2*width2 + j2].b + r2[i2*width2 + j2 + 1].b
                                         + r2[(i2 + 1)*width2 + j2].b + r2[(i2 + 1)*width2 + j2 + 1].b) >> 2;
+				r[i*width + j].l = r2[i2*width2 + j2].l;
+				if (r[i*width + j].l < r2[i2*width2 + j2 + 1].l) r[i*width + j].l = r2[i2*width2 + j2 + 1].l;
+				if (r[i*width + j].l < r2[(i2 + 1)*width2 + j2].l) r[i*width + j].l = r2[(i2 + 1)*width2 + j2].l;
+				if (r[i*width + j].l < r2[(i2 + 1)*width2 + j2 + 1].l) r[i*width + j].l = r2[(i2 + 1)*width2 + j2 + 1].l;
 			}
 		scaledData.push_back(r);
 	}
@@ -132,6 +135,7 @@ void ExposureStack::sort() {
 		std::sort(imgs.begin(), imgs.end());
 		for (vector<Exposure>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
 			n->setRelativeExposure(*p, width * height);
+		imgs.back().th = 0xffff;
 		// Calculate fusion map
 		map.resize(width * height);
 		unsigned int N = imgs.size();
@@ -147,8 +151,6 @@ void ExposureStack::sort() {
 void ExposureStack::preScale() {
 	for (vector<Exposure>::iterator it = imgs.begin(); it != imgs.end(); it++)
 		it->scaled(5, width, height);
-	// Calculate auto white balance, with gray world
-	calculateWB(0, 0, width, height);
 }
 
 
@@ -207,6 +209,7 @@ void ExposureStack::calculateWB(unsigned int x, unsigned int y, unsigned int w, 
 	// TODO: What if min == 0 ??????????
 	double min = wbr < wbg ? wbr : wbg;
 	min = wbb < min ? wbb : min;
+	if (min < wbb / 100.0) return;
 	wbr = min / wbr;
 	wbg = min / wbg;
 	wbb = min / wbb;
@@ -264,14 +267,7 @@ void ExposureStack::savePFS(const char * filename) {
 	vector<float> map(size);
 	// all pixels
 	for (unsigned int j = 0; j < size; j++) {
-		// For each exposure...
-		for (unsigned int i = 0; i < N; i++) {
-			// If it is under threshold, this is the correctly exposed pixel
-			if (i == N - 1 || imgs[i].p[j].l < imgs[i].th) {
-				map[j] = i;
-				break;
-			}
-		}
+		map[j] = &getExposureAt(j) - &imgs.front();
 	}
 
 	// Progressive merge: gaussian blur

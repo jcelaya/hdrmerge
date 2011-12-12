@@ -3,9 +3,6 @@
 #include <QWheelEvent>
 #include <QCursor>
 #include <QPainter>
-#include <QTime>
-#include <cmath>
-#include <iostream>
 
 
 PreviewWidget::PreviewWidget(QWidget * parent) : QLabel(parent) {
@@ -23,8 +20,6 @@ void PreviewWidget::toggleCrossCursor(bool toggle) {
 
 
 void PreviewWidget::paintImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image) {
-	QTime t;
-	t.start();
 	if (!pixmap()) {
 		setPixmap(QPixmap::fromImage(image));
 		resize(pixmap()->size());
@@ -41,8 +36,6 @@ void PreviewWidget::paintImage(unsigned int x, unsigned int y, unsigned int widt
 		emit focus((min.x() + parentWidget()->width() / 2) * scale, (min.y() + parentWidget()->height() / 2) * scale);
 	}
 	update();
-	std::cerr << "Setting pixmap at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData() << ", "
-		<< t.elapsed() << " ms elapsed" << std::endl;
 }
 
 

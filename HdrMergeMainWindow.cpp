@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
 
 	preview = new PreviewWidget(previewArea);
 	previewArea->setWidget(preview);
-	connect(preview, SIGNAL(focus(int, int)), previewArea, SLOT(center(int, int)));
+	connect(preview, SIGNAL(focus(int, int)), previewArea, SLOT(show(int, int)));
 	connect(preview, SIGNAL(imageClicked(QPoint, bool)), this, SLOT(clickImage(QPoint, bool)));
 
 	imageTabs = new QTabWidget(centralwidget);
@@ -169,12 +169,12 @@ void MainWindow::loadImages() {
 		progress.setValue(numImages + 2);
 
 		// Render
+		preview->resetScale();
 		rt = new RenderThread(images, 2.2f, this);
 		connect(rt, SIGNAL(renderedImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)),
 			preview, SLOT(paintImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)));
-		connect(preview, SIGNAL(imageViewport(int, int, int, int)),
-			rt, SLOT(setImageViewport(int, int, int, int)));
-		connect(preview, SIGNAL(scaleBy(int)), rt, SLOT(stepScale(int)));
+		connect(preview, SIGNAL(imageViewport(int, int, int, int, int)),
+			rt, SLOT(setImageViewport(int, int, int, int, int)));
 		rt->start(QThread::LowPriority);
 
 		// Create GUI

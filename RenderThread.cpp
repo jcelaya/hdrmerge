@@ -59,8 +59,13 @@ void RenderThread::calculateWB(int x, int y, int radius) {
 }
 
 
-void RenderThread::setImageViewport(int x, int y, int w, int h) {
+void RenderThread::setImageViewport(int x, int y, int w, int h, int newScale) {
 	mutex.lock();
+	if (newScale != scale) {
+		images->setScale(newScale);
+		restart = true;
+		scale = newScale;
+	}
 	// Check limits, due to roundings in preview label scale
 	minx = x > 0 ? x : 0;
 	miny = y > 0 ? y : 0;
@@ -68,14 +73,14 @@ void RenderThread::setImageViewport(int x, int y, int w, int h) {
 	maxy = y + h <= images->getHeight() ? y + h : images->getHeight();
 	qDebug() << "Viewport set to " << minx << ',' << miny << ':' << maxx << ',' << maxy ;
 	mutex.unlock();
+	if (restart)
+		condition.wakeOne();
 }
 
 
-void RenderThread::stepScale(int steps) {
+/*
+void RenderThread::setScale(int newScale) {
 	mutex.lock();
-	int newScale = scale - steps;
-	if (newScale < 0) newScale = 0;
-	else if (newScale > 4) newScale = 4;
 	if (newScale != scale) {
 		images->setScale(newScale);
 
@@ -124,6 +129,7 @@ void RenderThread::stepScale(int steps) {
 		condition.wakeOne();
 	} else mutex.unlock();
 }
+*/
 
 
 void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image) {

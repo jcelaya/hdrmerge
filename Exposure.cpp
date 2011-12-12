@@ -39,6 +39,7 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 
 	unsigned int size = height * width;
 	p.reset(new Pixel[size]);
+	scaledData.push_back(p);
 	cerr << "Loaded image " << name << ", with" << (bytes < width * 8 ? "out" : "") << " alpha channel, "
 		<< width << 'x' << height << ", "
 		<< (size * sizeof(Pixel)) << " bytes allocated" << endl;
@@ -77,13 +78,11 @@ ExposureStack::Exposure::Exposure(const char * fileName, unsigned int & width, u
 
 
 void ExposureStack::Exposure::scaled(unsigned int steps, unsigned int width, unsigned int height) {
-	scaledData.reserve(steps);
-	scaledData.clear();
-	scaledData.push_back(p);
 	for (unsigned int s = 1; s < steps; s++) {
 		unsigned int width2 = width;
 		width >>= 1;
 		height >>= 1;
+		if (s < scaledData.size()) continue;
 		boost::shared_array<Pixel> r(new Pixel[width * height]), r2 = scaledData.back();
 		for (unsigned int i = 0, i2 = 0; i < height; i++, i2 += 2)
 			for (unsigned int j = 0, j2 = 0; j < width; j++, j2 += 2) {
@@ -154,8 +153,10 @@ void ExposureStack::preScale() {
 
 void ExposureStack::setScale(unsigned int i) {
 	scale = i;
-	for (vector<Exposure>::iterator it = imgs.begin(); it != imgs.end(); it++)
+	for (vector<Exposure>::iterator it = imgs.begin(); it != imgs.end(); it++) {
+		it->scaled(i, width, height);
 		it->p = it->scaledData[scale];
+	}
 }
 
 

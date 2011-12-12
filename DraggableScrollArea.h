@@ -14,7 +14,7 @@ public:
 	DraggableScrollArea(QWidget * parent);
 
 public slots:
-	void center(int x, int y);
+	void show(int x, int y);
 
 protected:
 	void mousePressEvent(QMouseEvent *event);

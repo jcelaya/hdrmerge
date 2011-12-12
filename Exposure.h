@@ -2,6 +2,7 @@
 #define _EXPOSURE_H_
 
 #include <vector>
+#include <string>
 #include <boost/cstdint.hpp>
 #include <boost/shared_array.hpp>
 
@@ -20,6 +21,7 @@ class ExposureStack {
 	};
 
 	struct Exposure {
+		std::string filename;
 		boost::shared_array<Pixel> p;   ///< Image data
 		std::vector<boost::shared_array<Pixel> > scaledData;
 		uint16_t maxR, maxG, maxB;
@@ -29,7 +31,7 @@ class ExposureStack {
 		uint16_t th;            ///< Exposure threshold
 	
 		/// Create an exposure from a linear 16 bit TIFF file
-		Exposure(const char * fileName, unsigned int & width, unsigned int & height);
+		Exposure(const char * f, unsigned int & width, unsigned int & height);
 
 		/// Create the scaled copies of an image, scale is 1/2 each step
 		void scaled(unsigned int steps, unsigned int width, unsigned int height);
@@ -49,6 +51,14 @@ class ExposureStack {
 	unsigned int width;     ///< Size of a row
 	unsigned int height;    ///< Size of a column
 	unsigned int scale;     ///< Current scale factor
+
+	const Exposure & getExposureAt(unsigned int pos) const {
+		const Exposure * e = &imgs.front();
+		while (e->p[pos].l > e->th) e++;
+		// If the last image pixel is transparent, look for another one that is not
+		while (e->p[pos].l & Pixel::transparent && e != &imgs.front()) e--;
+		return *e;
+	}
 
 public:
 	ExposureStack() : wbr(1.0), wbg(1.0), wbb(1.0), width(0), height(0), scale(0) {}
@@ -83,6 +93,10 @@ public:
 		return imgs[i].th << 1;
 	}
 
+	const std::string & getFileName(int i) const {
+		return imgs[i].filename;
+	}
+
 	double getWBGR() const { return wbg / wbr; }
 
 	double getWBBR() const { return wbb / wbr; }
@@ -97,11 +111,9 @@ public:
 
 	void rgb(unsigned int x, unsigned int y, double & r, double & g, double & b) const {
 		unsigned int pos = y * (width >> scale) + x;
-		const Exposure * e = &imgs.front();
-		//while (e != &imgs.back() && e->p[pos].l > e->th) e++;
-		while (e != &imgs.back() && e->p[pos].max() > e->th) e++;
-		Pixel * pix = &e->p[pos];
-		double relExp = e->relExp;
+		const Exposure & e = getExposureAt(pos);
+		Pixel * pix = &e.p[pos];
+		double relExp = e.relExp;
 		r = pix->r * relExp * wbr;
 		g = pix->g * relExp * wbg;
 		b = pix->b * relExp * wbb;

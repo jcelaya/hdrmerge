@@ -1,3 +1,4 @@
+#include <list>
 #include "HdrMergeMainWindow.h"
 #include <QApplication>
 #include <QFuture>
@@ -10,6 +11,8 @@
 #include <QSettings>
 #include "ImageControl.h"
 #include <iostream>
+using namespace std;
+
 
 MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
 	: QMainWindow(parent, flags), images(NULL), rt(NULL), isPickingWB(false) {
@@ -200,16 +203,30 @@ void MainWindow::loadImages() {
 
 
 void MainWindow::saveResult() {
-	QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), QDir::currentPath(), tr("PFS stream files (*.pfs)"));
-	if (!file.isEmpty()) {
-		QProgressDialog progress(tr("Saving ") + file, QString(), 0, 1, this);
-		progress.setMinimumDuration(0);
-		progress.setValue(0);
-		QByteArray fileName = QDir::toNativeSeparators(file).toUtf8();
-		QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, fileName.constData());
-		while (result.isRunning())
-			QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-		progress.setValue(1);
+	if (images) {
+		// Take the prefix and add the first and last suffix
+		QString name;
+		if (images->size() > 1) {
+			list<string> names;
+			for (unsigned int i = 0; i < images->size(); i++)
+				names.push_back(images->getFileName(i).substr(0, images->getFileName(i).find_last_of('.')));
+			names.sort();
+			int pos = 0;
+			while (names.front()[pos] == names.back()[pos]) pos++;
+			name = (names.front() + '-' + names.back().substr(pos) + ".pfs").c_str();
+		} else name = images->getFileName(0).c_str();
+
+		QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), name, tr("PFS stream files (*.pfs)"));
+		if (!file.isEmpty()) {
+			QProgressDialog progress(tr("Saving ") + file, QString(), 0, 1, this);
+			progress.setMinimumDuration(0);
+			progress.setValue(0);
+			QByteArray fileName = QDir::toNativeSeparators(file).toUtf8();
+			QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, fileName.constData());
+			while (result.isRunning())
+				QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+			progress.setValue(1);
+		}
 	}
 }
 

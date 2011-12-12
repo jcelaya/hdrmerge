@@ -4,7 +4,6 @@
 #include <QCursor>
 #include <QPainter>
 #include <QTime>
-#include <cmath>
 #include <QDebug>
 
 
@@ -23,8 +22,6 @@ void PreviewWidget::toggleCrossCursor(bool toggle) {
 
 
 void PreviewWidget::paintImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image) {
-	QTime t;
-	t.start();
 	if (!pixmap()) {
 		setPixmap(QPixmap::fromImage(image));
 		resize(pixmap()->size());
@@ -44,7 +41,6 @@ void PreviewWidget::paintImage(unsigned int x, unsigned int y, unsigned int widt
 		}
 	}
 	update();
-	qDebug() << "Setting pixmap at " << QTime::currentTime() << ", " << t.elapsed() << " ms elapsed";
 }
 
 

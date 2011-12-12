@@ -83,9 +83,9 @@ public:
 		return imgs[i].th << 1;
 	}
 
-	double getWBRG() const { return wbr / wbg; }
+	double getWBGR() const { return wbg / wbr; }
 
-	double getWBRB() const { return wbr / wbb; }
+	double getWBBR() const { return wbb / wbr; }
 
 	void setRelativeExposure(int i, double re);
 
@@ -95,7 +95,7 @@ public:
 
 	void calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 
-	void rgb(unsigned int x, unsigned int y, float & r, float & g, float & b) const {
+	void rgb(unsigned int x, unsigned int y, double & r, double & g, double & b) const {
 		unsigned int pos = y * (width >> scale) + x;
 		const Exposure * e = &imgs.front();
 		//while (e != &imgs.back() && e->p[pos].l > e->th) e++;

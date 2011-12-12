@@ -189,7 +189,7 @@ void MainWindow::loadImages() {
 			imageTabs->addTab(ic, tr("Exposure") + " " + QString::number(i));
 		}
 		// Add white balance widget
-		wbw = new WhiteBalanceWidget(images->getWBRG(), images->getWBRB(), imageTabs);
+		wbw = new WhiteBalanceWidget(images->getWBGR(), images->getWBBR(), imageTabs);
 		connect(wbw, SIGNAL(pickerPushed()), this, SLOT(setPickingWB()));
 		connect(wbw, SIGNAL(autoWBPushed()), this, SLOT(setAutoWB()));
 		connect(rt, SIGNAL(whiteBalanceChanged(double, double)),
@@ -205,7 +205,8 @@ void MainWindow::saveResult() {
 		QProgressDialog progress(tr("Saving ") + file, QString(), 0, 1, this);
 		progress.setMinimumDuration(0);
 		progress.setValue(0);
-		QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, file.toUtf8().constData());
+		QByteArray fileName = QDir::toNativeSeparators(file).toUtf8();
+		QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, fileName.constData());
 		while (result.isRunning())
 			QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
 		progress.setValue(1);

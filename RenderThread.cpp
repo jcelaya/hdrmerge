@@ -53,7 +53,7 @@ void RenderThread::calculateWB(int x, int y, int radius) {
 	y = y > radius ? y - radius : 0;
 	images->calculateWB(x, y, w, h);
 	restart = true;
-	emit whiteBalanceChanged(images->getWBRG(), images->getWBRB());
+	emit whiteBalanceChanged(images->getWBGR(), images->getWBBR());
 	mutex.unlock();
 	condition.wakeOne();
 }
@@ -135,7 +135,7 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 
 		QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - miny));
 		for (unsigned int col = minx; col < maxx; col++) {
-			float rr, gg, bb;
+			double rr, gg, bb;
 			images->rgb(col, row, rr, gg, bb);
 			int r = (int)rr, g = (int)gg, b = (int)bb;
 			if (r >= 65536 || r < 0) std::cerr << "RValue " << r << " out of range at " << col << "x" << row << std::endl;

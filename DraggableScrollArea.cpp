@@ -11,7 +11,7 @@ DraggableScrollArea::DraggableScrollArea(QWidget * parent) : QScrollArea(parent)
 
 void DraggableScrollArea::show(int x, int y) {
 	ensureVisible(x, y, 0, 0);
-	ensureVisible(x + viewport()->width() - 1, y + viewport()->height() - 1, 0, 0);
+	ensureVisible(x + viewport()->width(), y + viewport()->height(), 0, 0);
 }
 
 

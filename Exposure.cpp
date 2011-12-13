@@ -156,7 +156,7 @@ void ExposureStack::preScale() {
 void ExposureStack::setScale(unsigned int i) {
 	scale = i;
 	for (vector<Exposure>::iterator it = imgs.begin(); it != imgs.end(); it++) {
-		it->scaled(i, width, height);
+		it->scaled(i + 1, width, height);
 		it->p = it->scaledData[scale];
 	}
 }

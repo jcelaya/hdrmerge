@@ -44,20 +44,23 @@ void PreviewWidget::paintImage(unsigned int x, unsigned int y, unsigned int widt
 }
 
 
-void PreviewWidget::wheelEvent(QWheelEvent * event) {
+void PreviewWidget::zoom(int steps) {
+	if (steps == 0) return;
+	// Positive steps is zoom in, negative is zoom out, the reverse of scale... so pay attention
 	if (pixmap()) {
 		// Zoom steps
 		int minWidth = pixmap()->width(), minHeight = pixmap()->height();
-		int minSteps = newScale - currentScale;
+		int minSteps = 0;
 		while (minWidth > parentWidget()->width() || minHeight > parentWidget()->height()) {
 			minWidth >>= 1;
 			minHeight >>= 1;
 			minSteps--;
 		}
-		int steps = event->delta() / 120;
-		if (steps > newScale) steps = newScale;
+		// Steps are referred to newScale, but need reference to currentScale
+		steps += newScale - currentScale;
+		if (steps > currentScale) steps = currentScale;
 		else if (steps < minSteps) steps = minSteps;
-		if (steps == 0) return;
+		newScale = currentScale - steps;
 
 		// Compute new viewport
 		QPoint currentMin = mapFromParent(QPoint(0, 0));
@@ -83,13 +86,16 @@ void PreviewWidget::wheelEvent(QWheelEvent * event) {
                         if (newminy + h > imageHeight)
 				newminy = imageHeight - h;
                 }
-                qDebug() << "New viewport will be " << newminx << ',' << newminy << ':' << (newminx + w) << ',' << (newminy + h);
+                qDebug() << "New viewport will be " << newminx << ',' << newminy << ':' << (newminx + w) << ',' << (newminy + h) << " at scale " << newScale;
 
-		newScale = newScale - steps;
 		emit imageViewport(newminx, newminy, w, h, newScale);
 	}
 }
 
+
+void PreviewWidget::wheelEvent(QWheelEvent * event) {
+	zoom(event->delta() / 120);
+}
 
 void PreviewWidget::mouseReleaseEvent(QMouseEvent * event) {
 	emit imageClicked(event->pos(), event->button() == Qt::LeftButton);

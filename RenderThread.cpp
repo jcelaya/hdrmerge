@@ -62,74 +62,18 @@ void RenderThread::calculateWB(int x, int y, int radius) {
 void RenderThread::setImageViewport(int x, int y, int w, int h, int newScale) {
 	mutex.lock();
 	if (newScale != scale) {
-		images->setScale(newScale);
 		restart = true;
 		scale = newScale;
 	}
-	// Check limits, due to roundings in preview label scale
-	minx = x > 0 ? x : 0;
-	miny = y > 0 ? y : 0;
-	maxx = x + w <= images->getWidth() ? x + w : images->getWidth();
-	maxy = y + h <= images->getHeight() ? y + h : images->getHeight();
+	minx = x;
+	miny = y;
+	maxx = x + w;
+	maxy = y + h;
 	qDebug() << "Viewport set to " << minx << ',' << miny << ':' << maxx << ',' << maxy ;
 	mutex.unlock();
 	if (restart)
 		condition.wakeOne();
 }
-
-
-/*
-void RenderThread::setScale(int newScale) {
-	mutex.lock();
-	if (newScale != scale) {
-		images->setScale(newScale);
-
-		// Recalculate viewport
-		unsigned int w = maxx - minx;
-		if (w > images->getWidth()) {
-			minx = 0;
-			maxx = images->getWidth();
-		} else {
-			unsigned int centerx = minx + maxx;
-			if (newScale > scale) {
-				centerx >>= (newScale - scale + 1);
-			} else {
-				centerx <<= (scale - newScale - 1);
-			}
-			int x = centerx - w / 2;
-			minx = x > 0 ? x : 0;
-			if (minx + w > images->getWidth()) {
-				maxx = images->getWidth();
-				minx = maxx - w;
-			} else maxx = minx + w;
-		}
-		unsigned int h = maxy - miny;
-		if (h > images->getHeight()) {
-			miny = 0;
-			maxy = images->getHeight();
-		} else {
-			unsigned int centery = miny + maxy;
-			if (newScale > scale) {
-				centery >>= (newScale - scale + 1);
-			} else {
-				centery <<= (scale - newScale - 1);
-			}
-			int y = centery - h / 2;
-			miny = y > 0 ? y : 0;
-			if (miny + h > images->getHeight()) {
-				maxy = images->getHeight();
-				miny = maxy - h;
-			} else maxy = miny + h;
-		}
-		qDebug() << "New viewport set to " << minx << ',' << miny << ':' << maxx << ',' << maxy ;
-
-		restart = true;
-		scale = newScale;
-		mutex.unlock();
-		condition.wakeOne();
-	} else mutex.unlock();
-}
-*/
 
 
 void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image) {
@@ -181,6 +125,7 @@ void RenderThread::run() {
 		_miny = miny;
 		_maxx = maxx;
 		_maxy = maxy;
+		images->setScale(scale);
 		mutex.unlock();
 	}
 }

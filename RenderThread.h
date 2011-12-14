@@ -33,12 +33,10 @@ public slots:
 	void setExposureThreshold(int i, int th);
 	void setExposureRelativeEV(int i, double re);
 	void setGamma(float g);
-	void calculateWB(int x, int y, int radius);
 	void setImageViewport(int x, int y, int w, int h, int newScale);
 
 signals:
 	void renderedImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
-	void whiteBalanceChanged(double rg, double rb);
 };
 
 #endif // _RENDERTHREAD_H_

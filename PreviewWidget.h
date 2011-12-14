@@ -14,7 +14,6 @@ public:
 	void toggleCrossCursor(bool toggle);
 
 signals:
-	void imageClicked(QPoint pos, bool left);
 	void focus(int x, int y);
 	void imageViewport(int x, int y, int w, int h, int scale);
 
@@ -25,7 +24,6 @@ public slots:
 
 protected:
 	void wheelEvent(QWheelEvent * event);
-	void mouseReleaseEvent(QMouseEvent * event);
 	void moveEvent(QMoveEvent * event);
 };
 

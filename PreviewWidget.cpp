@@ -3,8 +3,6 @@
 #include <QWheelEvent>
 #include <QCursor>
 #include <QPainter>
-#include <QTime>
-#include <QDebug>
 
 
 PreviewWidget::PreviewWidget(QWidget * parent) : QLabel(parent), currentScale(0), newScale(0) {
@@ -21,7 +19,8 @@ void PreviewWidget::toggleCrossCursor(bool toggle) {
 }
 
 
-void PreviewWidget::paintImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image) {
+void PreviewWidget::paintImage(unsigned int x, unsigned int y,
+	unsigned int width, unsigned int height, const QImage & image) {
 	if (!pixmap()) {
 		setPixmap(QPixmap::fromImage(image));
 		resize(pixmap()->size());
@@ -34,7 +33,7 @@ void PreviewWidget::paintImage(unsigned int x, unsigned int y, unsigned int widt
 		unsigned int currentWidth = this->width();
 		resize(pixmap()->size());
 		if (width != currentWidth) {
-			for (; currentWidth < width; currentWidth <<= 1) currentScale--;
+			for (; currentScale > 0 && currentWidth < width; currentWidth <<= 1) currentScale--;
 			for (; currentWidth > width; currentWidth >>= 1) currentScale++;
 			// If scale changed, move to new viewport
 			emit focus(x, y);
@@ -86,7 +85,6 @@ void PreviewWidget::zoom(int steps) {
                         if (newminy + h > imageHeight)
 				newminy = imageHeight - h;
                 }
-                qDebug() << "New viewport will be " << newminx << ',' << newminy << ':' << (newminx + w) << ',' << (newminy + h) << " at scale " << newScale;
 
 		emit imageViewport(newminx, newminy, w, h, newScale);
 	}
@@ -95,10 +93,6 @@ void PreviewWidget::zoom(int steps) {
 
 void PreviewWidget::wheelEvent(QWheelEvent * event) {
 	zoom(event->delta() / 120);
-}
-
-void PreviewWidget::mouseReleaseEvent(QMouseEvent * event) {
-	emit imageClicked(event->pos(), event->button() == Qt::LeftButton);
 }
 
 

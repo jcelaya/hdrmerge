@@ -12,7 +12,6 @@
 #include "Exposure.h"
 #include "RenderThread.h"
 #include "PreviewWidget.h"
-#include "WhiteBalanceWidget.h"
 #include "DraggableScrollArea.h"
 
 
@@ -37,9 +36,6 @@ class MainWindow : public QMainWindow {
 
 	ExposureStack * images;
 	RenderThread * rt;
-	WhiteBalanceWidget * wbw;
-
-	bool isPickingWB;
 
 	void createActions();
 	void createMenus();
@@ -48,9 +44,6 @@ private slots:
 	void about();
 	void loadImages();
 	void saveResult();
-	void setPickingWB();
-	void setAutoWB();
-	void clickImage(QPoint pos, bool left);
 
 public:
 	MainWindow(QWidget * parent = 0, Qt::WindowFlags flags = 0);

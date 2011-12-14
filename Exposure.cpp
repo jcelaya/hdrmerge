@@ -135,14 +135,6 @@ void ExposureStack::sort() {
 		for (vector<Exposure>::reverse_iterator p = imgs.rbegin(), n = p; n != imgs.rend(); p = n++)
 			n->setRelativeExposure(*p, width * height);
 		imgs.back().th = 0xffff;
-		// Calculate fusion map
-		map.resize(width * height);
-		unsigned int N = imgs.size();
-		for (unsigned int j = 0; j < width * height; j++) {
-			unsigned int i;
-			for (i = 0; i < N - 1 && imgs[i].p[j].l >= imgs[i].th; i++);
-			map[j] = i;
-		}
 	}
 }
 
@@ -173,59 +165,6 @@ void ExposureStack::setRelativeExposure(int i, double re) {
 
 void ExposureStack::setThreshold(int i, uint16_t th) {
 	imgs[i].th = th >> 1;
-}
-
-
-/*
-void ExposureStack::setWhiteBalance(double r, double g, double b) {
-	wbr = r;
-	wbg = g;
-	wbb = b;
-}
-*/
-
-
-void ExposureStack::calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
-	x <<= scale;
-	y <<= scale;
-	w <<= scale;
-	h <<= scale;
-	cerr << "Calculating white balance in " << x << ',' << y << ':' << w << 'x' << h << endl;
-	// Calculate white balance
-	wbr = 0.0;
-	wbg = 0.0;
-	wbb = 0.0;
-	for (unsigned int i = x; i < x + w; i++) {
-		for (unsigned int j = y; j < y + h; j++) {
-			unsigned int pos = j * width + i;
-			const Exposure * e = &imgs.front();
-			while (e != &imgs.back() && (e->scaledData[0])[pos].l >= e->th) e++;
-			Pixel * pix = &(e->scaledData[0])[pos];
-			double relExp = e->relExp;
-			wbr += pix->r * relExp;
-			wbg += pix->g * relExp;
-			wbb += pix->b * relExp;
-		}
-	}
-	// TODO: What if min == 0 ??????????
-	double min = wbr < wbg ? wbr : wbg;
-	min = wbb < min ? wbb : min;
-	if (min < wbb / 100.0) return;
-	wbr = min / wbr;
-	wbg = min / wbg;
-	wbb = min / wbb;
-	// Optimize white point
-	double wp = 0;
-	for (vector<Exposure>::iterator it = imgs.begin(); it != imgs.end(); it++) {
-		if (wp < it->maxR * it->relExp * wbr) wp = it->maxR * it->relExp * wbr;
-		if (wp < it->maxG * it->relExp * wbg) wp = it->maxG * it->relExp * wbg;
-		if (wp < it->maxB * it->relExp * wbb) wp = it->maxB * it->relExp * wbb;
-	}
-	wp = 65536.0 / wp;
-	wbr *= wp;
-	wbg *= wp;
-	wbb *= wp;
-	cerr << "White balance R:" << wbr << " G:" << wbg << " B:" << wbb << endl;
 }
 
 
@@ -285,16 +224,16 @@ void ExposureStack::savePFS(const char * filename) {
 		Pixel * pix = &imgs[i].p[j];
 		double relExp = imgs[i].relExp;
 		if (i == 0) {
-			(*r)(j) = pix->r * relExp * wbr / 65536.0;
-			(*g)(j) = pix->g * relExp * wbg / 65536.0;
-			(*b)(j) = pix->b * relExp * wbb / 65536.0;
+			(*r)(j) = pix->r * relExp / 65536.0;
+			(*g)(j) = pix->g * relExp / 65536.0;
+			(*b)(j) = pix->b * relExp / 65536.0;
 		} else {
 			double p = i - map[j];
 			Pixel * ppix = &imgs[i - 1].p[j];
 			double prelExp = imgs[i - 1].relExp;
-			(*r)(j) = (pix->r * relExp * (1.0 - p) + ppix->r * prelExp * p) * wbr / 65536.0;
-			(*g)(j) = (pix->g * relExp * (1.0 - p) + ppix->g * prelExp * p) * wbg / 65536.0;
-			(*b)(j) = (pix->b * relExp * (1.0 - p) + ppix->b * prelExp * p) * wbb / 65536.0;
+			(*r)(j) = (pix->r * relExp * (1.0 - p) + ppix->r * prelExp * p) / 65536.0;
+			(*g)(j) = (pix->g * relExp * (1.0 - p) + ppix->g * prelExp * p) / 65536.0;
+			(*b)(j) = (pix->b * relExp * (1.0 - p) + ppix->b * prelExp * p) / 65536.0;
 		}
 	}
 

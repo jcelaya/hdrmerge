@@ -11,11 +11,6 @@ class ExposureStack {
 	struct Pixel {
 		uint16_t r, g, b;
 		uint16_t l;
-		uint16_t max() const {
-			if (l >= transparent) return transparent;
-			uint16_t c = r > g ? r : g;
-			return c > b ? c >> 1 : b >> 1;
-		}
 
 		static const uint16_t transparent = 1 << 15;
 	};
@@ -45,9 +40,6 @@ class ExposureStack {
 
 	std::vector<Exposure> imgs;   ///< Exposures, from top to bottom
 	std::vector<unsigned char> map;   ///< Fusion map
-	double wbr;             ///< White balance red component
-	double wbg;             ///< White balance green component
-	double wbb;             ///< White balance blue component
 	unsigned int width;     ///< Size of a row
 	unsigned int height;    ///< Size of a column
 	unsigned int scale;     ///< Current scale factor
@@ -61,7 +53,7 @@ class ExposureStack {
 	}
 
 public:
-	ExposureStack() : wbr(1.0), wbg(1.0), wbb(1.0), width(0), height(0), scale(0) {}
+	ExposureStack() : width(0), height(0), scale(0) {}
 
 	/// Load an image into the stack
 	void loadImage(const char * fileName) {
@@ -97,26 +89,18 @@ public:
 		return imgs[i].filename;
 	}
 
-	double getWBGR() const { return wbg / wbr; }
-
-	double getWBBR() const { return wbb / wbr; }
-
 	void setRelativeExposure(int i, double re);
 
 	void setThreshold(int i, uint16_t th);
-
-	//void setWhiteBalance(double rg, double rb);
-
-	void calculateWB(unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 
 	void rgb(unsigned int x, unsigned int y, double & r, double & g, double & b) const {
 		unsigned int pos = y * (width >> scale) + x;
 		const Exposure & e = getExposureAt(pos);
 		Pixel * pix = &e.p[pos];
 		double relExp = e.relExp;
-		r = pix->r * relExp * wbr;
-		g = pix->g * relExp * wbg;
-		b = pix->b * relExp * wbb;
+		r = pix->r * relExp;
+		g = pix->g * relExp;
+		b = pix->b * relExp;
 	}
 
 	/// Merge stack and save as EXR

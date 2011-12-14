@@ -45,20 +45,6 @@ void RenderThread::setExposureRelativeEV(int i, double re) {
 }
 
 
-void RenderThread::calculateWB(int x, int y, int radius) {
-	mutex.lock();
-	unsigned int w = images->getWidth() - x > 2*radius ? 2*radius : images->getWidth() - x;
-	unsigned int h = images->getHeight() - y > 2*radius ? 2*radius : images->getHeight() - y;
-	x = x > radius ? x - radius : 0;
-	y = y > radius ? y - radius : 0;
-	images->calculateWB(x, y, w, h);
-	restart = true;
-	emit whiteBalanceChanged(images->getWBGR(), images->getWBBR());
-	mutex.unlock();
-	condition.wakeOne();
-}
-
-
 void RenderThread::setImageViewport(int x, int y, int w, int h, int newScale) {
 	mutex.lock();
 	if (newScale != scale) {
@@ -69,7 +55,6 @@ void RenderThread::setImageViewport(int x, int y, int w, int h, int newScale) {
 	miny = y;
 	maxx = x + w;
 	maxy = y + h;
-	qDebug() << "Viewport set to " << minx << ',' << miny << ':' << maxx << ',' << maxy ;
 	mutex.unlock();
 	if (restart)
 		condition.wakeOne();
@@ -88,12 +73,11 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 			double rr, gg, bb;
 			images->rgb(col, row, rr, gg, bb);
 			int r = (int)rr, g = (int)gg, b = (int)bb;
-			if (r >= 65536 || r < 0) std::cerr << "RValue " << r << " out of range at " << col << "x" << row << std::endl;
-			if (g >= 65536 || g < 0) std::cerr << "GValue " << g << " out of range at " << col << "x" << row << std::endl;
-			if (b >= 65536 || b < 0) std::cerr << "BValue " << b << " out of range at " << col << "x" << row << std::endl;
+			if (r >= 65536 || r < 0) qDebug() << "RValue " << r << " out of range at " << col << "x" << row;
+			if (g >= 65536 || g < 0) qDebug() << "GValue " << g << " out of range at " << col << "x" << row;
+			if (b >= 65536 || b < 0) qDebug() << "BValue " << b << " out of range at " << col << "x" << row;
 			// Apply gamma correction
 			*scanLine++ = qRgb(gamma[r], gamma[g], gamma[b]);
-			//*scanLine++ = qRgb(r, g, b);
 		}
 	}
 	qDebug() << "Render time " << t.elapsed() << " ms at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData();

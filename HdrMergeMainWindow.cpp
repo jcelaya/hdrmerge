@@ -15,7 +15,7 @@ using namespace std;
 
 
 MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
-	: QMainWindow(parent, flags), images(NULL), rt(NULL), isPickingWB(false) {
+	: QMainWindow(parent, flags), images(NULL), rt(NULL) {
 	centralwidget = new QWidget(this);
 	setCentralWidget(centralwidget);
 	QVBoxLayout * layout = new QVBoxLayout(centralwidget);
@@ -27,7 +27,6 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
 	preview = new PreviewWidget(previewArea);
 	previewArea->setWidget(preview);
 	connect(preview, SIGNAL(focus(int, int)), previewArea, SLOT(show(int, int)));
-	connect(preview, SIGNAL(imageClicked(QPoint, bool)), this, SLOT(clickImage(QPoint, bool)));
 
 	imageTabs = new QTabWidget(centralwidget);
 	QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
@@ -191,13 +190,6 @@ void MainWindow::loadImages() {
 				rt, SLOT(setExposureThreshold(int, int)));
 			imageTabs->addTab(ic, tr("Exposure") + " " + QString::number(i));
 		}
-		// Add white balance widget
-		wbw = new WhiteBalanceWidget(images->getWBGR(), images->getWBBR(), imageTabs);
-		connect(wbw, SIGNAL(pickerPushed()), this, SLOT(setPickingWB()));
-		connect(wbw, SIGNAL(autoWBPushed()), this, SLOT(setAutoWB()));
-		connect(rt, SIGNAL(whiteBalanceChanged(double, double)),
-			wbw, SLOT(changeFactors(double, double)));
-		imageTabs->addTab(wbw, tr("White Balance"));
 	}
 }
 
@@ -228,25 +220,5 @@ void MainWindow::saveResult() {
 			progress.setValue(1);
 		}
 	}
-}
-
-
-void MainWindow::setPickingWB() {
-	isPickingWB = true;
-	preview->toggleCrossCursor(true);
-}
-
-
-void MainWindow::clickImage(QPoint pos, bool left) {
-	if (left && isPickingWB) {
-		preview->toggleCrossCursor(false);
-		isPickingWB = false;
-		rt->calculateWB(pos.x(), pos.y(), 5);
-	}
-}
-
-
-void MainWindow::setAutoWB() {
-	rt->calculateWB(0, 0, 2000000000);
 }
 

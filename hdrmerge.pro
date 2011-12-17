@@ -16,6 +16,8 @@ SOURCES		+= RenderThread.cpp
 SOURCES		+= ImageControl.cpp
 SOURCES		+= PreviewWidget.cpp
 SOURCES		+= DraggableScrollArea.cpp
+TRANSLATIONS	+= hdrmerge_en.ts
+TRANSLATIONS	+= hdrmerge_es.ts
 
 TARGET = hdrmerge
 

@@ -77,29 +77,31 @@ void MainWindow::closeEvent(QCloseEvent * event) {
 
 
 void MainWindow::createActions() {
-	loadImagesAction = new QAction(tr("Load images..."), this);
+	loadImagesAction = new QAction(tr("&Open exposures..."), this);
+	loadImagesAction->setShortcut(tr("Ctrl+O"));
 	connect(loadImagesAction, SIGNAL(triggered()), this, SLOT(loadImages()));
 
-	quitAction = new QAction(tr("Quit"), this);
+	quitAction = new QAction(tr("&Quit"), this);
 	quitAction->setShortcut(tr("Ctrl+Q"));
 	connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
-	aboutAction = new QAction(tr("About..."), this);
+	aboutAction = new QAction(tr("&About..."), this);
 	connect(aboutAction, SIGNAL(triggered()), this, SLOT(about()));
 
-	mergeAction = new QAction(tr("Merge"), this);
+	mergeAction = new QAction(tr("&Save HDR..."), this);
+	mergeAction->setShortcut(tr("Ctrl+S"));
 	connect(mergeAction, SIGNAL(triggered()), this, SLOT(saveResult()));
 }
 
 
 void MainWindow::createMenus() {
-        fileMenu = new QMenu(tr("File"));
+        fileMenu = new QMenu(tr("&File"));
         fileMenu->addAction(loadImagesAction);
         fileMenu->addAction(mergeAction);
         fileMenu->addSeparator();
         fileMenu->addAction(quitAction);
 
-        helpMenu = new QMenu(tr("Help"));
+        helpMenu = new QMenu(tr("&Help"));
         helpMenu->addAction(aboutAction);
 
 	menuBar()->addMenu(fileMenu);
@@ -128,9 +130,9 @@ void MainWindow::about() {
 void MainWindow::loadImages() {
 	QSettings settings;
 	QVariant lastDirSetting = settings.value("lastOpenDirectory");
-	QStringList files = QFileDialog::getOpenFileNames(this, tr("Load images"),
+	QStringList files = QFileDialog::getOpenFileNames(this, tr("Open exposures"),
 		lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
-		tr("Linear TIFF images (*.tif *.tiff)"));
+		tr("Linear TIFF images (*.tif *.tiff)"), NULL, QFileDialog::DontUseNativeDialog);
 	if (!files.empty()) {
 		// Save last dir
 		QString lastDir = QDir(files.front()).absolutePath();
@@ -188,7 +190,7 @@ void MainWindow::loadImages() {
 				rt, SLOT(setExposureRelativeEV(int, double)));
 			connect(ic, SIGNAL(thresholdChanged(int, int)),
 				rt, SLOT(setExposureThreshold(int, int)));
-			imageTabs->addTab(ic, tr("Exposure") + " " + QString::number(i));
+			imageTabs->addTab(ic, tr("Exposure %1").arg(i));
 		}
 	}
 }
@@ -208,9 +210,10 @@ void MainWindow::saveResult() {
 			name = (names.front() + '-' + names.back().substr(pos) + ".pfs").c_str();
 		} else name = images->getFileName(0).c_str();
 
-		QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), name, tr("PFS stream files (*.pfs)"));
+		QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), name,
+			tr("PFS stream files (*.pfs)"), NULL, QFileDialog::DontUseNativeDialog);
 		if (!file.isEmpty()) {
-			QProgressDialog progress(tr("Saving ") + file, QString(), 0, 1, this);
+			QProgressDialog progress(tr("Saving %1").arg(file), QString(), 0, 1, this);
 			progress.setMinimumDuration(0);
 			progress.setValue(0);
 			QByteArray fileName = QDir::toNativeSeparators(file).toUtf8();

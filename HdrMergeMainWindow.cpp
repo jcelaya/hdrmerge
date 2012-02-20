@@ -127,6 +127,20 @@ void MainWindow::about() {
 }
 
 
+void MainWindow::preload(const list<char *> & fileNames) {
+	for (list<char *>::const_iterator it = fileNames.begin(); it != fileNames.end(); ++it)
+		preLoadFiles << QString(*it);
+}
+
+
+void MainWindow::showEvent(QShowEvent * event) {
+	if (!preLoadFiles.empty()) {
+		loadImages(preLoadFiles);
+		preLoadFiles.clear();
+	}
+}
+
+
 void MainWindow::loadImages() {
 	QSettings settings;
 	QVariant lastDirSetting = settings.value("lastOpenDirectory");
@@ -138,7 +152,13 @@ void MainWindow::loadImages() {
 		QString lastDir = QDir(files.front()).absolutePath();
 		lastDir.truncate(lastDir.lastIndexOf('/'));
 		settings.setValue("lastOpenDirectory", lastDir);
+		loadImages(files);
+	}
+}
 
+
+void MainWindow::loadImages(const QStringList & files) {
+	if (!files.empty()) {
 		unsigned int numImages = files.size();
 		// Clean previous state
 		while (imageTabs->count() > 0) {

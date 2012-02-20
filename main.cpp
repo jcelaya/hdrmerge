@@ -1,8 +1,12 @@
+#include <list>
+#include <string>
 #include <QApplication>
 #include <QTranslator>
 #include <QLibraryInfo>
 #include <QLocale>
 #include "HdrMergeMainWindow.h"
+#include "Exposure.h"
+using std::list;
 
 int main(int argc, char * argv[]) {
 	QApplication app(argc, argv);
@@ -22,9 +26,30 @@ int main(int argc, char * argv[]) {
 	appTranslator.load("hdrmerge_" + QLocale::system().name());
 	app.installTranslator(&appTranslator);
 
-	MainWindow mw;
-	mw.show();
+	// Parse the list of images in command line
+	list<char *> inFileNames;
+	char * outFileName = NULL;
+	for (int i = 1; i < argc; ++i) {
+		if (std::string("-o") == argv[i]) {
+			if (++i < argc)
+				outFileName = argv[i];
+		} else	
+			inFileNames.push_back(argv[i]);
+	}
 
-	return app.exec();
+	if (outFileName == NULL || inFileNames.empty()) {
+		// Create main window
+		MainWindow mw;
+		mw.preload(inFileNames);
+		mw.show();
+
+		return app.exec();
+	} else {
+		ExposureStack image;
+		for (list<char *>::iterator it = inFileNames.begin(); it != inFileNames.end(); ++it)
+			image.loadImage(*it);
+		image.sort();
+		image.savePFS(outFileName);
+	}
 }
 

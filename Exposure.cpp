@@ -68,7 +68,7 @@ ExposureStack::Exposure::Exposure(const char * f, unsigned int & width, unsigned
 		}
 	}
 	bn /= size;
-	th = 25600;
+	th = 254 << 7;
 	cerr << "  Brightness " << bn << endl;
 
 	_TIFFfree(buffer);

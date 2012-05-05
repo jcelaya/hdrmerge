@@ -78,47 +78,47 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="HdrMergeMainWindow.cpp" line="133"/>
+        <location filename="HdrMergeMainWindow.cpp" line="147"/>
         <source>Open exposures</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="HdrMergeMainWindow.cpp" line="135"/>
+        <location filename="HdrMergeMainWindow.cpp" line="149"/>
         <source>Linear TIFF images (*.tif *.tiff)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="HdrMergeMainWindow.cpp" line="154"/>
+        <location filename="HdrMergeMainWindow.cpp" line="174"/>
         <source>Loading files...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="HdrMergeMainWindow.cpp" line="164"/>
+        <location filename="HdrMergeMainWindow.cpp" line="184"/>
         <source>Sorting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="HdrMergeMainWindow.cpp" line="169"/>
+        <location filename="HdrMergeMainWindow.cpp" line="189"/>
         <source>Prescaling...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="HdrMergeMainWindow.cpp" line="193"/>
+        <location filename="HdrMergeMainWindow.cpp" line="213"/>
         <source>Exposure %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="HdrMergeMainWindow.cpp" line="213"/>
+        <location filename="HdrMergeMainWindow.cpp" line="233"/>
         <source>Save PFS file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="HdrMergeMainWindow.cpp" line="213"/>
+        <location filename="HdrMergeMainWindow.cpp" line="234"/>
         <source>PFS stream files (*.pfs)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="HdrMergeMainWindow.cpp" line="215"/>
+        <location filename="HdrMergeMainWindow.cpp" line="236"/>
         <source>Saving %1</source>
         <translation type="unfinished"></translation>
     </message>

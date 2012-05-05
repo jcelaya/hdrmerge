@@ -1,0 +1,4 @@
+// The configured options and settings for STaRS
+#define HDRMERGE_VERSION_MAJOR @HDRMERGE_VERSION_MAJOR@
+#define HDRMERGE_VERSION_MINOR @HDRMERGE_VERSION_MINOR@
+

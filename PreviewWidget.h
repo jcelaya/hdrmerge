@@ -5,26 +5,26 @@
 
 
 class PreviewWidget : public QLabel {
-        Q_OBJECT
-        
-	int currentScale, newScale;
 public:
-	PreviewWidget(QWidget * parent);
-
-	void toggleCrossCursor(bool toggle);
+    PreviewWidget(QWidget * parent);
 
 signals:
-	void focus(int x, int y);
-	void imageViewport(int x, int y, int w, int h, int scale);
+    void focus(int x, int y);
+    void imageViewport(int x, int y, int w, int h, int scale);
 
 public slots:
-	void resetScale() { currentScale = newScale = 0; }
-	void paintImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
-	void zoom(int steps);
+    void resetScale() { currentScale = newScale = 0; }
+    void paintImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
+    void zoom(int steps);
 
 protected:
-	void wheelEvent(QWheelEvent * event);
-	void moveEvent(QMoveEvent * event);
+    void wheelEvent(QWheelEvent * event);
+    void moveEvent(QMoveEvent * event);
+        
+private:
+    Q_OBJECT
+    
+    int currentScale, newScale;
 };
 
 

@@ -4,57 +4,121 @@
 #include <QFuture>
 #include <QtConcurrentRun>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QMenuBar>
 #include <QProgressDialog>
 #include <QSettings>
+#include <QToolBar>
+#include <QCursor>
 #include "ImageControl.h"
 #include <iostream>
 using namespace std;
 
 
 MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
-	: QMainWindow(parent, flags), images(NULL), rt(NULL) {
-	centralwidget = new QWidget(this);
-	setCentralWidget(centralwidget);
-	QVBoxLayout * layout = new QVBoxLayout(centralwidget);
+    : QMainWindow(parent, flags), images(NULL), rt(NULL) {
+    createGui();
+    createActions();
+    createMenus();
 
-	previewArea = new DraggableScrollArea(centralwidget);
-	previewArea->setAlignment(Qt::AlignCenter);
-	layout->addWidget(previewArea);
+    QSettings settings;
+    restoreGeometry(settings.value("windowGeometry").toByteArray());
+    restoreState(settings.value("windowState").toByteArray());
+}
 
-	preview = new PreviewWidget(previewArea);
-	previewArea->setWidget(preview);
-	connect(preview, SIGNAL(focus(int, int)), previewArea, SLOT(show(int, int)));
 
-	imageTabs = new QTabWidget(centralwidget);
-	QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-	sizePolicy.setHorizontalStretch(0);
-	sizePolicy.setVerticalStretch(0);
-	sizePolicy.setHeightForWidth(imageTabs->sizePolicy().hasHeightForWidth());
-	imageTabs->setSizePolicy(sizePolicy);
-	layout->addWidget(imageTabs);
+void MainWindow::createGui() {
+    centralwidget = new QWidget(this);
+    setCentralWidget(centralwidget);
+    QVBoxLayout * layout = new QVBoxLayout(centralwidget);
 
-	createActions();
-	createMenus();
+    previewArea = new DraggableScrollArea(centralwidget);
+    previewArea->setAlignment(Qt::AlignCenter);
+    layout->addWidget(previewArea);
 
-	//retranslateUi(HdrMergeMainWindow);
-	statusbar = new QStatusBar(this);
-	setStatusBar(statusbar);
-	setWindowTitle(tr("HDRMerge - High dynamic range image fussion"));
+    preview = new PreviewWidget(previewArea);
+    previewArea->setWidget(preview);
+    connect(preview, SIGNAL(focus(int, int)), previewArea, SLOT(show(int, int)));
 
-	QSettings settings;
-	restoreGeometry(settings.value("windowGeometry").toByteArray());
-	restoreState(settings.value("windowState").toByteArray());
+    QWidget * toolArea = new QWidget(centralwidget);
+    QHBoxLayout * toolLayout = new QHBoxLayout(toolArea);
+    
+    QToolBar * toolBar = new QToolBar(toolArea);
+    toolBar->setOrientation(Qt::Vertical);
+    toolBar->setFloatable(false);
+    toolBar->setMovable(false);
+    connect(toolBar, SIGNAL(actionTriggered(QAction*)), this, SLOT(setTool(QAction*)));
+    // Add tools
+    dragToolAction = toolBar->addAction(QIcon::fromTheme("edit-undo"), tr("Drag and zoom tool"));
+    addGhostAction = toolBar->addAction(QIcon::fromTheme("edit-copy"), tr("Add pixels tool"));
+    rmGhostAction = toolBar->addAction(QIcon::fromTheme("edit-paste"), tr("Remove pixels tool"));
+    dragToolAction->setCheckable(true);
+    addGhostAction->setCheckable(true);
+    rmGhostAction->setCheckable(true);
+    toolActionGroup = new QActionGroup(this);
+    toolActionGroup->addAction(dragToolAction);
+    toolActionGroup->addAction(addGhostAction);
+    toolActionGroup->addAction(rmGhostAction);
+    dragToolAction->setChecked(true);
+    toolLayout->addWidget(toolBar);
+    
+    imageTabs = new QTabWidget(toolArea);
+    QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    sizePolicy.setHorizontalStretch(0);
+    sizePolicy.setVerticalStretch(0);
+    sizePolicy.setHeightForWidth(imageTabs->sizePolicy().hasHeightForWidth());
+    imageTabs->setSizePolicy(sizePolicy);
+    toolLayout->addWidget(imageTabs);
+    
+    layout->addWidget(toolArea);
+
+    //retranslateUi(HdrMergeMainWindow);
+    statusbar = new QStatusBar(this);
+    setStatusBar(statusbar);
+    setWindowTitle(tr("HDRMerge - High dynamic range image fussion"));
+}
+
+
+void MainWindow::createActions() {
+    loadImagesAction = new QAction(tr("&Open exposures..."), this);
+    loadImagesAction->setShortcut(tr("Ctrl+O"));
+    connect(loadImagesAction, SIGNAL(triggered()), this, SLOT(loadImages()));
+
+    quitAction = new QAction(tr("&Quit"), this);
+    quitAction->setShortcut(tr("Ctrl+Q"));
+    connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+
+    aboutAction = new QAction(tr("&About..."), this);
+    connect(aboutAction, SIGNAL(triggered()), this, SLOT(about()));
+
+    mergeAction = new QAction(tr("&Save HDR..."), this);
+    mergeAction->setShortcut(tr("Ctrl+S"));
+    connect(mergeAction, SIGNAL(triggered()), this, SLOT(saveResult()));
+}
+
+
+void MainWindow::createMenus() {
+    fileMenu = new QMenu(tr("&File"));
+    fileMenu->addAction(loadImagesAction);
+    fileMenu->addAction(mergeAction);
+    fileMenu->addSeparator();
+    fileMenu->addAction(quitAction);
+
+    helpMenu = new QMenu(tr("&Help"));
+    helpMenu->addAction(aboutAction);
+
+    menuBar()->addMenu(fileMenu);
+    menuBar()->addMenu(helpMenu);
 }
 
 
 void MainWindow::closeEvent(QCloseEvent * event) {
-	QSettings settings;
-	settings.setValue("windowGeometry", saveGeometry());
-	settings.setValue("windowState", saveState());
-	QMainWindow::closeEvent(event);
+    QSettings settings;
+    settings.setValue("windowGeometry", saveGeometry());
+    settings.setValue("windowState", saveState());
+    QMainWindow::closeEvent(event);
 }
 
 
@@ -76,172 +140,152 @@ void MainWindow::closeEvent(QCloseEvent * event) {
 
 
 
-void MainWindow::createActions() {
-	loadImagesAction = new QAction(tr("&Open exposures..."), this);
-	loadImagesAction->setShortcut(tr("Ctrl+O"));
-	connect(loadImagesAction, SIGNAL(triggered()), this, SLOT(loadImages()));
-
-	quitAction = new QAction(tr("&Quit"), this);
-	quitAction->setShortcut(tr("Ctrl+Q"));
-	connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
-
-	aboutAction = new QAction(tr("&About..."), this);
-	connect(aboutAction, SIGNAL(triggered()), this, SLOT(about()));
-
-	mergeAction = new QAction(tr("&Save HDR..."), this);
-	mergeAction->setShortcut(tr("Ctrl+S"));
-	connect(mergeAction, SIGNAL(triggered()), this, SLOT(saveResult()));
-}
-
-
-void MainWindow::createMenus() {
-        fileMenu = new QMenu(tr("&File"));
-        fileMenu->addAction(loadImagesAction);
-        fileMenu->addAction(mergeAction);
-        fileMenu->addSeparator();
-        fileMenu->addAction(quitAction);
-
-        helpMenu = new QMenu(tr("&Help"));
-        helpMenu->addAction(aboutAction);
-
-	menuBar()->addMenu(fileMenu);
-	menuBar()->addMenu(helpMenu);
-}
-
-
 void MainWindow::changeEvent(QEvent * e) {
-	QMainWindow::changeEvent(e);
-	switch (e->type()) {
-	case QEvent::LanguageChange:
-		//retranslateUi(this);
-		break;
-	default:
-		break;
-	}
+    QMainWindow::changeEvent(e);
+    switch (e->type()) {
+    case QEvent::LanguageChange:
+        //retranslateUi(this);
+        break;
+    default:
+        break;
+    }
 }
 
 
 void MainWindow::about() {
-	QMessageBox::about(this, tr("About HDRMerge"),
-		tr("<p><b>HDR Merge tool</b></p>"));
+    QMessageBox::about(this, tr("About HDRMerge"),
+        tr("<p><b>HDR Merge tool</b></p>"));
 }
 
 
 void MainWindow::preload(const list<char *> & fileNames) {
-	for (list<char *>::const_iterator it = fileNames.begin(); it != fileNames.end(); ++it)
-		preLoadFiles << QString(*it);
+    for (list<char *>::const_iterator it = fileNames.begin(); it != fileNames.end(); ++it)
+        preLoadFiles << QString(*it);
 }
 
 
 void MainWindow::showEvent(QShowEvent * event) {
-	if (!preLoadFiles.empty()) {
-		loadImages(preLoadFiles);
-		preLoadFiles.clear();
-	}
+    if (!preLoadFiles.empty()) {
+        loadImages(preLoadFiles);
+        preLoadFiles.clear();
+    }
 }
 
 
 void MainWindow::loadImages() {
-	QSettings settings;
-	QVariant lastDirSetting = settings.value("lastOpenDirectory");
-	QStringList files = QFileDialog::getOpenFileNames(this, tr("Open exposures"),
-		lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
-		tr("Linear TIFF images (*.tif *.tiff)"), NULL, QFileDialog::DontUseNativeDialog);
-	if (!files.empty()) {
-		// Save last dir
-		QString lastDir = QDir(files.front()).absolutePath();
-		lastDir.truncate(lastDir.lastIndexOf('/'));
-		settings.setValue("lastOpenDirectory", lastDir);
-		loadImages(files);
-	}
+    QSettings settings;
+    QVariant lastDirSetting = settings.value("lastOpenDirectory");
+    QStringList files = QFileDialog::getOpenFileNames(this, tr("Open exposures"),
+        lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
+        tr("Linear TIFF images (*.tif *.tiff)"), NULL, QFileDialog::DontUseNativeDialog);
+    if (!files.empty()) {
+        // Save last dir
+        QString lastDir = QDir(files.front()).absolutePath();
+        lastDir.truncate(lastDir.lastIndexOf('/'));
+        settings.setValue("lastOpenDirectory", lastDir);
+        loadImages(files);
+    }
 }
 
 
 void MainWindow::loadImages(const QStringList & files) {
-	if (!files.empty()) {
-		unsigned int numImages = files.size();
-		// Clean previous state
-		while (imageTabs->count() > 0) {
-			delete imageTabs->widget(0);
-			imageTabs->removeTab(0);
-		}
-		if (rt != NULL)
-			delete rt;
+    if (!files.empty()) {
+        unsigned int numImages = files.size();
+        // Clean previous state
+        while (imageTabs->count() > 0) {
+            delete imageTabs->widget(0);
+            imageTabs->removeTab(0);
+        }
+        if (rt != NULL)
+            delete rt;
 
-		// Load and sort images
-		images = new ExposureStack();
-		QFuture<void> result;
-		QProgressDialog progress(tr("Loading files..."), QString(), 0, numImages + 2, this);
-		progress.setMinimumDuration(0);
-		for (unsigned int i = 0; i < numImages; i++) {
-			progress.setValue(i);
-			QByteArray fileName = QDir::toNativeSeparators(files[i]).toUtf8();
-			result = QtConcurrent::run(images, &ExposureStack::loadImage, fileName.constData());
-			while (result.isRunning())
-				QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-		}
-		progress.setValue(numImages);
-		progress.setLabelText(tr("Sorting..."));
-		result = QtConcurrent::run(images, &ExposureStack::sort);
-		while (result.isRunning())
-			QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-		progress.setValue(numImages + 1);
-		progress.setLabelText(tr("Prescaling..."));
-		result = QtConcurrent::run(images, &ExposureStack::preScale);
-		while (result.isRunning())
-			QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-		progress.setValue(numImages + 2);
+        // Load and sort images
+        images = new ExposureStack();
+        QFuture<void> result;
+        QProgressDialog progress(tr("Loading files..."), QString(), 0, numImages + 2, this);
+        progress.setMinimumDuration(0);
+        for (unsigned int i = 0; i < numImages; i++) {
+            progress.setValue(i);
+            QByteArray fileName = QDir::toNativeSeparators(files[i]).toUtf8();
+            result = QtConcurrent::run(images, &ExposureStack::loadImage, fileName.constData());
+            while (result.isRunning())
+                QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+        }
+        progress.setValue(numImages);
+        progress.setLabelText(tr("Sorting..."));
+        result = QtConcurrent::run(images, &ExposureStack::sort);
+        while (result.isRunning())
+            QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+        progress.setValue(numImages + 1);
+        progress.setLabelText(tr("Prescaling..."));
+        result = QtConcurrent::run(images, &ExposureStack::preScale);
+        while (result.isRunning())
+            QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+        progress.setValue(numImages + 2);
 
-		// Render
-		preview->resetScale();
-		rt = new RenderThread(images, 2.2f, this);
-		connect(rt, SIGNAL(renderedImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)),
-			preview, SLOT(paintImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)));
-		connect(preview, SIGNAL(imageViewport(int, int, int, int, int)),
-			rt, SLOT(setImageViewport(int, int, int, int, int)));
-		rt->start(QThread::LowPriority);
+        // Render
+        preview->resetScale();
+        rt = new RenderThread(images, 2.2f, this);
+        connect(rt, SIGNAL(renderedImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)),
+                preview, SLOT(paintImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)));
+        connect(preview, SIGNAL(imageViewport(int, int, int, int, int)),
+                rt, SLOT(setImageViewport(int, int, int, int, int)));
+        rt->start(QThread::LowPriority);
 
-		// Create GUI
-		for (unsigned int i = 0; i < numImages - 1; i++) {
-			// Create ImageControl widgets for every exposure except the last one
-			ImageControl * ic =
-				new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
-			connect(ic, SIGNAL(relativeEVChanged(int, double)),
-				rt, SLOT(setExposureRelativeEV(int, double)));
-			connect(ic, SIGNAL(thresholdChanged(int, int)),
-				rt, SLOT(setExposureThreshold(int, int)));
-			imageTabs->addTab(ic, tr("Exposure %1").arg(i));
-		}
-	}
+        // Create GUI
+        for (unsigned int i = 0; i < numImages - 1; i++) {
+            // Create ImageControl widgets for every exposure except the last one
+            ImageControl * ic =
+                new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
+            connect(ic, SIGNAL(relativeEVChanged(int, double)),
+                    rt, SLOT(setExposureRelativeEV(int, double)));
+            connect(ic, SIGNAL(thresholdChanged(int, int)),
+                    rt, SLOT(setExposureThreshold(int, int)));
+            imageTabs->addTab(ic, tr("Exposure %1").arg(i));
+        }
+    }
 }
 
 
 void MainWindow::saveResult() {
-	if (images) {
-		// Take the prefix and add the first and last suffix
-		QString name;
-		if (images->size() > 1) {
-			list<string> names;
-			for (unsigned int i = 0; i < images->size(); i++)
-				names.push_back(images->getFileName(i).substr(0, images->getFileName(i).find_last_of('.')));
-			names.sort();
-			int pos = 0;
-			while (names.front()[pos] == names.back()[pos]) pos++;
-			name = (names.front() + '-' + names.back().substr(pos) + ".pfs").c_str();
-		} else name = images->getFileName(0).c_str();
+    if (images) {
+        // Take the prefix and add the first and last suffix
+        QString name;
+        if (images->size() > 1) {
+            list<string> names;
+            for (unsigned int i = 0; i < images->size(); i++)
+                names.push_back(images->getFileName(i).substr(0, images->getFileName(i).find_last_of('.')));
+            names.sort();
+            int pos = 0;
+            while (names.front()[pos] == names.back()[pos]) pos++;
+            name = (names.front() + '-' + names.back().substr(pos) + ".pfs").c_str();
+        } else name = images->getFileName(0).c_str();
 
-		QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), name,
-			tr("PFS stream files (*.pfs)"), NULL, QFileDialog::DontUseNativeDialog);
-		if (!file.isEmpty()) {
-			QProgressDialog progress(tr("Saving %1").arg(file), QString(), 0, 1, this);
-			progress.setMinimumDuration(0);
-			progress.setValue(0);
-			QByteArray fileName = QDir::toNativeSeparators(file).toUtf8();
-			QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, fileName.constData());
-			while (result.isRunning())
-				QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-			progress.setValue(1);
-		}
-	}
+        QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), name,
+            tr("PFS stream files (*.pfs)"), NULL, QFileDialog::DontUseNativeDialog);
+        if (!file.isEmpty()) {
+            QProgressDialog progress(tr("Saving %1").arg(file), QString(), 0, 1, this);
+            progress.setMinimumDuration(0);
+            progress.setValue(0);
+            QByteArray fileName = QDir::toNativeSeparators(file).toUtf8();
+            QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, fileName.constData());
+            while (result.isRunning())
+                QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+            progress.setValue(1);
+        }
+    }
 }
 
+
+void MainWindow::setTool(QAction * action) {
+    if (action == dragToolAction) {
+        preview->setCursor(Qt::OpenHandCursor);
+        previewArea->toggleMoveViewport(true);
+    } else if (action == addGhostAction) {
+        preview->setCursor(Qt::CrossCursor);
+        previewArea->toggleMoveViewport(false);
+    } else if (action == rmGhostAction) {
+        preview->setCursor(Qt::CrossCursor);
+        previewArea->toggleMoveViewport(false);
+    }
+}

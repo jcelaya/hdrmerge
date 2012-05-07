@@ -1,21 +1,12 @@
 #include "PreviewWidget.h"
 #include <QImage>
 #include <QWheelEvent>
-#include <QCursor>
 #include <QPainter>
 
 
 PreviewWidget::PreviewWidget(QWidget * parent) : QLabel(parent), currentScale(0), newScale(0) {
 	setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 	setScaledContents(false);
-}
-
-
-void PreviewWidget::toggleCrossCursor(bool toggle) {
-	if (toggle)
-		setCursor(Qt::CrossCursor);
-	else
-		unsetCursor();
 }
 
 

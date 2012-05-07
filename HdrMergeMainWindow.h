@@ -3,6 +3,7 @@
 
 #include <list>
 #include <QAction>
+#include <QActionGroup>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
@@ -18,45 +19,56 @@
 
 
 class MainWindow : public QMainWindow {
-	Q_OBJECT
+public:
+    MainWindow(QWidget * parent = 0, Qt::WindowFlags flags = 0);
 
-	QMutex mutex;
+    void changeEvent(QEvent * e);
 
-	QAction * loadImagesAction;
-	QAction * quitAction;
-	QAction * aboutAction;
-	QAction * mergeAction;
-
-	QMenu * fileMenu;
-	QMenu * helpMenu;
-
-	QWidget * centralwidget;
-	DraggableScrollArea * previewArea;
-	PreviewWidget * preview;
-	QTabWidget * imageTabs;
-	QStatusBar * statusbar;
-
-	ExposureStack * images;
-	RenderThread * rt;
-
-	QStringList preLoadFiles;
-
-	void createActions();
-	void createMenus();
+    /// Triggered when the window is first shown
+    void showEvent(QShowEvent * event);
+    /// Triggered when the window is closed, exit the application
+    void closeEvent(QCloseEvent * event);
+    /// Preloads a list of images
+    void preload(const std::list<char *> & fileNames);
 
 private slots:
-	void about();
-	void loadImages();
-	void loadImages(const QStringList & files);
-	void saveResult();
+    void about();
+    void loadImages();
+    void loadImages(const QStringList & files);
+    void saveResult();
+    void setTool(QAction * action);
 
-public:
-	MainWindow(QWidget * parent = 0, Qt::WindowFlags flags = 0);
+private:
+    void createGui();
+    void createActions();
+    void createMenus();
 
-	void changeEvent(QEvent * e);
-	void showEvent(QShowEvent * event);
-	void closeEvent(QCloseEvent * event);
-	void preload(const std::list<char *> & fileNames);
+    Q_OBJECT
+
+    QMutex mutex;
+
+    QAction * loadImagesAction;
+    QAction * quitAction;
+    QAction * aboutAction;
+    QAction * mergeAction;
+    QAction * dragToolAction;
+    QAction * addGhostAction;
+    QAction * rmGhostAction;
+    QActionGroup * toolActionGroup;
+
+    QMenu * fileMenu;
+    QMenu * helpMenu;
+
+    QWidget * centralwidget;
+    DraggableScrollArea * previewArea;
+    PreviewWidget * preview;
+    QTabWidget * imageTabs;
+    QStatusBar * statusbar;
+
+    ExposureStack * images;
+    RenderThread * rt;
+
+    QStringList preLoadFiles;
 };
 
 #endif // UI_HDRMERGEMAINWINDOW_H

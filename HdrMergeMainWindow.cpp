@@ -51,9 +51,9 @@ void MainWindow::createGui() {
     toolBar->setMovable(false);
     connect(toolBar, SIGNAL(actionTriggered(QAction*)), this, SLOT(setTool(QAction*)));
     // Add tools
-    dragToolAction = toolBar->addAction(QIcon::fromTheme("edit-undo"), tr("Drag and zoom tool"));
-    addGhostAction = toolBar->addAction(QIcon::fromTheme("edit-copy"), tr("Add pixels tool"));
-    rmGhostAction = toolBar->addAction(QIcon::fromTheme("edit-paste"), tr("Remove pixels tool"));
+    dragToolAction = toolBar->addAction(QIcon("images/transform_move.png"), tr("Drag and zoom"));
+    addGhostAction = toolBar->addAction(QIcon("images/ghost_white.png"), tr("Add pixels to the current exposure"));
+    rmGhostAction = toolBar->addAction(QIcon("images/ghost_black.png"), tr("Remove pixels from the current exposure"));
     dragToolAction->setCheckable(true);
     addGhostAction->setCheckable(true);
     rmGhostAction->setCheckable(true);

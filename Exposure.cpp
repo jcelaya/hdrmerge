@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdexcept>
 #include <string>
 #include <iostream>
@@ -5,7 +6,9 @@
 #include <algorithm>
 #include <tiff.h>
 #include <tiffio.h>
-#include <ImfRgbaFile.h>
+#ifdef HAVE_OPENEXR
+    #include <ImfRgbaFile.h>
+#endif
 #include <pfs-1.2/pfs.h>
 #include "Exposure.h"
 using namespace std;
@@ -169,6 +172,7 @@ void ExposureStack::setThreshold(int i, uint16_t th) {
 
 
 void ExposureStack::saveEXR(const char * filename) {
+#ifdef HAVE_OPENEXR
 /*
 	SharedArray< Imf::Rgba > pixels( rows * columns );
 
@@ -185,6 +189,7 @@ void ExposureStack::saveEXR(const char * filename) {
         file.setFrameBuffer( &pixels[ 0 ], 1, columns );
         file.writePixels( rows );
 */
+#endif
 }
 
 

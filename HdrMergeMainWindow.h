@@ -30,14 +30,15 @@ public:
     void closeEvent(QCloseEvent * event);
     /// Preloads a list of images
     void preload(const std::list<char *> & fileNames);
-
+    
 private slots:
     void about();
     void loadImages();
     void loadImages(const QStringList & files);
     void saveResult();
     void setTool(QAction * action);
-
+    void painted(int x, int y);
+    
 private:
     void createGui();
     void createActions();

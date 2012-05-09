@@ -13,6 +13,7 @@
 #include <QToolBar>
 #include <QCursor>
 #include "ImageControl.h"
+#include "config.h"
 #include <iostream>
 using namespace std;
 
@@ -41,6 +42,7 @@ void MainWindow::createGui() {
     preview = new PreviewWidget(previewArea);
     previewArea->setWidget(preview);
     connect(preview, SIGNAL(focus(int, int)), previewArea, SLOT(show(int, int)));
+    connect(previewArea, SIGNAL(drag(int, int)), this, SLOT(painted(int, int)));
 
     QWidget * toolArea = new QWidget(centralwidget);
     QHBoxLayout * toolLayout = new QHBoxLayout(toolArea);
@@ -52,8 +54,8 @@ void MainWindow::createGui() {
     connect(toolBar, SIGNAL(actionTriggered(QAction*)), this, SLOT(setTool(QAction*)));
     // Add tools
     dragToolAction = toolBar->addAction(QIcon("images/transform_move.png"), tr("Drag and zoom"));
-    addGhostAction = toolBar->addAction(QIcon("images/ghost_white.png"), tr("Add pixels to the current exposure"));
-    rmGhostAction = toolBar->addAction(QIcon("images/ghost_black.png"), tr("Remove pixels from the current exposure"));
+    addGhostAction = toolBar->addAction(QIcon("images/paintbrush.png"), tr("Add pixels to the current exposure"));
+    rmGhostAction = toolBar->addAction(QIcon("images/draw_eraser.png"), tr("Remove pixels from the current exposure"));
     dragToolAction->setCheckable(true);
     addGhostAction->setCheckable(true);
     rmGhostAction->setCheckable(true);
@@ -75,9 +77,9 @@ void MainWindow::createGui() {
     layout->addWidget(toolArea);
 
     //retranslateUi(HdrMergeMainWindow);
-    statusbar = new QStatusBar(this);
-    setStatusBar(statusbar);
-    setWindowTitle(tr("HDRMerge - High dynamic range image fussion"));
+    //statusbar = new QStatusBar(this);
+    //setStatusBar(statusbar);
+    setWindowTitle(tr("HDRMerge v%1.%2 - High dynamic range image fussion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
 }
 
 
@@ -287,5 +289,16 @@ void MainWindow::setTool(QAction * action) {
     } else if (action == rmGhostAction) {
         preview->setCursor(Qt::CrossCursor);
         previewArea->toggleMoveViewport(false);
+    }
+}
+
+
+void MainWindow::painted(int x, int y) {
+    // TODO: configure radius
+    if (rt != NULL) {
+        if (addGhostAction->isChecked())
+            rt->addPixels(imageTabs->currentIndex(), x, y, 3);
+        else
+            rt->removePixels(imageTabs->currentIndex(), x, y, 3);
     }
 }

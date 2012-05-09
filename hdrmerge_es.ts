@@ -15,10 +15,6 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <source>HDRMerge - High dynamic range image fussion</source>
-        <translation>HDRMerge - Fusión de imágenes para alto rango dinámico</translation>
-    </message>
-    <message>
         <source>&amp;Open exposures...</source>
         <translation>&amp;Abrir exposiciones...</translation>
     </message>
@@ -97,6 +93,22 @@
     <message>
         <source>Saving %1</source>
         <translation>Guardando %1</translation>
+    </message>
+    <message>
+        <source>Drag and zoom</source>
+        <translation>Mover y ampliar</translation>
+    </message>
+    <message>
+        <source>Add pixels to the current exposure</source>
+        <translation>Añadir pixels a la exposición actual</translation>
+    </message>
+    <message>
+        <source>Remove pixels from the current exposure</source>
+        <translation>Eliminar pixels de la exposición actual</translation>
+    </message>
+    <message>
+        <source>HDRMerge v%1.%2 - High dynamic range image fussion</source>
+        <translation>HDRMerge v%1.%2 - Fusión de imágenes para alto rango dinámico</translation>
     </message>
 </context>
 </TS>

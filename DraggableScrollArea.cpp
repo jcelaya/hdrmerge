@@ -15,7 +15,7 @@ void DraggableScrollArea::mousePressEvent(QMouseEvent * event) {
         lastScrollPos.setX(horizontalScrollBar()->value());
         lastScrollPos.setY(verticalScrollBar()->value());
     } else
-        emit drag(event->pos().x(), event->pos().y());
+        emit drag(widget()->mapFromParent(event->pos()).x(), widget()->mapFromParent(event->pos()).y());
 }
 
 
@@ -26,6 +26,6 @@ void DraggableScrollArea::mouseMoveEvent(QMouseEvent * event) {
         horizontalScrollBar()->setValue(lastScrollPos.x() - deltax);
         verticalScrollBar()->setValue(lastScrollPos.y() - deltay);
     } else
-        emit drag(event->pos().x(), event->pos().y());
+        emit drag(widget()->mapFromParent(event->pos()).x(), widget()->mapFromParent(event->pos()).y());
 }
 

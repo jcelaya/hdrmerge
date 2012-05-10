@@ -121,7 +121,8 @@ private:
 
     /// Create the scaled copies of an image, scale is 1/2 each step
     void scale(unsigned int i, unsigned int steps);
-    
+
+    void updateLValues(unsigned int i, unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 };
 
 

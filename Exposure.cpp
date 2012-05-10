@@ -232,14 +232,6 @@ void ExposureStack::Exposure::addPixel(int x, int y, int width) {
             scaledData[0][pos].l = l & Pixel::mask;
         }
     }
-    // Update scaled data
-//     for (unsigned int s = 1; s < scaledData.size(); ++s) {
-//         unsigned int newpos = (pos + x / (1 << (s-1))) / 4;
-//         if (scaledData[s][newpos].l < scaledData[s - 1][pos].l)
-//             scaledData[s][newpos].l = scaledData[s - 1][pos].l;
-//         else break;
-//         pos = newpos;
-//     }
 }
 
 
@@ -280,12 +272,42 @@ struct removeCircleOfPixels {
 
 
 void ExposureStack::addPixels(unsigned int i, int x, int y, int radius) {
-    fillCircle(x << currentScale, y << currentScale, radius << currentScale, addCircleOfPixels(imgs[i], width, height));
+    x <<= currentScale;
+    y <<= currentScale;
+    radius <<= currentScale;
+    fillCircle(x, y, radius, addCircleOfPixels(imgs[i], width, height));
+    updateLValues(i, x - radius, y - radius, 2*radius + 1, 2*radius + 1);
 }
 
 
 void ExposureStack::removePixels(unsigned int i, int x, int y, int radius) {
-    fillCircle(x << currentScale, y << currentScale, radius << currentScale, removeCircleOfPixels(imgs[i], width, height));
+    x <<= currentScale;
+    y <<= currentScale;
+    radius <<= currentScale;
+    fillCircle(x, y, radius, removeCircleOfPixels(imgs[i], width, height));
+    updateLValues(i, x - radius, y - radius, 2*radius + 1, 2*radius + 1);
+}
+
+
+void ExposureStack::updateLValues(unsigned int i, unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
+    Exposure & e = imgs[i];
+    unsigned int swidth = width;
+    for (unsigned int s = 1; s < e.scaledData.size(); s++) {
+        unsigned int width2 = swidth, x2 = x, y2 = y, w2 = w, h2 = h;
+        swidth >>= 1;
+        x >>= 1;
+        y >>= 1;
+        w >>= 1;
+        h >>= 1;
+        boost::shared_array<Pixel> r = e.scaledData[s], r2 = e.scaledData[s - 1];
+        for (unsigned int i = y, i2 = y2; i < y + h; i++, i2 += 2)
+            for (unsigned int j = x, j2 = x2; j < x + w; j++, j2 += 2) {
+                r[i*swidth + j].l = r2[i2*width2 + j2].l;
+                if (r[i*swidth + j].l < r2[i2*width2 + j2 + 1].l) r[i*swidth + j].l = r2[i2*width2 + j2 + 1].l;
+                if (r[i*swidth + j].l < r2[(i2 + 1)*width2 + j2].l) r[i*swidth + j].l = r2[(i2 + 1)*width2 + j2].l;
+                if (r[i*swidth + j].l < r2[(i2 + 1)*width2 + j2 + 1].l) r[i*swidth + j].l = r2[(i2 + 1)*width2 + j2 + 1].l;
+            }
+    }   
 }
 
 

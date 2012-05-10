@@ -1,5 +1,3 @@
-- Hacer el zooming más fluido, llevando el viewport donde debe estar
-- Corregir el balance de blancos, hace que algunos valores se pasen del máximo
-- Añadir el antighosting: quitar pixels de una capa
-- Añadir la opción de poner pixels en una capa
-
+- Hacer el repintado más fluido.
+- Añadir carga de ficheros RAW, con balance de blancos personalizado y alineación automática.
+- Incluir shortcuts para algunas operaciones.

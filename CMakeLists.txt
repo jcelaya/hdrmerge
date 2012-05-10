@@ -24,7 +24,7 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 # The version number.
 set (HDRMERGE_VERSION_MAJOR 0)
-set (HDRMERGE_VERSION_MINOR 1)
+set (HDRMERGE_VERSION_MINOR 2)
 
 # configure a header file to pass some of the CMake settings
 # to the source code

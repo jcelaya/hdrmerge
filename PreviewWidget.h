@@ -1,12 +1,13 @@
 #ifndef _PREVIEWWIDGET_H_
 #define _PREVIEWWIDGET_H_
 
-#include <QLabel>
+#include <QWidget>
 
 
-class PreviewWidget : public QLabel {
+class PreviewWidget : public QWidget {
 public:
     PreviewWidget(QWidget * parent);
+    QSize sizeHint() const;
 
 signals:
     void focus(int x, int y);
@@ -20,11 +21,13 @@ public slots:
 protected:
     void wheelEvent(QWheelEvent * event);
     void moveEvent(QMoveEvent * event);
+    void paintEvent(QPaintEvent * event);
         
 private:
     Q_OBJECT
     
     int currentScale, newScale;
+    QPixmap * pixmap;
 };
 
 

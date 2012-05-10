@@ -64,6 +64,7 @@ void MainWindow::createGui() {
     toolActionGroup->addAction(addGhostAction);
     toolActionGroup->addAction(rmGhostAction);
     dragToolAction->setChecked(true);
+    preview->setCursor(Qt::OpenHandCursor);
     toolLayout->addWidget(toolBar);
     
     imageTabs = new QTabWidget(toolArea);

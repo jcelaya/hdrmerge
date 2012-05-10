@@ -4,42 +4,57 @@
 #include <QPainter>
 
 
-PreviewWidget::PreviewWidget(QWidget * parent) : QLabel(parent), currentScale(0), newScale(0) {
+PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent), currentScale(0), newScale(0), pixmap(NULL) {
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    setScaledContents(false);
+}
+
+
+QSize PreviewWidget::sizeHint() const {
+    return pixmap ? pixmap->size() : QSize(0, 0);
 }
 
 
 void PreviewWidget::paintImage(unsigned int x, unsigned int y,
     unsigned int width, unsigned int height, const QImage & image) {
-    if (!pixmap()) {
-        setPixmap(QPixmap::fromImage(image));
-        resize(pixmap()->size());
+    if (!pixmap) {
+        pixmap = new QPixmap(QPixmap::fromImage(image));
+        resize(pixmap->size());
     } else {
-        QPixmap pix(width, height);
-        pix.fill();
-        QPainter painter(&pix);
+        unsigned int currentWidth = pixmap->width();
+        if (currentWidth != width) {
+            pixmap = new QPixmap(width, height);
+            pixmap->fill();
+        }
+            
+        QPainter painter(pixmap);
         painter.drawImage(x, y, image);
-        setPixmap(pix);
-        unsigned int currentWidth = this->width();
-        resize(pixmap()->size());
-        if (width != currentWidth) {
+
+        if (currentWidth != width) {
+            // If scale changed, move to new viewport
+            resize(pixmap->size());
             for (; currentScale > 0 && currentWidth < width; currentWidth <<= 1) currentScale--;
             for (; currentWidth > width; currentWidth >>= 1) currentScale++;
-            // If scale changed, move to new viewport
             emit focus(x, y);
         }
     }
-    update();
+    update(x, y, image.width(), image.height());
+}
+
+
+void PreviewWidget::paintEvent(QPaintEvent * event) {
+    if (pixmap) {
+        QPainter painter(this);
+        painter.drawPixmap(0, 0, *pixmap);
+    }
 }
 
 
 void PreviewWidget::zoom(int steps) {
     if (steps == 0) return;
     // Positive steps is zoom in, negative is zoom out, the reverse of scale... so pay attention
-    if (pixmap()) {
+    if (pixmap) {
         // Zoom steps
-        int minWidth = pixmap()->width(), minHeight = pixmap()->height();
+        int minWidth = pixmap->width(), minHeight = pixmap->height();
         int minSteps = 0;
         while (minWidth > parentWidget()->width() || minHeight > parentWidget()->height()) {
             minWidth >>= 1;
@@ -54,7 +69,7 @@ void PreviewWidget::zoom(int steps) {
 
         // Compute new viewport
         QPoint currentMin = mapFromParent(QPoint(0, 0));
-        int imageWidth = steps < 0 ? pixmap()->width() >> -steps : pixmap()->width() << steps;
+        int imageWidth = steps < 0 ? pixmap->width() >> -steps : pixmap->width() << steps;
         int newminx, w = parentWidget()->width(), halfw = w >> 1;
         if (w > imageWidth) {
             newminx = 0;
@@ -65,7 +80,7 @@ void PreviewWidget::zoom(int steps) {
             if (newminx + w > imageWidth)
                 newminx = imageWidth - w;
         }
-        int imageHeight = steps < 0 ? pixmap()->height() >> -steps : pixmap()->height() << steps;
+        int imageHeight = steps < 0 ? pixmap->height() >> -steps : pixmap->height() << steps;
         int newminy, h = parentWidget()->height(), halfh = h >> 1;
         if (h > imageHeight) {
             newminy = 0;

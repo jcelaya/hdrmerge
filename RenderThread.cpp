@@ -64,26 +64,28 @@ void RenderThread::setImageViewport(int x, int y, int w, int h, int newScale) {
 void RenderThread::addPixels(int i, int x, int y, int radius) {
     mutex.lock();
     images->addPixels(i, x, y, radius);
-    restart = true;
+    QImage a(2*radius + 1, 2*radius + 1, QImage::Format_RGB32);
+    doRender(x - radius, y - radius, x + radius + 1, y + radius + 1, a, true);
+    emit renderedImage(x - radius, y - radius, images->getWidth(), images->getHeight(), a);
     mutex.unlock();
-    condition.wakeOne();
 }
 
 
 void RenderThread::removePixels(int i, int x, int y, int radius) {
     mutex.lock();
     images->removePixels(i, x, y, radius);
-    restart = true;
+    QImage a(2*radius + 1, 2*radius + 1, QImage::Format_RGB32);
+    doRender(x - radius, y - radius, x + radius + 1, y + radius + 1, a, true);
+    emit renderedImage(x - radius, y - radius, images->getWidth(), images->getHeight(), a);
     mutex.unlock();
-    condition.wakeOne();
 }
 
 
-void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image) {
+void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image, bool ignoreRestart) {
     QTime t;
     t.start();
     // Iterate through pixels
-    for (unsigned int row = miny; !restart && row < maxy; row++) {
+    for (unsigned int row = miny; (!restart || ignoreRestart) && row < maxy; row++) {
         if (abort) return;
 
         QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - miny));
@@ -107,9 +109,10 @@ void RenderThread::run() {
     forever {
         if (abort) return;
 
-        QImage a(_maxx - _minx, _maxy - _miny, QImage::Format_RGB32);
-        doRender(_minx, _miny, _maxx, _maxy, a);
-        if (!restart && _maxy > 0) {
+        if (_maxy > 0) {
+        //if (!restart && _maxy > 0) {
+            QImage a(_maxx - _minx, _maxy - _miny, QImage::Format_RGB32);
+            doRender(_minx, _miny, _maxx, _maxy, a, true);
             emit renderedImage(_minx, _miny, images->getWidth(), images->getHeight(), a);
             yieldCurrentThread();
         }

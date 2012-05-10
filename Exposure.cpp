@@ -155,7 +155,7 @@ void ExposureStack::setScale(unsigned int i) {
 void ExposureStack::setRelativeExposure(unsigned int i, double re) {
     imgs[i].immExp = re;
     // Recalculate relExp
-    for (unsigned int j = i; j >= 0; --j) {
+    for (int j = i; j >= 0; --j) {
         imgs[j].relExp = imgs[j + 1].relExp * imgs[j].immExp;
     }
 }

@@ -20,7 +20,7 @@ class RenderThread : public QThread {
     int gamma[65536];
     int scale;
 
-    void doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image);
+    void doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image, bool ignoreRestart = false);
 
 protected:
     void run();

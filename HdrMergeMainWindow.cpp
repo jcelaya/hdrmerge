@@ -12,6 +12,9 @@
 #include <QSettings>
 #include <QToolBar>
 #include <QCursor>
+#include <QPainter>
+#include <QPen>
+#include <QBitmap>
 #include "ImageControl.h"
 #include "config.h"
 #include <iostream>
@@ -285,10 +288,29 @@ void MainWindow::setTool(QAction * action) {
         preview->setCursor(Qt::OpenHandCursor);
         previewArea->toggleMoveViewport(true);
     } else if (action == addGhostAction) {
-        preview->setCursor(Qt::CrossCursor);
+        QPixmap cursor(32, 32);
+        cursor.fill(Qt::white);
+        {
+            QPainter painter(&cursor);
+            painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            painter.drawEllipse(16 - 5, 16 - 5, 5*2, 5*2);
+            painter.drawLine(14, 16, 18, 16);
+            painter.drawLine(16, 14, 16, 18);
+        }
+        cursor.setMask(cursor.createMaskFromColor(Qt::white));
+        preview->setCursor(QCursor(cursor, 16, 16));
         previewArea->toggleMoveViewport(false);
     } else if (action == rmGhostAction) {
-        preview->setCursor(Qt::CrossCursor);
+        QPixmap cursor(32, 32);
+        cursor.fill(Qt::white);
+        {
+            QPainter painter(&cursor);
+            painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            painter.drawEllipse(16 - 5, 16 - 5, 5*2, 5*2);
+            painter.drawLine(14, 16, 18, 16);
+        }
+        cursor.setMask(cursor.createMaskFromColor(Qt::white));
+        preview->setCursor(QCursor(cursor, 16, 16));
         previewArea->toggleMoveViewport(false);
     }
 }
@@ -298,8 +320,8 @@ void MainWindow::painted(int x, int y) {
     // TODO: configure radius
     if (rt != NULL) {
         if (addGhostAction->isChecked())
-            rt->addPixels(imageTabs->currentIndex(), x, y, 3);
+            rt->addPixels(imageTabs->currentIndex(), x, y, 5);
         else
-            rt->removePixels(imageTabs->currentIndex(), x, y, 3);
+            rt->removePixels(imageTabs->currentIndex(), x, y, 5);
     }
 }

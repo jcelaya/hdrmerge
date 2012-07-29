@@ -23,7 +23,7 @@ int main(int argc, char * argv[]) {
 	app.installTranslator(&qtTranslator);
  
 	QTranslator appTranslator;
-	appTranslator.load("hdrmerge_" + QLocale::system().name());
+        appTranslator.load("hdrmerge_" + QLocale::system().name());
 	app.installTranslator(&appTranslator);
 
 	// Parse the list of images in command line

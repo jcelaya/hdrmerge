@@ -39,17 +39,27 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 # Sources and headers
 set(hdrmerge_sources main.cpp HdrMergeMainWindow.cpp Exposure.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp)
-set(hdrmerge_qobject_headers HdrMergeMainWindow.h RenderThread.h ImageControl.h PreviewWidget.h DraggableScrollArea.h)
+set(hdrmerge_qobject_headers HdrMergeMainWindow.h RenderThread.h ImageControl.h PreviewWidget.h DraggableScrollArea.h AboutDialog.h)
 set(hdrmerge_translations hdrmerge_en.ts hdrmerge_es.ts)
 
 # Qt4 intermediate files
 QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})
 QT4_ADD_TRANSLATION(hdrmerge_qm ${hdrmerge_translations})
+# Generate the XML version of hdrmerge_qm
+foreach(file ${hdrmerge_qm})
+    set(HDRMERGE_QM_XML "${HDRMERGE_QM_XML}
+        <file>${file}</file>")
+endforeach(file)
+configure_file (
+    "${PROJECT_SOURCE_DIR}/translations.qrc.in"
+    "${PROJECT_BINARY_DIR}/translations.qrc"
+)
+QT4_ADD_RESOURCES(hdrmerge_rsrc ${PROJECT_BINARY_DIR}/translations.qrc resources.qrc)
 
-add_executable(hdrmerge ${hdrmerge_sources} ${hdrmerge_moc} ${hdrmerge_qm})
+add_executable(hdrmerge ${hdrmerge_sources} ${hdrmerge_moc} ${hdrmerge_rsrc})
 
 # Link with qt4, libtiff and libpfs-1.2
 # TODO: find them at build time
 target_link_libraries(hdrmerge ${QT_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} pfs-1.2)
 
-install(DIRECTORY images DESTINATION ${PROJECT_BINARY_DIR})
+install(TARGETS hdrmerge RUNTIME DESTINATION bin)

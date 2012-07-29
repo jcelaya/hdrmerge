@@ -42,9 +42,20 @@ public:
 
     ExposureStack() : width(0), height(0), currentScale(0) {}
     
-    /// Load an image into the stack
-    /// Create an exposure from a linear 16 bit TIFF file
-    void loadImage(const char * fileName);
+    enum LoadResult {
+        LOAD_SUCCESS = 0,
+        LOAD_OPEN_FAIL = 1,
+        LOAD_PARAM_FAIL = 2,
+        LOAD_FORMAT_FAIL = 3,
+    };
+    
+    /**
+     * Load an image into the stack
+     * Create an exposure from a linear 16 bit TIFF file
+     * On error, no image is loaded.
+     * @return Error code, or 0 if success.
+     */
+    LoadResult loadImage(const char * fileName);
     
     /// Sort images and calculate relative exposure
     void sort();

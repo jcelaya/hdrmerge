@@ -31,6 +31,10 @@ public:
     /// Preloads a list of images
     void preload(const std::list<char *> & fileNames);
     
+protected:
+    void keyPressEvent(QKeyEvent * event);
+    void keyReleaseEvent(QKeyEvent * event);
+
 private slots:
     void about();
     void loadImages();
@@ -70,6 +74,7 @@ private:
     RenderThread * rt;
 
     QStringList preLoadFiles;
+    bool shiftPressed, controlPressed;
 };
 
 #endif // UI_HDRMERGEMAINWINDOW_H

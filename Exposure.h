@@ -1,3 +1,25 @@
+/*
+ *  HDRMerge - HDR exposure merging software.
+ *  Copyright 2012 Javier Celaya
+ *  jcelaya@gmail.com
+ *
+ *  This file is part of HDRMerge.
+ *
+ *  HDRMerge is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  HDRMerge is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with HDRMerge. If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #ifndef _EXPOSURE_H_
 #define _EXPOSURE_H_
 
@@ -42,9 +64,20 @@ public:
 
     ExposureStack() : width(0), height(0), currentScale(0) {}
     
-    /// Load an image into the stack
-    /// Create an exposure from a linear 16 bit TIFF file
-    void loadImage(const char * fileName);
+    enum LoadResult {
+        LOAD_SUCCESS = 0,
+        LOAD_OPEN_FAIL = 1,
+        LOAD_PARAM_FAIL = 2,
+        LOAD_FORMAT_FAIL = 3,
+    };
+    
+    /**
+     * Load an image into the stack
+     * Create an exposure from a linear 16 bit TIFF file
+     * On error, no image is loaded.
+     * @return Error code, or 0 if success.
+     */
+    LoadResult loadImage(const char * fileName);
     
     /// Sort images and calculate relative exposure
     void sort();

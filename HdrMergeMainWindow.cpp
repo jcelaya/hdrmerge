@@ -1,4 +1,28 @@
+/*
+ *  HDRMerge - HDR exposure merging software.
+ *  Copyright 2012 Javier Celaya
+ *  jcelaya@gmail.com
+ *
+ *  This file is part of HDRMerge.
+ *
+ *  HDRMerge is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  HDRMerge is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with HDRMerge. If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include <list>
+#include <iostream>
+#include <boost/concept_check.hpp>
 #include "HdrMergeMainWindow.h"
 #include <QApplication>
 #include <QFuture>
@@ -15,14 +39,15 @@
 #include <QPainter>
 #include <QPen>
 #include <QBitmap>
+#include <QKeyEvent>
 #include "ImageControl.h"
+#include "AboutDialog.h"
 #include "config.h"
-#include <iostream>
 using namespace std;
 
 
 MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags), images(NULL), rt(NULL) {
+    : QMainWindow(parent, flags), images(NULL), rt(NULL), shiftPressed(false), controlPressed(false) {
     createGui();
     createActions();
     createMenus();
@@ -51,14 +76,15 @@ void MainWindow::createGui() {
     QHBoxLayout * toolLayout = new QHBoxLayout(toolArea);
     
     QToolBar * toolBar = new QToolBar(toolArea);
-    toolBar->setOrientation(Qt::Vertical);
+    toolBar->setOrientation(Qt::Horizontal);
     toolBar->setFloatable(false);
     toolBar->setMovable(false);
     connect(toolBar, SIGNAL(actionTriggered(QAction*)), this, SLOT(setTool(QAction*)));
     // Add tools
-    dragToolAction = toolBar->addAction(QIcon("images/transform_move.png"), tr("Drag and zoom"));
-    addGhostAction = toolBar->addAction(QIcon("images/paintbrush.png"), tr("Add pixels to the current exposure"));
-    rmGhostAction = toolBar->addAction(QIcon("images/draw_eraser.png"), tr("Remove pixels from the current exposure"));
+    // TODO: load default icons from KDE
+    dragToolAction = toolBar->addAction(QIcon::fromTheme("transform-move", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png")), tr("Drag and zoom"));
+    addGhostAction = toolBar->addAction(QIcon::fromTheme("draw-brush", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png")), tr("Add pixels to the current exposure"));
+    rmGhostAction = toolBar->addAction(QIcon::fromTheme("draw-eraser", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-eraser.png")), tr("Remove pixels from the current exposure"));
     dragToolAction->setCheckable(true);
     addGhostAction->setCheckable(true);
     rmGhostAction->setCheckable(true);
@@ -84,6 +110,7 @@ void MainWindow::createGui() {
     //statusbar = new QStatusBar(this);
     //setStatusBar(statusbar);
     setWindowTitle(tr("HDRMerge v%1.%2 - High dynamic range image fussion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
+    setWindowIcon(QIcon(":/images/logo.png"));
 }
 
 
@@ -159,14 +186,14 @@ void MainWindow::changeEvent(QEvent * e) {
 
 
 void MainWindow::about() {
-    QMessageBox::about(this, tr("About HDRMerge"),
-        tr("<p><b>HDR Merge tool</b></p>"));
+    AboutDialog dialog(this);
+    dialog.exec();
 }
 
 
 void MainWindow::preload(const list<char *> & fileNames) {
     for (list<char *>::const_iterator it = fileNames.begin(); it != fileNames.end(); ++it)
-        preLoadFiles << QString(*it);
+        preLoadFiles << QString::fromLocal8Bit(*it);
 }
 
 
@@ -197,29 +224,38 @@ void MainWindow::loadImages() {
 void MainWindow::loadImages(const QStringList & files) {
     if (!files.empty()) {
         unsigned int numImages = files.size();
-        // Clean previous state
-        while (imageTabs->count() > 0) {
-            delete imageTabs->widget(0);
-            imageTabs->removeTab(0);
-        }
-        if (rt != NULL)
-            delete rt;
 
         // Load and sort images
-        images = new ExposureStack();
-        QFuture<void> result;
+        ExposureStack * img = new ExposureStack();
         QProgressDialog progress(tr("Loading files..."), QString(), 0, numImages + 2, this);
         progress.setMinimumDuration(0);
         for (unsigned int i = 0; i < numImages; i++) {
             progress.setValue(i);
-            QByteArray fileName = QDir::toNativeSeparators(files[i]).toUtf8();
-            result = QtConcurrent::run(images, &ExposureStack::loadImage, fileName.constData());
+            QByteArray fileName = QDir::toNativeSeparators(files[i]).toLocal8Bit();//toUtf8();
+            QFuture<ExposureStack::LoadResult> result = QtConcurrent::run(img, &ExposureStack::loadImage, fileName.constData());
             while (result.isRunning())
                 QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+            // Check for error
+            if (result.result() != ExposureStack::LOAD_SUCCESS) {
+                switch (result.result()) {
+                    case ExposureStack::LOAD_OPEN_FAIL:
+                        QMessageBox::warning(this, tr("Error opening file"), tr("Unable to open file %1.").arg(files[i]));
+                        break;
+                    case ExposureStack::LOAD_PARAM_FAIL:
+                        QMessageBox::warning(this, tr("Error reading file"), tr("Unable to read parameters of file %1.").arg(files[i]));
+                        break;
+                    case ExposureStack::LOAD_FORMAT_FAIL:
+                        QMessageBox::warning(this, tr("Error in file format"), tr("Incorrect format of file %1. All images must have the same size, with 16-bit linear channels.").arg(files[i]));
+                        break;
+                }
+                delete img;
+                return;
+            }
         }
         progress.setValue(numImages);
         progress.setLabelText(tr("Sorting..."));
-        result = QtConcurrent::run(images, &ExposureStack::sort);
+        images = img;
+        QFuture<void> result = QtConcurrent::run(images, &ExposureStack::sort);
         while (result.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         progress.setValue(numImages + 1);
@@ -228,6 +264,14 @@ void MainWindow::loadImages(const QStringList & files) {
         while (result.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         progress.setValue(numImages + 2);
+
+        // Clean previous state
+        while (imageTabs->count() > 0) {
+            delete imageTabs->widget(0);
+            imageTabs->removeTab(0);
+        }
+        if (rt != NULL)
+            delete rt;
 
         // Render
         preview->resetScale();
@@ -324,4 +368,28 @@ void MainWindow::painted(int x, int y) {
         else
             rt->removePixels(imageTabs->currentIndex(), x, y, 5);
     }
+}
+
+
+void MainWindow::keyPressEvent(QKeyEvent * event) {
+    if (event->key() == Qt::Key_Shift)
+        shiftPressed = true;
+    else if (event->key() == Qt::Key_Control)
+        controlPressed = true;
+    else QMainWindow::keyPressEvent(event);
+    if (shiftPressed) addGhostAction->trigger();
+    else if (controlPressed) rmGhostAction->trigger();
+    else dragToolAction->trigger();
+}
+
+
+void MainWindow::keyReleaseEvent(QKeyEvent * event) {
+    if (event->key() == Qt::Key_Shift)
+        shiftPressed = false;
+    else if (event->key() == Qt::Key_Control)
+        controlPressed = false;
+    else QMainWindow::keyReleaseEvent(event);
+    if (shiftPressed) addGhostAction->trigger();
+    else if (controlPressed) rmGhostAction->trigger();
+    else dragToolAction->trigger();
 }

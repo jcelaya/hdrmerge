@@ -5,110 +5,134 @@
     <name>ImageControl</name>
     <message>
         <source>Relative EV</source>
-        <translation>EV relativo</translation>
+        <translation type="finished">EV relativo</translation>
     </message>
     <message>
         <source>Threshold</source>
-        <translation>Umbral</translation>
+        <translation type="finished">Umbral</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
         <source>&amp;Open exposures...</source>
-        <translation>&amp;Abrir exposiciones...</translation>
+        <translation type="finished">&amp;Abrir exposiciones...</translation>
     </message>
     <message>
         <source>Ctrl+O</source>
-        <translation>Ctrl+A</translation>
+        <translation type="finished">Ctrl+A</translation>
     </message>
     <message>
         <source>&amp;Quit</source>
-        <translation>&amp;Salir</translation>
+        <translation type="finished">&amp;Salir</translation>
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation>Ctrl+Q</translation>
+        <translation type="finished">Ctrl+Q</translation>
     </message>
     <message>
         <source>&amp;About...</source>
-        <translation>&amp;Acerca de...</translation>
+        <translation type="finished">&amp;Acerca de...</translation>
     </message>
     <message>
         <source>&amp;Save HDR...</source>
-        <translation>&amp;Guardar HDR...</translation>
+        <translation type="finished">&amp;Guardar HDR...</translation>
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation>Ctrl+G</translation>
+        <translation type="finished">Ctrl+G</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation>&amp;Archivo</translation>
+        <translation type="finished">&amp;Archivo</translation>
     </message>
     <message>
         <source>&amp;Help</source>
-        <translation>Ay&amp;uda</translation>
+        <translation type="finished">Ay&amp;uda</translation>
     </message>
     <message>
         <source>About HDRMerge</source>
-        <translation>Acerca de HDRMerge</translation>
+        <translation type="finished">Acerca de HDRMerge</translation>
     </message>
     <message>
         <source>&lt;p&gt;&lt;b&gt;HDR Merge tool&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;Herramienta de fusión HDR&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;&lt;b&gt;Herramienta de fusión HDR&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Open exposures</source>
-        <translation>Abrir exposiciones</translation>
+        <translation type="finished">Abrir exposiciones</translation>
     </message>
     <message>
         <source>Linear TIFF images (*.tif *.tiff)</source>
-        <translation>Imágenes TIFF lineales (*.tiff *.tiff)</translation>
+        <translation type="finished">Imágenes TIFF lineales (*.tiff *.tiff)</translation>
     </message>
     <message>
         <source>Loading files...</source>
-        <translation>Cargando ficheros...</translation>
+        <translation type="finished">Cargando ficheros...</translation>
     </message>
     <message>
         <source>Sorting...</source>
-        <translation>Ordenando...</translation>
+        <translation type="finished">Ordenando...</translation>
     </message>
     <message>
         <source>Prescaling...</source>
-        <translation>Preescalado...</translation>
+        <translation type="finished">Preescalado...</translation>
     </message>
     <message>
         <source>Exposure %1</source>
-        <translation>Exposición %1</translation>
+        <translation type="finished">Exposición %1</translation>
     </message>
     <message>
         <source>Save PFS file</source>
-        <translation>Guardar fichero PFS</translation>
+        <translation type="finished">Guardar fichero PFS</translation>
     </message>
     <message>
         <source>PFS stream files (*.pfs)</source>
-        <translation>Ficheros de flujo PFS (*.pfs)</translation>
+        <translation type="finished">Ficheros de flujo PFS (*.pfs)</translation>
     </message>
     <message>
         <source>Saving %1</source>
-        <translation>Guardando %1</translation>
+        <translation type="finished">Guardando %1</translation>
     </message>
     <message>
         <source>Drag and zoom</source>
-        <translation>Mover y ampliar</translation>
+        <translation type="finished">Mover y ampliar</translation>
     </message>
     <message>
         <source>Add pixels to the current exposure</source>
-        <translation>Añadir pixels a la exposición actual</translation>
+        <translation type="finished">Añadir pixels a la exposición actual</translation>
     </message>
     <message>
         <source>Remove pixels from the current exposure</source>
-        <translation>Eliminar pixels de la exposición actual</translation>
+        <translation type="finished">Eliminar pixels de la exposición actual</translation>
     </message>
     <message>
         <source>HDRMerge v%1.%2 - High dynamic range image fussion</source>
-        <translation>HDRMerge v%1.%2 - Fusión de imágenes para alto rango dinámico</translation>
+        <translation type="finished">HDRMerge v%1.%2 - Fusión de imágenes para alto rango dinámico</translation>
+    </message>
+    <message>
+        <source>Error opening file</source>
+        <translation type="finished">Error al abrir el fichero</translation>
+    </message>
+    <message>
+        <source>Unable to open file %1.</source>
+        <translation type="finished">No se pudo abrir el fichero %1.</translation>
+    </message>
+    <message>
+        <source>Error reading file</source>
+        <translation type="finished">Error al leer el fichero</translation>
+    </message>
+    <message>
+        <source>Unable to read parameters of file %1.</source>
+        <translation type="finished">No fue posible leer los parámetros del fichero %1.</translation>
+    </message>
+    <message>
+        <source>Error in file format</source>
+        <translation type="unfinished">Error de formato en el fichero</translation>
+    </message>
+    <message>
+        <source>Incorrect format of file %1. All images must have the same size, with 16-bit linear channels.</source>
+        <translation type="unfinished">Formato incorrecto en el fichero %1. Todas las imágenes deben tener el mismo tamaño, con canales de color lineal y 16 bits.</translation>
     </message>
 </context>
 </TS>

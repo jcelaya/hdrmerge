@@ -1,3 +1,25 @@
+/*
+ *  HDRMerge - HDR exposure merging software.
+ *  Copyright 2012 Javier Celaya
+ *  jcelaya@gmail.com
+ *
+ *  This file is part of HDRMerge.
+ *
+ *  HDRMerge is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  HDRMerge is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with HDRMerge. If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include <stdexcept>
 #include <string>
 #include <iostream>
@@ -13,32 +35,30 @@
 using namespace std;
 
 
-void ExposureStack::loadImage(const char * fileName) {
-    imgs.push_back(Exposure(fileName));
-    Exposure & e = imgs.back();
+ExposureStack::LoadResult ExposureStack::loadImage(const char * fileName) {
+    Exposure e(fileName);
     
-    // TODO: is it necessary to throw?
-    TIFF* file = TIFFOpen(e.filename.c_str(), "r");
+    TIFF* file = TIFFOpen(fileName, "r");
     if (file == NULL)
-        throw std::runtime_error("unable to open image file");
+        return LOAD_OPEN_FAIL;
     
     unsigned int w, h;
     if (!TIFFGetField(file, TIFFTAG_IMAGELENGTH, &h))
-        throw std::runtime_error( "unable to read rows" );
+        return LOAD_PARAM_FAIL;
     if (!TIFFGetField(file, TIFFTAG_IMAGEWIDTH, &w))
-        throw std::runtime_error( "unable to read columns" );
-    if (width != 0 && (width != w || height != h))
-        throw std::runtime_error( "images must be same size" );
-    else {
+        return LOAD_PARAM_FAIL;
+    if (width != 0 && (width != w || height != h)) {
+        return LOAD_FORMAT_FAIL;
+    } else {
         width = w;
         height = h;
     }
     
     unsigned int bits = 0;;
     if (!TIFFGetField(file, TIFFTAG_BITSPERSAMPLE, &bits))
-        throw std::runtime_error( "unable to read bits" );
+        return LOAD_PARAM_FAIL;
     if (bits != 16)
-        throw std::runtime_error( "expected 16-bit linear color channels" );
+        return LOAD_FORMAT_FAIL;
     
     unsigned int bytes = TIFFScanlineSize(file);
     
@@ -74,8 +94,12 @@ void ExposureStack::loadImage(const char * fileName) {
     e.bn /= size;
     cerr << "  Brightness " << e.bn << endl;
     
+    imgs.push_back(e);
+
     _TIFFfree(buffer);
     TIFFClose(file);
+    
+    return LOAD_SUCCESS;
 }
 
 

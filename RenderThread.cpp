@@ -23,7 +23,6 @@
 #include <cmath>
 #include "RenderThread.h"
 #include <QTime>
-#include <QDebug>
 
 
 RenderThread::RenderThread(ExposureStack * es, float gamma, QObject * parent)
@@ -115,14 +114,10 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
             double rr, gg, bb;
             images->rgb(col, row, rr, gg, bb);
             int r = (int)rr, g = (int)gg, b = (int)bb;
-            if (r >= 65536 || r < 0) qDebug() << "RValue " << r << " out of range at " << col << "x" << row;
-            if (g >= 65536 || g < 0) qDebug() << "GValue " << g << " out of range at " << col << "x" << row;
-            if (b >= 65536 || b < 0) qDebug() << "BValue " << b << " out of range at " << col << "x" << row;
             // Apply gamma correction
             *scanLine++ = qRgb(gamma[r], gamma[g], gamma[b]);
         }
     }
-    qDebug() << "Render time " << t.elapsed() << " ms at " << QTime::currentTime().toString("hh:mm:ss.zzz").toUtf8().constData();
 }
 
 

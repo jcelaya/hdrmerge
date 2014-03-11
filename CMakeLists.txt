@@ -18,9 +18,11 @@ find_package(OpenEXR)
 if (OPENEXR_FOUND)
     set(HAVE_OPENEXR 1)
     include_directories(${OPENEXR_INCLUDE_PATHS})
-endif()
+endif(OPENEXR_FOUND)
 
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif(NOT CMAKE_BUILD_TYPE)
 
 # The version number.
 set (HDRMERGE_VERSION_MAJOR 0)

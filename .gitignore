@@ -2,3 +2,6 @@ Makefile
 *.o
 *~
 moc_*
+build
+samples
+

@@ -27,7 +27,7 @@
 #include <algorithm>
 #include <tiff.h>
 #include <tiffio.h>
-#include "Exposure.h"
+#include "Exposure.hpp"
 #ifdef HAVE_OPENEXR
     #include <ImfRgbaFile.h>
 #endif
@@ -37,11 +37,11 @@ using namespace std;
 
 ExposureStack::LoadResult ExposureStack::loadImage(const char * fileName) {
     Exposure e(fileName);
-    
+
     TIFF* file = TIFFOpen(fileName, "r");
     if (file == NULL)
         return LOAD_OPEN_FAIL;
-    
+
     unsigned int w, h;
     if (!TIFFGetField(file, TIFFTAG_IMAGELENGTH, &h))
         return LOAD_PARAM_FAIL;
@@ -53,23 +53,23 @@ ExposureStack::LoadResult ExposureStack::loadImage(const char * fileName) {
         width = w;
         height = h;
     }
-    
+
     unsigned int bits = 0;;
     if (!TIFFGetField(file, TIFFTAG_BITSPERSAMPLE, &bits))
         return LOAD_PARAM_FAIL;
     if (bits != 16)
         return LOAD_FORMAT_FAIL;
-    
+
     unsigned int bytes = TIFFScanlineSize(file);
-    
+
     unsigned int size = height * width;
     e.p.reset(new Pixel[size]);
     e.scaledData.push_back(e.p);
     cerr << "Loaded image " << e.filename << ", with" << (bytes < width * 8 ? "out" : "") << " alpha channel, "
         << width << 'x' << height << ", "
         << (size * sizeof(Pixel)) << " bytes allocated" << endl;
-    
-    
+
+
     tdata_t buffer = _TIFFmalloc(bytes);
     Pixel * pix = e.p.get();
     for (unsigned int row = 0; row < height; ++row) {
@@ -93,12 +93,12 @@ ExposureStack::LoadResult ExposureStack::loadImage(const char * fileName) {
     }
     e.bn /= size;
     cerr << "  Brightness " << e.bn << endl;
-    
+
     imgs.push_back(e);
 
     _TIFFfree(buffer);
     TIFFClose(file);
-    
+
     return LOAD_SUCCESS;
 }
 
@@ -197,7 +197,7 @@ void fillCircle(int x0, int y0, int radius, const PixelOp & op) {
     int ddF_y = -2 * radius;
     int x = 0;
     int y = radius;
-    
+
     // Line from (x0, y0 + radius) to (x0, y0 - radius)
     for (int i = y0 - radius; i <= y0 + radius; ++i)
         op(x0, i);
@@ -205,7 +205,7 @@ void fillCircle(int x0, int y0, int radius, const PixelOp & op) {
     op(x0 - radius, y0);
     x++;
     ddF_x += 2;
-    
+
     while(x < y)
     {
         // ddF_x == 2 * x + 1;
@@ -331,7 +331,7 @@ void ExposureStack::updateLValues(unsigned int i, unsigned int x, unsigned int y
                 if (r[i*swidth + j].l < r2[(i2 + 1)*width2 + j2].l) r[i*swidth + j].l = r2[(i2 + 1)*width2 + j2].l;
                 if (r[i*swidth + j].l < r2[(i2 + 1)*width2 + j2 + 1].l) r[i*swidth + j].l = r2[(i2 + 1)*width2 + j2 + 1].l;
             }
-    }   
+    }
 }
 
 

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.6)
 
 project(hdrmerge)
 
+set (CMAKE_CXX_FLAGS -std=c++11)
+
 # Required and optional packages
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 # Qt4
@@ -40,8 +42,8 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
 
 # Sources and headers
-set(hdrmerge_sources main.cpp HdrMergeMainWindow.cpp Exposure.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp)
-set(hdrmerge_qobject_headers HdrMergeMainWindow.h RenderThread.h ImageControl.h PreviewWidget.h DraggableScrollArea.h AboutDialog.h)
+set(hdrmerge_sources main.cpp gui.cpp MainWindow.cpp Exposure.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp)
+set(hdrmerge_qobject_headers MainWindow.hpp RenderThread.hpp ImageControl.hpp PreviewWidget.hpp DraggableScrollArea.hpp AboutDialog.hpp)
 set(hdrmerge_translations hdrmerge_en.ts hdrmerge_es.ts)
 
 # Qt4 intermediate files

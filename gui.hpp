@@ -21,33 +21,14 @@
  */
 
 #include <list>
-#include <string>
-#include "gui.hpp"
-#include "Exposure.hpp"
+#include <QApplication>
 
-int main(int argc, char * argv[]) {
-    hdrmerge::GUI app(argc, argv);
+namespace hdrmerge {
 
-    // Parse the list of images in command line
-    std::list<char *> inFileNames;
-    char * outFileName = NULL;
-    for (int i = 1; i < argc; ++i) {
-        if (std::string("-o") == argv[i]) {
-            if (++i < argc)
-                outFileName = argv[i];
-        } else
-            inFileNames.push_back(argv[i]);
-    }
+class GUI : public QApplication {
+public:
+    GUI(int argc, char * argv[]) : QApplication(argc, argv) {}
 
-    if (outFileName == NULL || inFileNames.empty()) {
-        return app.startGUI(inFileNames);
-    } else {
-        ExposureStack image;
-        for (auto name : inFileNames)
-            image.loadImage(name);
-        image.sort();
-        image.savePFS(outFileName);
-        return 0;
-    }
-}
-
+    int startGUI(const std::list<char *> & fileNames);
+};
+} // namespace hdrmerge

@@ -21,7 +21,7 @@
  */
 
 #include <cmath>
-#include "RenderThread.h"
+#include "RenderThread.hpp"
 #include <QTime>
 
 
@@ -133,7 +133,7 @@ void RenderThread::run() {
             emit renderedImage(_minx, _miny, images->getWidth(), images->getHeight(), a);
             yieldCurrentThread();
         }
-        
+
         QImage b(images->getWidth(), images->getHeight(), QImage::Format_RGB32);
         doRender(0, 0, images->getWidth(), images->getHeight(), b);
         mutex.lock();

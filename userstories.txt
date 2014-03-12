@@ -1,0 +1,6 @@
+#: As a <role>, I want <goal/desire> [so that <benefit>]
+US1: As a user, I want to load RAW files directly so that I do not have to preprocess them.
+US2: As a user, I want the software to align my images.
+US3: As a user, I want to be able to save the result in PFS or Tiff LogLuv32 formats.
+US4: As a user, I want the software to detect the output format based on the file extension.
+ 

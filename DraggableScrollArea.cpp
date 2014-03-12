@@ -20,7 +20,7 @@
  *
  */
 
-#include "DraggableScrollArea.h"
+#include "DraggableScrollArea.hpp"
 #include <QScrollBar>
 #include <QMouseEvent>
 

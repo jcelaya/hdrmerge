@@ -23,7 +23,7 @@
 #include <list>
 #include <iostream>
 #include <boost/concept_check.hpp>
-#include "HdrMergeMainWindow.h"
+#include "MainWindow.hpp"
 #include <QApplication>
 #include <QFuture>
 #include <QtConcurrentRun>
@@ -40,8 +40,8 @@
 #include <QPen>
 #include <QBitmap>
 #include <QKeyEvent>
-#include "ImageControl.h"
-#include "AboutDialog.h"
+#include "ImageControl.hpp"
+#include "AboutDialog.hpp"
 #include "config.h"
 using namespace std;
 
@@ -74,7 +74,7 @@ void MainWindow::createGui() {
 
     QWidget * toolArea = new QWidget(centralwidget);
     QHBoxLayout * toolLayout = new QHBoxLayout(toolArea);
-    
+
     QToolBar * toolBar = new QToolBar(toolArea);
     toolBar->setOrientation(Qt::Horizontal);
     toolBar->setFloatable(false);
@@ -95,7 +95,7 @@ void MainWindow::createGui() {
     dragToolAction->setChecked(true);
     preview->setCursor(Qt::OpenHandCursor);
     toolLayout->addWidget(toolBar);
-    
+
     imageTabs = new QTabWidget(toolArea);
     QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
     sizePolicy.setHorizontalStretch(0);
@@ -103,7 +103,7 @@ void MainWindow::createGui() {
     sizePolicy.setHeightForWidth(imageTabs->sizePolicy().hasHeightForWidth());
     imageTabs->setSizePolicy(sizePolicy);
     toolLayout->addWidget(imageTabs);
-    
+
     layout->addWidget(toolArea);
 
     //retranslateUi(HdrMergeMainWindow);

@@ -20,7 +20,7 @@
  *
  */
 
-#include "ImageControl.h"
+#include "ImageControl.hpp"
 #include <iostream>
 
 

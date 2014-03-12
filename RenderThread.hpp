@@ -27,7 +27,7 @@
 #include <QImage>
 #include <QMutex>
 #include <QWaitCondition>
-#include "Exposure.h"
+#include "Exposure.hpp"
 
 
 class RenderThread : public QThread {
@@ -58,7 +58,7 @@ public slots:
     void setImageViewport(int x, int y, int w, int h, int newScale);
     void addPixels(int i, int x, int y, int radius);
     void removePixels(int i, int x, int y, int radius);
-    
+
 signals:
     void renderedImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
 };

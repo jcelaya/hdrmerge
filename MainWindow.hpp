@@ -34,10 +34,10 @@
 #include <QEvent>
 #include <QMutex>
 #include <QStringList>
-#include "Exposure.h"
-#include "RenderThread.h"
-#include "PreviewWidget.h"
-#include "DraggableScrollArea.h"
+#include "Exposure.hpp"
+#include "RenderThread.hpp"
+#include "PreviewWidget.hpp"
+#include "DraggableScrollArea.hpp"
 
 
 class MainWindow : public QMainWindow {
@@ -52,7 +52,7 @@ public:
     void closeEvent(QCloseEvent * event);
     /// Preloads a list of images
     void preload(const std::list<char *> & fileNames);
-    
+
 protected:
     void keyPressEvent(QKeyEvent * event);
     void keyReleaseEvent(QKeyEvent * event);
@@ -64,7 +64,7 @@ private slots:
     void saveResult();
     void setTool(QAction * action);
     void painted(int x, int y);
-    
+
 private:
     void createGui();
     void createActions();

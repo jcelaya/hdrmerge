@@ -20,7 +20,7 @@
  *
  */
 
-#include "PreviewWidget.h"
+#include "PreviewWidget.hpp"
 #include <QImage>
 #include <QWheelEvent>
 #include <QPainter>
@@ -47,7 +47,7 @@ void PreviewWidget::paintImage(unsigned int x, unsigned int y,
             pixmap = new QPixmap(width, height);
             pixmap->fill();
         }
-            
+
         QPainter painter(pixmap);
         painter.drawImage(x, y, image);
 

@@ -36,13 +36,13 @@ configure_file (
     "${PROJECT_SOURCE_DIR}/config.h.in"
     "${PROJECT_BINARY_DIR}/config.h"
 )
- 
+
 # add the binary tree to the search path for include files
 # so that we will find config.h
 include_directories("${PROJECT_BINARY_DIR}")
 
 # Sources and headers
-set(hdrmerge_sources main.cpp gui.cpp MainWindow.cpp Exposure.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp)
+set(hdrmerge_sources main.cpp gui.cpp MainWindow.cpp Exposure.cpp RawExposureStack.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp RenderThread.hpp ImageControl.hpp PreviewWidget.hpp DraggableScrollArea.hpp AboutDialog.hpp)
 set(hdrmerge_translations hdrmerge_en.ts hdrmerge_es.ts)
 
@@ -64,6 +64,6 @@ add_executable(hdrmerge ${hdrmerge_sources} ${hdrmerge_moc} ${hdrmerge_rsrc})
 
 # Link with qt4, libtiff and libpfs-1.2
 # TODO: find them at build time
-target_link_libraries(hdrmerge ${QT_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} pfs-1.2)
+target_link_libraries(hdrmerge ${QT_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} pfs-1.2 raw)
 
 install(TARGETS hdrmerge RUNTIME DESTINATION bin)

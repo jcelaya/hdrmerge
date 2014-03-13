@@ -24,6 +24,7 @@
 #include <string>
 #include <iostream>
 #include <cmath>
+#include <cstring>
 #include <algorithm>
 #include <tiff.h>
 #include <tiffio.h>
@@ -43,9 +44,12 @@ RawExposureStack::LoadResult RawExposureStack::Exposure::load(const Exposure * r
 
     unsigned int w = r.sizes.raw_width;
     unsigned int h = r.sizes.raw_height;
-    if (ref != nullptr && (ref->rawData.imgdata.sizes.raw_width != w
-            || ref->rawData.imgdata.sizes.raw_height != h)) {
-        // TODO Check other fields too
+    if (ref != nullptr &&
+        (ref->rawData.imgdata.sizes.raw_width != w
+         || ref->rawData.imgdata.sizes.raw_height != h
+         || ref->rawData.imgdata.idata.filters != r.idata.filters
+         || strcmp(ref->rawData.imgdata.idata.cdesc, r.idata.cdesc)
+        )) {
         return LOAD_FORMAT_FAIL;
     }
 
@@ -66,7 +70,17 @@ RawExposureStack::LoadResult RawExposureStack::Exposure::load(const Exposure * r
 
 
 void RawExposureStack::Exposure::subtractBlack() {
-
+    unsigned int rowWidth = rawData.imgdata.sizes.raw_width;
+    unsigned int rowDisp = 0;
+    unsigned int black = rawData.imgdata.color.black;
+    unsigned int * cblack = rawData.imgdata.color.cblack;
+    for (unsigned int row = 0; row < rawData.imgdata.sizes.raw_height; ++row) {
+        for (unsigned int col = 0; col < rowWidth; ++col) {
+            img[rowDisp + col] -= black + cblack[rawData.FC(row, col)];
+        }
+        rowDisp += rowWidth;
+    }
+    max -= black;
 }
 
 
@@ -120,7 +134,6 @@ void RawExposureStack::sort() {
 
 void RawExposureStack::setRelativeExposure(unsigned int i, double re) {
     exps[i].immExp = re;
-    // Recalculate relExp
     for (int j = i; j >= 0; --j) {
         exps[j].relExp = exps[j + 1].relExp * exps[j].immExp;
     }
@@ -140,6 +153,6 @@ void RawExposureStack::Exposure::dumpInfo() const {
     cerr << r.color.maximum << " max value, black at " << r.color.black << endl;
     // Show other
     cerr << "ISO:" << r.other.iso_speed << " shutter:1/" << (1.0/r.other.shutter) << " aperture:f" << r.other.aperture << endl;
-    cerr << "Exposure (log) " << logExp << " steps" << endl;
+    cerr << "Exposure (log) " << logExp << " steps, pixels saturate at " << max << endl;
     // Show rawdata
 }

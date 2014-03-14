@@ -27,52 +27,16 @@
 #include <string>
 #include <memory>
 //#include "config.h"
-#include <libraw/libraw.h>
+#include "RawExposure.hpp"
 
 
 namespace hdrmerge {
 
 class RawExposureStack {
 public:
-    enum LoadResult {
-        LOAD_SUCCESS = 0,
-        LOAD_OPEN_FAIL = 1,
-        LOAD_PARAM_FAIL = 2,
-        LOAD_FORMAT_FAIL = 3,
-    };
-
-    struct Exposure {
-        std::string fileName;
-        LibRaw rawData;
-        uint16_t * img;
-        uint16_t max;
-        double logExp;          ///< Logarithmic exposure, from metadata
-        double relExp;          ///< Relative exposure, from data
-        double immExp;          ///< Exposure relative to the next image
-
-        Exposure(const char * f) : fileName(f), img(nullptr), max(0), logExp(0.0), relExp(1.0), immExp(1.0) {}
-        ~Exposure() {
-            rawData.recycle();
-        }
-
-        LoadResult load(const Exposure * ref);
-
-        /// Order by brightness
-        bool operator<(const Exposure & r) const { return logExp > r.logExp; }
-
-        void dumpInfo() const;
-
-    private:
-        void subtractBlack();
-        void computeLogExp();
-    };
-
     RawExposureStack() : width(0), height(0), currentScale(0) {}
 
-    LoadResult loadImage(const char * fileName);
-
-    /// Sort images and calculate relative exposure
-    void sort();
+    bool addExposure();
 
     unsigned int size() const { return exps.size(); }
 
@@ -95,7 +59,7 @@ public:
     void setRelativeExposure(unsigned int i, double re);
 
 private:
-    std::vector<Exposure> exps;   ///< Exposures, from top to bottom
+    std::vector<RawExposure> exps;   ///< Exposures, from top to bottom
     unsigned int width;     ///< Size of a row
     unsigned int height;    ///< Size of a column
     unsigned int currentScale;     ///< Current scale factor

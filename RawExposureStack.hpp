@@ -48,12 +48,8 @@ public:
         return height >> currentScale;
     }
 
-    float getRelativeExposure(unsigned int i) const {
-        return exps[i].immExp;
-    }
-
-    const std::string & getFileName(unsigned int i) const {
-        return exps[i].fileName;
+    RawExposure & getExposure(unsigned int i) {
+        return exps[i];
     }
 
     void setRelativeExposure(unsigned int i, double re);

@@ -40,15 +40,7 @@ public:
         LOAD_FORMAT_FAIL = 2,
     };
 
-    std::string fileName;
-    LibRaw rawData;
-    uint16_t * img;
-    uint16_t max;
-    double logExp;          ///< Logarithmic exposure, from metadata
-    double relExp;          ///< Relative exposure, from data
-    double immExp;          ///< Exposure relative to the next image
-
-    RawExposure(const char * f) : fileName(f), img(nullptr), max(0), logExp(0.0), relExp(1.0), immExp(1.0) {}
+    RawExposure(const char * f) : fileName(f), img(nullptr), max(0), logExp(0.0), relExp(1.0), nextExposure(nullptr), immExp(1.0) {}
     ~RawExposure() {
         rawData.recycle();
     }
@@ -63,6 +55,15 @@ public:
     void dumpInfo() const;
 
 private:
+    std::string fileName;
+    LibRaw rawData;
+    uint16_t * img;
+    uint16_t max;
+    double logExp;          ///< Logarithmic exposure, from metadata
+    double relExp;          ///< Relative exposure, from data
+    RawExposure * nextExposure;
+    double immExp;          ///< Exposure relative to the next image
+
     void subtractBlack();
     void computeLogExp();
 };

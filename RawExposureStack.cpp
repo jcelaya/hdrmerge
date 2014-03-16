@@ -79,8 +79,8 @@ bool RawExposureStack::addExposure() {
 
 
 void RawExposureStack::setRelativeExposure(unsigned int i, double re) {
-    exps[i].immExp = re;
-    for (int j = i; j >= 0; --j) {
-        exps[j].relExp = exps[j + 1].relExp * exps[j].immExp;
-    }
+//     exps[i].immExp = re;
+//     for (int j = i; j >= 0; --j) {
+//         exps[j].relExp = exps[j + 1].relExp * exps[j].immExp;
+//     }
 }

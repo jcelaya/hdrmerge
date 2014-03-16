@@ -30,22 +30,22 @@
 #include <tiffio.h>
 #include <libraw/libraw.h>
 #include <pfs-1.2/pfs.h>
-#include "RawExposure.hpp"
+#include "Image.hpp"
 using namespace std;
 using namespace hdrmerge;
 
 
-bool RawExposure::isWrongFormat(const RawExposure * ref) {
-    auto & r = rawData.imgdata;
+bool Image::isWrongFormat(const Image * ref) const {
+    auto & r = rawData.imgdata, & rr = ref->rawData.imgdata;
     return (ref != nullptr &&
-        (ref->rawData.imgdata.sizes.raw_width != r.sizes.raw_width
-        || ref->rawData.imgdata.sizes.raw_height != r.sizes.raw_height
-        || ref->rawData.imgdata.idata.filters != r.idata.filters
-        || strcmp(ref->rawData.imgdata.idata.cdesc, r.idata.cdesc)));
+        (rr.sizes.raw_width != r.sizes.raw_width
+        || rr.sizes.raw_height != r.sizes.raw_height
+        || rr.idata.filters != r.idata.filters
+        || strcmp(rr.idata.cdesc, r.idata.cdesc)));
 }
 
 
-RawExposure::LoadResult RawExposure::load(const RawExposure * ref) {
+Image::LoadResult Image::load(const Image * ref) {
     int error = rawData.open_file(fileName.c_str());
     if (error != 0) {
         return LOAD_OPEN_FAIL;
@@ -56,8 +56,8 @@ RawExposure::LoadResult RawExposure::load(const RawExposure * ref) {
 
     rawData.unpack();
     auto & r = rawData.imgdata;
-    img = r.rawdata.raw_image;
-    if (img == nullptr) {
+    pixel = r.rawdata.raw_image;
+    if (pixel == nullptr) {
         return LOAD_FORMAT_FAIL;
     }
     max = r.color.maximum;
@@ -72,14 +72,14 @@ RawExposure::LoadResult RawExposure::load(const RawExposure * ref) {
 }
 
 
-void RawExposure::subtractBlack() {
+void Image::subtractBlack() {
     unsigned int rowWidth = rawData.imgdata.sizes.raw_width;
     unsigned int rowDisp = 0;
     unsigned int black = rawData.imgdata.color.black;
     unsigned int * cblack = rawData.imgdata.color.cblack;
     for (unsigned int row = 0; row < rawData.imgdata.sizes.raw_height; ++row) {
         for (unsigned int col = 0; col < rowWidth; ++col) {
-            img[rowDisp + col] -= black + cblack[rawData.FC(row, col)];
+            pixel[rowDisp + col] -= black + cblack[rawData.FC(row, col)];
         }
         rowDisp += rowWidth;
     }
@@ -87,13 +87,34 @@ void RawExposure::subtractBlack() {
 }
 
 
-void RawExposure::computeLogExp() {
+void Image::computeLogExp() {
     auto & o = rawData.imgdata.other;
     logExp = log2(o.iso_speed * o.shutter / (100.0 * o.aperture * o.aperture));
 }
 
 
-void RawExposure::dumpInfo() const {
+void Image::computeRelExp() {
+    if (nextImage == nullptr) {
+        relExp = immExp = 1.0;
+    } else {
+        // Calculate median relative exposure
+        uint16_t min = (uint16_t)floor(max * 0.2);
+        vector<float> samples;
+        uint16_t * rpix = nextImage->pixel, * end = pixel + rawData.imgdata.sizes.raw_width * rawData.imgdata.sizes.raw_height;
+        for (uint16_t * pix = pixel; pix < end; rpix++, pix++) {
+            // Only sample those pixels that are in the linear zone
+            if (*rpix < max && *rpix > min && *pix < max && *pix > min)
+                samples.push_back((float)*rpix / *pix);
+        }
+        std::sort(samples.begin(), samples.end());
+        immExp = samples[samples.size() / 2];
+        relExp = immExp * nextImage->relExp;
+        cerr << "Relative exposure: " << (1.0/relExp) << '(' << log2(1.0/relExp) << " EV)" << endl;
+    }
+}
+
+
+void Image::dumpInfo() const {
     auto & r = rawData.imgdata;
     // Show idata
     cerr << "Picture by " << r.idata.make << ", model " << r.idata.model << endl;

@@ -30,57 +30,26 @@
 #include <tiffio.h>
 #include <libraw/libraw.h>
 #include <pfs-1.2/pfs.h>
-#include "RawExposureStack.hpp"
+#include "ImageStack.hpp"
 using namespace std;
 using namespace hdrmerge;
 
 
-// RawExposureStack::LoadResult RawExposureStack::loadImage(const char * fileName) {
+// ImageStack::LoadResult ImageStack::loadImage(const char * fileName) {
 //     Exposure e(fileName);
-//     LoadResult result = e.load(exps.empty() ? nullptr : &exps.front());
+//     LoadResult result = e.load(images.empty() ? nullptr : &images.front());
 //     if (result == LOAD_SUCCESS) {
 //         width = e.rawData.imgdata.sizes.raw_width;
 //         height = e.rawData.imgdata.sizes.raw_height;
-//         exps.push_back(e);
+//         images.push_back(e);
 //     }
 //     return result;
 // }
 
 
-bool RawExposureStack::addExposure() {
-    if (!exps.empty()) {
-         std::sort(exps.begin(), exps.end());
-//         for (vector<Exposure>::reverse_iterator cur = exps.rbegin(), prev = cur++; cur != exps.rend(); prev = cur++) {
-//             // Calculate median relative exposure
-//             const uint16_t min = 3275, max = 52430;
-//             vector<float> samples;
-//             const Pixel * rpix = prev->p.get(), * pix = cur->p.get();
-//             const Pixel * end = pix + width * height;
-//             for (; pix < end; rpix++, pix++) {
-//                 if (rpix->l == Pixel::transparent)
-//                     continue;
-//                 // Only sample those pixels that are in the linear zone
-//                 //if (rpix->r < max && rpix->r > min && pix->r < max && pix->r > min)
-//                 //      samples.push_back((float)rpix->r / pix->r);
-//                 if (rpix->g < max && rpix->g > min && pix->g < max && pix->g > min)
-//                     samples.push_back((float)rpix->g / pix->g);
-//                 //if (rpix->b < max && rpix->b > min && pix->b < max && pix->b > min)
-//                 //      samples.push_back((float)rpix->b / pix->b);
-//             }
-//             std::sort(samples.begin(), samples.end());
-//             cur->immExp = samples[samples.size() / 2];
-//             cur->relExp = cur->immExp * prev->relExp;
-//             cerr << "Relative exposure: " << (1.0/cur->relExp) << '(' << (log(1.0/cur->relExp) / log(2.0)) << " EV)" << endl;
-//         }
-//         exps.back().th = 0xffff;
-    }
-    return true;
-}
-
-
-void RawExposureStack::setRelativeExposure(unsigned int i, double re) {
-//     exps[i].immExp = re;
+void ImageStack::setRelativeExposure(unsigned int i, double re) {
+//     images[i].immExp = re;
 //     for (int j = i; j >= 0; --j) {
-//         exps[j].relExp = exps[j + 1].relExp * exps[j].immExp;
+//         images[j].relExp = images[j + 1].relExp * images[j].immExp;
 //     }
 }

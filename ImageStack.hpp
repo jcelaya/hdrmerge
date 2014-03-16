@@ -20,25 +20,23 @@
  *
  */
 
-#ifndef _RAWEXPOSURESTACK_H_
-#define _RAWEXPOSURESTACK_H_
+#ifndef _IMAGESTACK_H_
+#define _IMAGESTACK_H_
 
 #include <vector>
 #include <string>
 #include <memory>
 //#include "config.h"
-#include "RawExposure.hpp"
+#include "Image.hpp"
 
 
 namespace hdrmerge {
 
-class RawExposureStack {
+class ImageStack {
 public:
-    RawExposureStack() : width(0), height(0), currentScale(0) {}
+    ImageStack() : width(0), height(0), currentScale(0) {}
 
-    bool addExposure();
-
-    unsigned int size() const { return exps.size(); }
+    unsigned int size() const { return images.size(); }
 
     unsigned int getWidth() const {
         return width >> currentScale;
@@ -48,14 +46,14 @@ public:
         return height >> currentScale;
     }
 
-    RawExposure & getExposure(unsigned int i) {
-        return exps[i];
+    Image & getImage(unsigned int i) {
+        return images[i];
     }
 
     void setRelativeExposure(unsigned int i, double re);
 
 private:
-    std::vector<RawExposure> exps;   ///< Exposures, from top to bottom
+    std::vector<Image> images;   ///< Exposures, from top to bottom
     unsigned int width;     ///< Size of a row
     unsigned int height;    ///< Size of a column
     unsigned int currentScale;     ///< Current scale factor
@@ -63,4 +61,4 @@ private:
 
 } // namespace hdrmerge
 
-#endif // _EXPOSURE_H_
+#endif // _IMAGESTACK_H_

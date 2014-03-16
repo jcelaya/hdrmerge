@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _RAWEXPOSURE_H_
-#define _RAWEXPOSURE_H_
+#ifndef _IMAGE_H_
+#define _IMAGE_H_
 
 #include <vector>
 #include <string>
@@ -32,7 +32,7 @@
 
 namespace hdrmerge {
 
-class RawExposure {
+class Image {
 public:
     enum LoadResult {
         LOAD_SUCCESS = 0,
@@ -40,34 +40,39 @@ public:
         LOAD_FORMAT_FAIL = 2,
     };
 
-    RawExposure(const char * f) : fileName(f), img(nullptr), max(0), logExp(0.0), relExp(1.0), nextExposure(nullptr), immExp(1.0) {}
-    ~RawExposure() {
-        rawData.recycle();
-    }
+    Image(const char * f) : fileName(f), pixel(nullptr), max(0), logExp(0.0), relExp(1.0), nextImage(nullptr), immExp(1.0) {}
+//     ~Image() {
+//         rawData.recycle();
+//     }
 
-    bool isWrongFormat(const RawExposure * ref);
+    bool isWrongFormat(const Image * ref) const;
 
-    LoadResult load(const RawExposure * ref);
+    LoadResult load(const Image * ref);
 
     /// Order by brightness
-    bool operator<(const RawExposure & r) const { return logExp > r.logExp; }
+    bool operator<(const Image & r) const { return logExp > r.logExp; }
 
     void dumpInfo() const;
+
+    void setNextImage(Image * n) {
+        nextImage = n;
+    }
 
 private:
     std::string fileName;
     LibRaw rawData;
-    uint16_t * img;
+    uint16_t * pixel;
     uint16_t max;
     double logExp;          ///< Logarithmic exposure, from metadata
     double relExp;          ///< Relative exposure, from data
-    RawExposure * nextExposure;
+    Image * nextImage;
     double immExp;          ///< Exposure relative to the next image
 
     void subtractBlack();
     void computeLogExp();
+    void computeRelExp();
 };
 
 } // namespace hdrmerge
 
-#endif // _RAWEXPOSURE_H_
+#endif // _IMAGE_H_

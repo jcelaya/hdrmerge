@@ -15,12 +15,8 @@ add_definitions(${QT_DEFINITIONS})
 find_package(TIFF REQUIRED)
 include(${TIFF_INCLUDE_DIR})
 
-# OpenEXR
-find_package(OpenEXR)
-if (OPENEXR_FOUND)
-    set(HAVE_OPENEXR 1)
-    include_directories(${OPENEXR_INCLUDE_PATHS})
-endif(OPENEXR_FOUND)
+# Boost Test
+find_package(Boost 1.46 COMPONENTS unit_test_framework)
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -36,15 +32,19 @@ configure_file (
     "${PROJECT_SOURCE_DIR}/config.h.in"
     "${PROJECT_BINARY_DIR}/config.h"
 )
- 
+
 # add the binary tree to the search path for include files
 # so that we will find config.h
 include_directories("${PROJECT_BINARY_DIR}")
 
 # Sources and headers
-set(hdrmerge_sources main.cpp gui.cpp MainWindow.cpp Exposure.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp)
+set(hdrmerge_sources gui.cpp MainWindow.cpp Exposure.cpp Image.cpp ImageStack.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp RenderThread.hpp ImageControl.hpp PreviewWidget.hpp DraggableScrollArea.hpp AboutDialog.hpp)
 set(hdrmerge_translations hdrmerge_en.ts hdrmerge_es.ts)
+
+# Link with qt4, libtiff and libpfs-1.2
+# TODO: find them at build time
+set(hdrmerge_libs ${QT_LIBRARIES} ${TIFF_LIBRARIES} pfs-1.2 raw)
 
 # Qt4 intermediate files
 QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})
@@ -60,10 +60,12 @@ configure_file (
 )
 QT4_ADD_RESOURCES(hdrmerge_rsrc ${PROJECT_BINARY_DIR}/translations.qrc resources.qrc)
 
-add_executable(hdrmerge ${hdrmerge_sources} ${hdrmerge_moc} ${hdrmerge_rsrc})
-
-# Link with qt4, libtiff and libpfs-1.2
-# TODO: find them at build time
-target_link_libraries(hdrmerge ${QT_LIBRARIES} ${TIFF_LIBRARIES} ${OPENEXR_LIBRARIES} pfs-1.2)
+add_library(hdrmerge-objects OBJECT ${hdrmerge_sources} ${hdrmerge_moc} ${hdrmerge_rsrc})
+add_executable(hdrmerge main.cpp $<TARGET_OBJECTS:hdrmerge-objects>)
+target_link_libraries(hdrmerge ${hdrmerge_libs})
 
 install(TARGETS hdrmerge RUNTIME DESTINATION bin)
+
+if (Boost_FOUND)
+    add_subdirectory(test)
+endif (Boost_FOUND)

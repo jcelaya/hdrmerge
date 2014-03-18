@@ -1,7 +1,18 @@
-#: As a <role>, I want <goal/desire> [so that <benefit>]
-US1: As a user, I want to load RAW files directly so that I do not have to preprocess them.
-US2: As a user, I want the software to align my images with the MTB algorithm.
-US3: As a user, I want to be able to save the result in PFS or Tiff LogLuv32 formats.
+#: As a <role>, I want <goal/desire> [so that <benefit>]. PR priority (1 highest)
+US2: As a user, I want the software to align my images using the MTB algorithm on RAW space. PR1
+US3: As a user, I want to be able to save the result in PFS or Tiff LogLuv32 formats. PR1
     In the Tiff case, the metadata of the source images must be transferred, using either the wider apperture or the longer exposure time. Other metadata is supposed to be the same in all the source images.
-US4: As a user, I want the software to detect the output format based on the file extension.
-US5: As a user, I want the software to merge the exposures BEFORE the demosaicing, so that the information suffers as less transformations as possible.
+US4: As a user, I want the software to detect the output format based on the file extension. PR2
+US5: As a user, I want to apply a custom white balance to the final image. PR3
+    Choose among camera, average, zone.
+US6: As a user, I want to apply a noise reduction algorithm to the final image. PR4
+US7: As a user, I want to correct the chromatic aberrations. PR4
+US8: As a user, I want to transform the colorspace to an apropriate one. PR4
+US9: As a user, I want to correct color artifacts after demosaicing. PR4
+US10: As a user, I want to demosaic the image with the AMAzE algorithm. PR1
+
+Doing:
+US1: As a user, I want to load RAW files directly. PR1
+    The loader also subtracts the black point and computes the logarithmic exposure.
+
+Done:

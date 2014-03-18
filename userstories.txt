@@ -12,7 +12,8 @@ US9: As a user, I want to correct color artifacts after demosaicing. PR4
 US10: As a user, I want to demosaic the image with the AMAzE algorithm. PR1
 
 Doing:
+
+Done:
 US1: As a user, I want to load RAW files directly. PR1
     The loader also subtracts the black point and computes the logarithmic exposure.
 
-Done:

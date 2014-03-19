@@ -26,7 +26,6 @@
 #include <vector>
 #include <string>
 #include <memory>
-//#include "config.h"
 #include <libraw/libraw.h>
 
 
@@ -34,43 +33,59 @@ namespace hdrmerge {
 
 class Image {
 public:
-    enum LoadResult {
-        LOAD_SUCCESS = 0,
-        LOAD_OPEN_FAIL = 1,
-        LOAD_FORMAT_FAIL = 2,
-    };
+    Image(const char * f);
 
-    Image(const char * f) : fileName(f), pixel(nullptr), max(0), logExp(0.0), relExp(1.0), nextImage(nullptr), immExp(1.0) {}
-//     ~Image() {
-//         rawData.recycle();
-//     }
-
-    bool isWrongFormat(const Image * ref) const;
-
-    LoadResult load(const Image * ref);
-
-    /// Order by brightness
+    bool loadFailed() const {
+        return pixel == nullptr;
+    }
+    size_t getWidth() const {
+        return width;
+    }
+    size_t getHeight() const {
+        return height;
+    }
+    int getDeltaX() const {
+        return dx;
+    }
+    int getDeltaY() const {
+        return dy;
+    }
+    bool isWrongFormat(const Image & ref) const;
+    /// Order by exposure
     bool operator<(const Image & r) const { return logExp > r.logExp; }
-
-    void dumpInfo() const;
-
     void setNextImage(Image * n) {
         nextImage = n;
     }
+    void alignWith(const Image & r, float threshold, float tolerance);
+
+    void dumpInfo(const LibRaw & rawData) const;
+
+    static uint16_t getMedian(const uint16_t * values, size_t size, float threshold);
 
 private:
+    static const int scaleSteps = 6;
+
     std::string fileName;
-    LibRaw rawData;
     uint16_t * pixel;
+    std::vector<std::unique_ptr<uint16_t[]>> scaledData;
+    size_t width, height;
+    int dx, dy;
+    std::string cdesc;
+    uint32_t filter;
     uint16_t max;
     double logExp;          ///< Logarithmic exposure, from metadata
     double relExp;          ///< Relative exposure, from data
     Image * nextImage;
     double immExp;          ///< Exposure relative to the next image
 
-    void subtractBlack();
-    void computeLogExp();
+    void subtractBlack(const LibRaw & rawData);
+    void computeLogExp(const LibRaw & rawData);
     void computeRelExp();
+    void preScale();
+    // From LibRaw
+    int FC(int row, int col) const {
+        return (filter >> (((row << 1 & 14) | (col & 1)) << 1) & 3);
+    }
 };
 
 } // namespace hdrmerge

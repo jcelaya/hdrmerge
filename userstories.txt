@@ -1,5 +1,4 @@
 #: As a <role>, I want <goal/desire> [so that <benefit>]. PR priority (1 highest)
-US2: As a user, I want the software to align my images using the MTB algorithm on RAW space. PR1
 US3: As a user, I want to be able to save the result in PFS or Tiff LogLuv32 formats. PR1
     In the Tiff case, the metadata of the source images must be transferred, using either the wider apperture or the longer exposure time. Other metadata is supposed to be the same in all the source images.
 US4: As a user, I want the software to detect the output format based on the file extension. PR2
@@ -12,6 +11,7 @@ US9: As a user, I want to correct color artifacts after demosaicing. PR4
 US10: As a user, I want to demosaic the image with the AMAzE algorithm. PR1
 
 Doing:
+US2: As a user, I want the software to align my images using the MTB algorithm on RAW space. PR1
 
 Done:
 US1: As a user, I want to load RAW files directly. PR1

@@ -31,63 +31,60 @@
 #include <libraw/libraw.h>
 #include <pfs-1.2/pfs.h>
 #include "Image.hpp"
+#include "Bitmap.hpp"
 using namespace std;
 using namespace hdrmerge;
 
 
-bool Image::isWrongFormat(const Image * ref) const {
-    auto & r = rawData.imgdata, & rr = ref->rawData.imgdata;
-    return (ref != nullptr &&
-        (rr.sizes.raw_width != r.sizes.raw_width
-        || rr.sizes.raw_height != r.sizes.raw_height
-        || rr.idata.filters != r.idata.filters
-        || strcmp(rr.idata.cdesc, r.idata.cdesc)));
-}
-
-
-Image::LoadResult Image::load(const Image * ref) {
+Image::Image(const char * f) : fileName(f), pixel(nullptr), dx(0), dy(0),
+        max(0), logExp(0.0), relExp(1.0), nextImage(nullptr), immExp(1.0) {
+    LibRaw rawData;
     int error = rawData.open_file(fileName.c_str());
-    if (error != 0) {
-        return LOAD_OPEN_FAIL;
+    if (error == 0) {
+        rawData.unpack();
+        auto & r = rawData.imgdata;
+        if (r.rawdata.raw_image != nullptr) {
+            width = r.sizes.raw_width;
+            height = r.sizes.raw_height;
+            scaledData.emplace_back(new uint16_t[width*height]);
+            pixel = scaledData.back().get();
+            std::copy_n(r.rawdata.raw_image, width*height, pixel);
+            filter = r.idata.filters;
+            cdesc = r.idata.cdesc;
+            max = r.color.maximum;
+            subtractBlack(rawData);
+            computeLogExp(rawData);
+            preScale();
+            cerr << "Loaded image " << fileName << ", " << (width * height * 2) << " bytes allocated" << endl;
+            dumpInfo(rawData);
+        }
     }
-    if (isWrongFormat(ref)) {
-        return LOAD_FORMAT_FAIL;
-    }
-
-    rawData.unpack();
-    auto & r = rawData.imgdata;
-    pixel = r.rawdata.raw_image;
-    if (pixel == nullptr) {
-        return LOAD_FORMAT_FAIL;
-    }
-    max = r.color.maximum;
-    subtractBlack();
-    computeLogExp();
-
-    unsigned int w = r.sizes.raw_width;
-    unsigned int h = r.sizes.raw_height;
-    cerr << "Loaded image " << fileName << ", " << w << 'x' << h << ", " << (w * h * 2) << " bytes allocated" << endl;
-
-    return LOAD_SUCCESS;
 }
 
 
-void Image::subtractBlack() {
-    unsigned int rowWidth = rawData.imgdata.sizes.raw_width;
+bool Image::isWrongFormat(const Image & ref) const {
+    return (width != ref.width
+        || height != ref.height
+        || filter != ref.filter
+        || cdesc != ref.cdesc);
+}
+
+
+void Image::subtractBlack(const LibRaw & rawData) {
     unsigned int rowDisp = 0;
     unsigned int black = rawData.imgdata.color.black;
-    unsigned int * cblack = rawData.imgdata.color.cblack;
-    for (unsigned int row = 0; row < rawData.imgdata.sizes.raw_height; ++row) {
-        for (unsigned int col = 0; col < rowWidth; ++col) {
-            pixel[rowDisp + col] -= black + cblack[rawData.FC(row, col)];
+    const unsigned int * cblack = rawData.imgdata.color.cblack;
+    for (unsigned int row = 0; row < height; ++row) {
+        for (unsigned int col = 0; col < width; ++col) {
+            pixel[rowDisp + col] -= black + cblack[FC(row, col)];
         }
-        rowDisp += rowWidth;
+        rowDisp += width;
     }
     max -= black;
 }
 
 
-void Image::computeLogExp() {
+void Image::computeLogExp(const LibRaw & rawData) {
     auto & o = rawData.imgdata.other;
     logExp = log2(o.iso_speed * o.shutter / (100.0 * o.aperture * o.aperture));
 }
@@ -100,7 +97,7 @@ void Image::computeRelExp() {
         // Calculate median relative exposure
         uint16_t min = (uint16_t)floor(max * 0.2);
         vector<float> samples;
-        uint16_t * rpix = nextImage->pixel, * end = pixel + rawData.imgdata.sizes.raw_width * rawData.imgdata.sizes.raw_height;
+        uint16_t * rpix = nextImage->pixel, * end = pixel + width*height;
         for (uint16_t * pix = pixel; pix < end; rpix++, pix++) {
             // Only sample those pixels that are in the linear zone
             if (*rpix < max && *rpix > min && *pix < max && *pix > min)
@@ -114,7 +111,79 @@ void Image::computeRelExp() {
 }
 
 
-void Image::dumpInfo() const {
+void Image::alignWith(const Image & r, float threshold, float tolerance) {
+    dx = dy = 0;
+    size_t curWidth = width >> (scaleSteps - 1);
+    size_t curHeight = height >> (scaleSteps - 1);
+    uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
+    for (size_t s = scaleSteps - 1; s > 0; --s) {
+        uint16_t mth1 = getMedian(scaledData[s].get(), curWidth*curHeight, threshold);
+        uint16_t mth2 = getMedian(r.scaledData[s].get(), curWidth*curHeight, threshold);
+        Bitmap mtb1, mtb2, excl1, excl2;
+        mtb1.mtb(scaledData[s].get(), curWidth, curHeight, mth1);
+        mtb2.mtb(r.scaledData[s].get(), curWidth, curHeight, mth2);
+        excl1.exclusion(scaledData[s].get(), curWidth, curHeight, mth1, tolPixels);
+        excl2.exclusion(r.scaledData[s].get(), curWidth, curHeight, mth2, tolPixels);
+        size_t minError = curWidth*curHeight;
+        int curdx = dx, curdy = dy;
+        for (int i : {-1, 0, 1}) {
+            for (int j : {-1, 0, 1}) {
+                Bitmap shiftMtb, shiftExcl;
+                shiftMtb.shift(mtb2, curdx + i, curdy + j);
+                shiftExcl.shift(excl2, curdx + i, curdy + j);
+                shiftMtb.bitwiseXor(mtb1);
+                shiftMtb.bitwiseAnd(excl1);
+                shiftMtb.bitwiseAnd(shiftExcl);
+                size_t err = shiftMtb.count();
+                if (err < minError) {
+                    dx = curdx + i;
+                    dy = curdy + j;
+                    minError = err;
+                }
+            }
+        }
+        dx <<= 1;
+        dy <<= 1;
+    }
+}
+
+
+void Image::preScale() {
+    scaledData.resize(1);
+    size_t curWidth = width;
+    size_t curHeight = height;
+    for (size_t s = 1; s < scaleSteps; ++s) {
+        size_t prevWidth = curWidth;
+        curWidth >>= 1;
+        curHeight >>= 1;
+        uint16_t * r = new uint16_t[curWidth * curHeight], * r2 = scaledData.back().get();
+        for (size_t y = 0, prevY = 0; y < curHeight; ++y, prevY += 2) {
+            for (size_t x = 0, prevX = 0; x < curWidth; ++x, prevX += 2) {
+                uint32_t value1 = r2[prevY*prevWidth + prevX],
+                    value2 = r2[prevY*prevWidth + prevX + 1],
+                    value3 = r2[(prevY + 1)*prevWidth + prevX],
+                    value4 = r2[(prevY + 1)*prevWidth + prevX + 1];
+                r[y*curWidth + x] = (value1 + value2 + value3 + value4) >> 2;
+            }
+        }
+        scaledData.emplace_back(r);
+    }
+}
+
+
+uint16_t Image::getMedian(const uint16_t * values, size_t size, float threshold) {
+    size_t histogram[65536] = {};
+    for (size_t i = 0; i < size; ++i) {
+        ++histogram[values[i]];
+    }
+    size_t current = histogram[0], limit = std::floor(size * threshold);
+    uint16_t result;
+    for (result = 0; current < limit; current += histogram[++result]);
+    return result;
+}
+
+
+void Image::dumpInfo(const LibRaw & rawData) const {
     auto & r = rawData.imgdata;
     // Show idata
     cerr << "Picture by " << r.idata.make << ", model " << r.idata.model << endl;

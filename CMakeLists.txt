@@ -38,7 +38,9 @@ configure_file (
 include_directories("${PROJECT_BINARY_DIR}")
 
 # Sources and headers
-set(hdrmerge_sources gui.cpp MainWindow.cpp Exposure.cpp Image.cpp ImageStack.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp)
+set(hdrmerge_sources
+    gui.cpp MainWindow.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp
+    Exposure.cpp Image.cpp ImageStack.cpp Bitmap.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp RenderThread.hpp ImageControl.hpp PreviewWidget.hpp DraggableScrollArea.hpp AboutDialog.hpp)
 set(hdrmerge_translations hdrmerge_en.ts hdrmerge_es.ts)
 

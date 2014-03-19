@@ -4,4 +4,4 @@ Makefile
 moc_*
 build
 samples
-
+hdrmerge.kdev4

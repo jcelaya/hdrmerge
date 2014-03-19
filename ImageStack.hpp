@@ -26,7 +26,7 @@
 #include <vector>
 #include <string>
 #include <memory>
-//#include "config.h"
+#include "config.h"
 #include "Image.hpp"
 
 
@@ -47,13 +47,13 @@ public:
     }
 
     Image & getImage(unsigned int i) {
-        return images[i];
+        return *images[i];
     }
-
-    void setRelativeExposure(unsigned int i, double re);
+    
+    bool addImage(std::unique_ptr<Image> & i);
 
 private:
-    std::vector<Image> images;   ///< Exposures, from top to bottom
+    std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
     unsigned int width;     ///< Size of a row
     unsigned int height;    ///< Size of a column
     unsigned int currentScale;     ///< Current scale factor

@@ -20,12 +20,6 @@
  *
  */
 
-#include <stdexcept>
-#include <string>
-#include <iostream>
-#include <cmath>
-#include <cstring>
-#include <algorithm>
 #include <tiff.h>
 #include <tiffio.h>
 #include <libraw/libraw.h>
@@ -34,6 +28,16 @@
 using namespace std;
 using namespace hdrmerge;
 
+
+bool ImageStack::addImage(std::unique_ptr<Image> & i) {
+    if (images.empty() || !images.front()->isWrongFormat(*i)) {
+        width = i->getWidth();
+        height = i->getHeight();
+        images.push_back(std::move(i));
+        return true;
+    }
+    return false;
+}
 
 // ImageStack::LoadResult ImageStack::loadImage(const char * fileName) {
 //     Exposure e(fileName);
@@ -47,9 +51,9 @@ using namespace hdrmerge;
 // }
 
 
-void ImageStack::setRelativeExposure(unsigned int i, double re) {
+//void ImageStack::setRelativeExposure(unsigned int i, double re) {
 //     images[i].immExp = re;
 //     for (int j = i; j >= 0; --j) {
 //         images[j].relExp = images[j + 1].relExp * images[j].immExp;
 //     }
-}
+//}

@@ -11,9 +11,9 @@ US9: As a user, I want to correct color artifacts after demosaicing. PR4
 US10: As a user, I want to demosaic the image with the AMAzE algorithm. PR1
 
 Doing:
-US2: As a user, I want the software to align my images using the MTB algorithm on RAW space. PR1
 
 Done:
 US1: As a user, I want to load RAW files directly. PR1
     The loader also subtracts the black point and computes the logarithmic exposure.
+US2: As a user, I want the software to align my images using the MTB algorithm on RAW space. PR1
 

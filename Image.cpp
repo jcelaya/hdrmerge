@@ -32,82 +32,69 @@
 #include <pfs-1.2/pfs.h>
 #include "Image.hpp"
 #include "Bitmap.hpp"
+#include "Histogram.hpp"
 using namespace std;
 using namespace hdrmerge;
 
 
-Image::Image(const char * f) : fileName(f), pixel(nullptr), dx(0), dy(0),
-        max(0), logExp(0.0), relExp(1.0), nextImage(nullptr), immExp(1.0) {
+Image::Image(const char * f) : pixel(nullptr), dx(0), dy(0), max(0), relExp(1.0), immExp(1.0) {
     LibRaw rawData;
-    int error = rawData.open_file(fileName.c_str());
+    int error = rawData.open_file(f);
     if (error == 0) {
         rawData.unpack();
-        auto & r = rawData.imgdata;
-        if (r.rawdata.raw_image != nullptr) {
-            width = r.sizes.raw_width;
-            height = r.sizes.raw_height;
+        uint16_t * rawImage = rawData.imgdata.rawdata.raw_image;
+        if (rawImage != nullptr) {
+            metaData.reset(new MetaData(f, rawData));
+            width = metaData->width;
+            height = metaData->height;
+            max = metaData->max;
             scaledData.emplace_back(new uint16_t[width*height]);
             pixel = scaledData.back().get();
-            std::copy_n(r.rawdata.raw_image, width*height, pixel);
-            filter = r.idata.filters;
-            cdesc = r.idata.cdesc;
-            max = r.color.maximum;
-            subtractBlack(rawData);
-            computeLogExp(rawData);
+            std::copy_n(rawImage, width*height, pixel);
+            subtractBlack();
+            logExp = metaData->logExp();
             preScale();
-            cerr << "Loaded image " << fileName << ", " << (width * height * 2) << " bytes allocated" << endl;
-            dumpInfo(rawData);
+            metaData->dumpInfo();
         }
     }
 }
 
 
-bool Image::isWrongFormat(const Image & ref) const {
-    return (width != ref.width
-        || height != ref.height
-        || filter != ref.filter
-        || cdesc != ref.cdesc);
+bool Image::isSameFormat(const Image & ref) const {
+    return metaData->isSameFormat(*ref.metaData);
 }
 
 
-void Image::subtractBlack(const LibRaw & rawData) {
-    unsigned int rowDisp = 0;
-    unsigned int black = rawData.imgdata.color.black;
-    const unsigned int * cblack = rawData.imgdata.color.cblack;
-    for (unsigned int row = 0; row < height; ++row) {
-        for (unsigned int col = 0; col < width; ++col) {
-            pixel[rowDisp + col] -= black + cblack[FC(row, col)];
+void Image::subtractBlack() {
+    size_t rowDisp = 0;
+    for (size_t row = 0; row < height; ++row) {
+        for (size_t col = 0; col < width; ++col) {
+            pixel[rowDisp + col] -= metaData->blackAt(row, col);
         }
         rowDisp += width;
     }
-    max -= black;
-}
-
-
-void Image::computeLogExp(const LibRaw & rawData) {
-    auto & o = rawData.imgdata.other;
-    logExp = log2(o.iso_speed * o.shutter / (100.0 * o.aperture * o.aperture));
+    max -= metaData->black;
 }
 
 
 void Image::computeRelExp() {
-    if (nextImage == nullptr) {
-        relExp = immExp = 1.0;
-    } else {
-        // Calculate median relative exposure
-        uint16_t min = (uint16_t)floor(max * 0.2);
-        vector<float> samples;
-        uint16_t * rpix = nextImage->pixel, * end = pixel + width*height;
-        for (uint16_t * pix = pixel; pix < end; rpix++, pix++) {
-            // Only sample those pixels that are in the linear zone
-            if (*rpix < max && *rpix > min && *pix < max && *pix > min)
-                samples.push_back((float)*rpix / *pix);
-        }
-        std::sort(samples.begin(), samples.end());
-        immExp = samples[samples.size() / 2];
-        relExp = immExp * nextImage->relExp;
-        cerr << "Relative exposure: " << (1.0/relExp) << '(' << log2(1.0/relExp) << " EV)" << endl;
-    }
+//     if (nextImage == nullptr) {
+//         relExp = immExp = 1.0;
+//     } else {
+//         // Calculate median relative exposure
+//         uint16_t min = (uint16_t)floor(max * 0.2);
+//         vector<float> samples;
+//         uint16_t * rpix = nextImage->pixel, * end = pixel + width*height;
+//         for (uint16_t * pix = pixel; pix < end; rpix++, pix++) {
+//             // Only sample those pixels that are in the linear zone
+//             if (*rpix < max && *rpix > min && *pix < max && *pix > min)
+//                 samples.push_back((float)*rpix / *pix);
+//         }
+//         std::sort(samples.begin(), samples.end());
+//         immExp = samples[samples.size() / 2];
+//         relExp = immExp * nextImage->relExp;
+//         cerr << "Relative exposure: " << (1.0/relExp) << '(' << log2(1.0/relExp) << " EV)" << endl;
+//     }
 }
 
 
@@ -117,8 +104,10 @@ void Image::alignWith(const Image & r, float threshold, float tolerance) {
     size_t curHeight = height >> (scaleSteps - 1);
     uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
     for (size_t s = scaleSteps - 1; s > 0; --s) {
-        uint16_t mth1 = getMedian(scaledData[s].get(), curWidth*curHeight, threshold);
-        uint16_t mth2 = getMedian(r.scaledData[s].get(), curWidth*curHeight, threshold);
+        Histogram hist1(scaledData[s].get(), scaledData[s].get() + curWidth*curHeight);
+        Histogram hist2(r.scaledData[s].get(), r.scaledData[s].get() + curWidth*curHeight);
+        uint16_t mth1 = hist1.getMedian(threshold);
+        uint16_t mth2 = hist2.getMedian(threshold);
         Bitmap mtb1, mtb2, excl1, excl2;
         mtb1.mtb(scaledData[s].get(), curWidth, curHeight, mth1);
         mtb2.mtb(r.scaledData[s].get(), curWidth, curHeight, mth2);
@@ -168,34 +157,4 @@ void Image::preScale() {
         }
         scaledData.emplace_back(r);
     }
-}
-
-
-uint16_t Image::getMedian(const uint16_t * values, size_t size, float threshold) {
-    size_t histogram[65536] = {};
-    for (size_t i = 0; i < size; ++i) {
-        ++histogram[values[i]];
-    }
-    size_t current = histogram[0], limit = std::floor(size * threshold);
-    uint16_t result;
-    for (result = 0; current < limit; current += histogram[++result]);
-    return result;
-}
-
-
-void Image::dumpInfo(const LibRaw & rawData) const {
-    auto & r = rawData.imgdata;
-    // Show idata
-    cerr << "Picture by " << r.idata.make << ", model " << r.idata.model << endl;
-    cerr << r.idata.colors << " colors with mask " << hex << r.idata.filters << dec << ", " << r.idata.cdesc << endl;
-    // Show sizes
-    cerr << r.sizes.raw_width << 'x' << r.sizes.raw_height << " (" << r.sizes.width << 'x' << r.sizes.height << '+'
-        << r.sizes.left_margin << ',' << r.sizes.top_margin << ") aspect:" << r.sizes.pixel_aspect << ", flip:"
-        << r.sizes.flip << ", raw_pitch:" << r.sizes.raw_pitch << endl;
-    // Show color
-    cerr << r.color.maximum << " max value, black at " << r.color.black << endl;
-    // Show other
-    cerr << "ISO:" << r.other.iso_speed << " shutter:1/" << (1.0/r.other.shutter) << " aperture:f" << r.other.aperture << endl;
-    cerr << "Exposure (log) " << logExp << " steps, pixels saturate at " << max << endl;
-    // Show rawdata
 }

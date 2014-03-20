@@ -26,7 +26,7 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include <libraw/libraw.h>
+#include "MetaData.hpp"
 
 
 namespace hdrmerge {
@@ -35,8 +35,8 @@ class Image {
 public:
     Image(const char * f);
 
-    bool loadFailed() const {
-        return pixel == nullptr;
+    bool good() const {
+        return pixel != nullptr && metaData.get() != nullptr;
     }
     size_t getWidth() const {
         return width;
@@ -50,42 +50,33 @@ public:
     int getDeltaY() const {
         return dy;
     }
-    bool isWrongFormat(const Image & ref) const;
-    /// Order by exposure
-    bool operator<(const Image & r) const { return logExp > r.logExp; }
-    void setNextImage(Image * n) {
-        nextImage = n;
-    }
+    bool isSameFormat(const Image & ref) const;
     void alignWith(const Image & r, float threshold, float tolerance);
+    void displace(int newDx, int newDy) {
+        dx += newDx;
+        dy += newDy;
+    }
 
-    void dumpInfo(const LibRaw & rawData) const;
-
-    static uint16_t getMedian(const uint16_t * values, size_t size, float threshold);
+    static bool comparePointers(const std::unique_ptr<Image> & l, const std::unique_ptr<Image> & r) {
+        return l->logExp > r->logExp;
+    }
 
 private:
     static const int scaleSteps = 6;
 
-    std::string fileName;
+    std::unique_ptr<MetaData> metaData;
     uint16_t * pixel;
     std::vector<std::unique_ptr<uint16_t[]>> scaledData;
     size_t width, height;
     int dx, dy;
-    std::string cdesc;
-    uint32_t filter;
     uint16_t max;
     double logExp;          ///< Logarithmic exposure, from metadata
     double relExp;          ///< Relative exposure, from data
-    Image * nextImage;
     double immExp;          ///< Exposure relative to the next image
 
-    void subtractBlack(const LibRaw & rawData);
-    void computeLogExp(const LibRaw & rawData);
+    void subtractBlack();
     void computeRelExp();
     void preScale();
-    // From LibRaw
-    int FC(int row, int col) const {
-        return (filter >> (((row << 1 & 14) | (col & 1)) << 1) & 3);
-    }
 };
 
 } // namespace hdrmerge

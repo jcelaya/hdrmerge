@@ -20,47 +20,40 @@
  *
  */
 
-#ifndef _IMAGESTACK_H_
-#define _IMAGESTACK_H_
+#ifndef _HISTOGRAM_H_
+#define _HISTOGRAM_H_
 
-#include <vector>
-#include <string>
-#include <memory>
-#include "config.h"
-#include "Image.hpp"
-
+#include <cmath>
 
 namespace hdrmerge {
 
-class ImageStack {
+class Histogram {
 public:
-    ImageStack() : width(0), height(0), dx(0), dy(0), currentScale(0) {}
-
-    size_t size() const { return images.size(); }
-
-    size_t getWidth() const {
-        return width >> currentScale;
+    Histogram() : bins{}, numSamples(0) {}
+    template <typename Iterator> Histogram(Iterator start, Iterator end) : Histogram() {
+        while (start != end) {
+            addValue((uint16_t)*start++);
+        }
     }
 
-    size_t getHeight() const {
-        return height >> currentScale;
+    void addValue(uint16_t v) {
+        ++bins[v];
+        ++numSamples;
     }
 
-    Image & getImage(unsigned int i) {
-        return *images[i];
+    uint16_t getMedian(float threshold) const {
+        unsigned int current = bins[0], limit = std::floor(numSamples * threshold);
+        uint16_t result = 0;
+        while (current < limit)
+                current += bins[++result];
+        return result;
     }
-
-    bool addImage(std::unique_ptr<Image> & i);
-    void align();
 
 private:
-    std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
-    size_t width;     ///< Size of a row
-    size_t height;    ///< Size of a column
-    int dx, dy;
-    unsigned int currentScale;     ///< Current scale factor
+    unsigned int bins[65536];
+    size_t numSamples;
 };
 
-} // namespace hdrmerge
+}
 
-#endif // _IMAGESTACK_H_
+#endif // _HISTOGRAM_H_

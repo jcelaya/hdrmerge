@@ -20,47 +20,50 @@
  *
  */
 
-#ifndef _IMAGESTACK_H_
-#define _IMAGESTACK_H_
+#ifndef _METADATA_H_
+#define _METADATA_H_
 
-#include <vector>
 #include <string>
-#include <memory>
-#include "config.h"
-#include "Image.hpp"
+#include <libraw/libraw.h>
 
 
 namespace hdrmerge {
 
-class ImageStack {
+class MetaData {
 public:
-    ImageStack() : width(0), height(0), dx(0), dy(0), currentScale(0) {}
+    MetaData(const char * f, const LibRaw & rawData);
 
-    size_t size() const { return images.size(); }
-
-    size_t getWidth() const {
-        return width >> currentScale;
+    // From LibRaw
+    int FC(int row, int col) const {
+        return (filter >> (((row << 1 & 14) | (col & 1)) << 1) & 3);
     }
 
-    size_t getHeight() const {
-        return height >> currentScale;
+    bool isSameFormat(const MetaData & r) {
+        return width == r.width && height == r.height && filter == r.filter && cdesc == r.cdesc;
     }
 
-    Image & getImage(unsigned int i) {
-        return *images[i];
+    uint16_t blackAt(size_t row, size_t col) {
+        return black + cblack[FC(row, col)];
     }
 
-    bool addImage(std::unique_ptr<Image> & i);
-    void align();
+    float logExp() const;
 
-private:
-    std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
-    size_t width;     ///< Size of a row
-    size_t height;    ///< Size of a column
-    int dx, dy;
-    unsigned int currentScale;     ///< Current scale factor
+    void dumpInfo() const;
+
+    std::string fileName;
+    size_t width, height;
+    std::string cdesc;
+    uint32_t filter;
+    uint16_t max;
+    uint16_t black;
+    uint16_t cblack[4];
+    float isoSpeed;
+    float shutter;
+    float aperture;
+    std::string maker, model;
+    int colors;
 };
 
 } // namespace hdrmerge
 
-#endif // _IMAGESTACK_H_
+#endif // _METADATA_H_

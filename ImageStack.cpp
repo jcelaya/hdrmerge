@@ -24,36 +24,45 @@
 #include <tiffio.h>
 #include <libraw/libraw.h>
 #include <pfs-1.2/pfs.h>
+#include <algorithm>
 #include "ImageStack.hpp"
 using namespace std;
 using namespace hdrmerge;
 
 
 bool ImageStack::addImage(std::unique_ptr<Image> & i) {
-    if (images.empty() || !images.front()->isWrongFormat(*i)) {
+    if (images.empty()) {
         width = i->getWidth();
         height = i->getHeight();
         images.push_back(std::move(i));
+        return true;
+    } else if (images.front()->isSameFormat(*i)) {
+        images.push_back(std::move(i));
+        std::sort(images.begin(), images.end(), Image::comparePointers);
         return true;
     }
     return false;
 }
 
-// ImageStack::LoadResult ImageStack::loadImage(const char * fileName) {
-//     Exposure e(fileName);
-//     LoadResult result = e.load(images.empty() ? nullptr : &images.front());
-//     if (result == LOAD_SUCCESS) {
-//         width = e.rawData.imgdata.sizes.raw_width;
-//         height = e.rawData.imgdata.sizes.raw_height;
-//         images.push_back(e);
-//     }
-//     return result;
-// }
-
-
-//void ImageStack::setRelativeExposure(unsigned int i, double re) {
-//     images[i].immExp = re;
-//     for (int j = i; j >= 0; --j) {
-//         images[j].relExp = images[j + 1].relExp * images[j].immExp;
-//     }
-//}
+void ImageStack::align() {
+    if (images.size() > 1) {
+        dx = 0, dy = 0;
+        for (auto cur = images.begin(), prev = ++cur; cur != images.end(); prev = ++cur) {
+            dx += (*prev)->getDeltaX();
+            dy += (*prev)->getDeltaY();
+            (*cur)->alignWith(**prev, 0.5, 0.00025);
+            (*cur)->displace(dx, dy);
+        }
+        dx = 0, dy = 0;
+        for (auto & i : images) {
+            int newDx = max(dx, i->getDeltaX());
+            int bound = min(dx + width, i->getDeltaX() + i->getWidth());
+            width = bound > newDx ? bound - newDx : 0;
+            dx = newDx;
+            int newDy = max(dy, i->getDeltaY());
+            bound = min(dy + height, i->getDeltaY() + i->getHeight());
+            height = bound > newDy ? bound - newDy : 0;
+            dy = newDy;
+        }
+    }
+}

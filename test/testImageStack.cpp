@@ -8,10 +8,10 @@ static const char * image2 = "test/sample2.dng";
 
 BOOST_AUTO_TEST_CASE( image_load ) {
     Image e1(image1);
-    BOOST_REQUIRE(!e1.loadFailed());
+    BOOST_REQUIRE(e1.good());
     Image e2(image2);
-    BOOST_REQUIRE(!e2.loadFailed());
-    BOOST_REQUIRE(!e2.isWrongFormat(e1));
+    BOOST_REQUIRE(e2.good());
+    BOOST_REQUIRE(e2.isSameFormat(e1));
     e1.alignWith(e2, 0.5, 1.0/4096);
     e2.alignWith(e1, 0.5, 1.0/4096);
     BOOST_CHECK_EQUAL(e1.getDeltaX(), -e2.getDeltaX());
@@ -21,13 +21,17 @@ BOOST_AUTO_TEST_CASE( image_load ) {
 BOOST_AUTO_TEST_CASE(stack_load) {
     ImageStack images;
     BOOST_CHECK_EQUAL(images.size(), 0);
-    unique_ptr<Image> e1(new Image(image1)), e2(new Image(image2));
-    BOOST_REQUIRE(!e1->loadFailed());
-    BOOST_REQUIRE(!e2->loadFailed());
+    unique_ptr<Image> e1(new Image(image2)), e2(new Image(image1));
+    Image & e1ref = *e1, & e2ref = *e2;
+    BOOST_REQUIRE(e1->good());
+    BOOST_REQUIRE(e2->good());
     BOOST_REQUIRE(images.addImage(e1));
     BOOST_CHECK(!e1.get());
     BOOST_CHECK(images.addImage(e2));
     BOOST_CHECK_EQUAL(images.size(), 2);
+    BOOST_CHECK_EQUAL(&images.getImage(0), &e2ref);
     BOOST_CHECK_EQUAL(images.getImage(0).getWidth(), images.getWidth());
     BOOST_CHECK_EQUAL(images.getImage(0).getHeight(), images.getHeight());
+    images.align();
+
 }

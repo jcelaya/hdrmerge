@@ -20,7 +20,8 @@
  *
  */
 
-#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <cmath>
 #include "Bitmap.hpp"
 using namespace hdrmerge;
@@ -47,9 +48,6 @@ const int Bitmap::ones[256] = {
 
 Bitmap::Bitmap(size_t w, size_t h) {
     resize(w, h);
-    for (size_t i = 0; i < size; ++i) {
-        bits[i] = 0;
-    }
 }
 
 
@@ -63,10 +61,6 @@ void Bitmap::resize(size_t w, size_t h) {
 
 
 void Bitmap::shift(const Bitmap & src, int dx, int dy) {
-    rowWidth = src.rowWidth;
-    size = src.size;
-    numBits = src.numBits;
-    bits.reset(new uint32_t[size]);
     int pos = -dy*rowWidth - dx;
     int div = pos >> 5;
     size_t b = pos & 31;
@@ -83,6 +77,7 @@ void Bitmap::shift(const Bitmap & src, int dx, int dy) {
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
     applyRowMask(dx);
+    dumpFile();
 }
 
 
@@ -97,12 +92,16 @@ void Bitmap::applyRowMask(int dx) {
     } else return;
     for (size_t disp = 0; disp < numBits; disp += rowWidth) {
         Position pa(disp + a), pb(disp + b);
+        uint32_t amask = pa.mod ? allOnes >> (32 - pa.mod) : 0;
+        uint32_t bmask = allOnes << pb.mod;
         if (pa.div == pb.div) {
-            uint32_t mask = (allOnes >> (32 - pa.mod)) | (allOnes << pb.mod);
+            uint32_t mask = amask | bmask;
             bits[pa.div] &= mask;
         } else {
-            bits[pa.div] &= allOnes >> (32 - pa.mod);
-            bits[pb.div] &= allOnes << pb.mod;
+            bits[pa.div] &= amask;
+            for (size_t i = pa.div + 1; i < pb.div; ++i)
+                bits[i] &= 0;
+            bits[pb.div] &= bmask;
         }
     }
 }
@@ -112,6 +111,7 @@ void Bitmap::bitwiseXor(const Bitmap & r) {
     for (size_t i = 0; i < size; ++i) {
         bits[i] ^= r.bits[i];
     }
+    dumpFile();
 }
 
 
@@ -119,11 +119,11 @@ void Bitmap::bitwiseAnd(const Bitmap & r) {
     for (size_t i = 0; i < size; ++i) {
         bits[i] &= r.bits[i];
     }
+    dumpFile();
 }
 
 
-void Bitmap::mtb(const uint16_t * pixels, size_t w, size_t h, uint16_t mth) {
-    resize(w, h);
+void Bitmap::mtb(const uint16_t * pixels, uint16_t mth) {
     uint32_t mask = 1;
     for (size_t i = 0, pos = 0; i < numBits; ++i) {
         if (pixels[i] > mth) {
@@ -138,15 +138,15 @@ void Bitmap::mtb(const uint16_t * pixels, size_t w, size_t h, uint16_t mth) {
         }
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
+    dumpFile();
 }
 
 
-void Bitmap::exclusion(const uint16_t * pixels, size_t w, size_t h, uint16_t mth, uint16_t tolerance) {
-    resize(w, h);
+void Bitmap::exclusion(const uint16_t * pixels, uint16_t mth, uint16_t tolerance) {
     uint32_t mask = 1;
     uint16_t min = mth - tolerance, max = mth + tolerance;
     for (size_t i = 0, pos = 0; i < numBits; ++i) {
-        if (pixels[i] < min || pixels[i] > max) {
+        if (pixels[i] <= min || pixels[i] > max) {
             bits[pos] |= mask;
         } else {
             bits[pos] &= ~mask;
@@ -158,6 +158,7 @@ void Bitmap::exclusion(const uint16_t * pixels, size_t w, size_t h, uint16_t mth
         }
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
+    dumpFile();
 }
 
 
@@ -173,14 +174,30 @@ size_t Bitmap::count() const {
 }
 
 
-void Bitmap::dumpInfo() {
+std::string Bitmap::dumpInfo() {
+    std::ostringstream oss;
     size_t tb = 0;
     for (size_t i = 0; i < size; ++i) {
         uint32_t value = bits[i];
         for (int b = 0; tb < numBits && b < 32; ++tb, ++b) {
-            std::cerr << (value % 2);
+            oss << (value % 2);
             value >>= 1;
         }
     }
-    std::cerr << std::endl;
+    return oss.str();
 }
+
+void Bitmap::dumpFile() {
+//     std::ofstream of("bitmap.pbm");
+//     of << "P1\n# Foo\n" << rowWidth << " " << (numBits/rowWidth) << "\n";
+//     size_t tb = 0;
+//     for (size_t i = 0; i < size; ++i) {
+//         uint32_t value = bits[i];
+//         for (int b = 0; tb < numBits && b < 32; ++tb, ++b) {
+//             of << ' ' << (value % 2);
+//             value >>= 1;
+//         }
+//         of << "\n";
+//     }
+}
+

@@ -27,6 +27,10 @@ using namespace hdrmerge;
 using namespace std;
 
 
+MetaData::MetaData() : width(0), height(0), filter(0), max(0), black(0),
+cblack{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
+
+
 MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     auto & r = rawData.imgdata;
     width = r.sizes.raw_width;

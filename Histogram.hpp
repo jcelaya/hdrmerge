@@ -24,6 +24,7 @@
 #define _HISTOGRAM_H_
 
 #include <cmath>
+#include <cstdint>
 
 namespace hdrmerge {
 
@@ -42,7 +43,7 @@ public:
     }
 
     uint16_t getMedian(float threshold) const {
-        unsigned int current = bins[0], limit = std::floor(numSamples * threshold);
+        std::size_t current = bins[0], limit = std::floor(numSamples * threshold);
         uint16_t result = 0;
         while (current < limit)
                 current += bins[++result];
@@ -51,7 +52,7 @@ public:
 
 private:
     unsigned int bins[65536];
-    size_t numSamples;
+    std::size_t numSamples;
 };
 
 }

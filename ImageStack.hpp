@@ -34,7 +34,7 @@ namespace hdrmerge {
 
 class ImageStack {
 public:
-    ImageStack() : width(0), height(0), dx(0), dy(0), currentScale(0) {}
+    ImageStack() : width(0), height(0), currentScale(0) {}
 
     size_t size() const { return images.size(); }
 
@@ -57,8 +57,9 @@ private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
     size_t width;     ///< Size of a row
     size_t height;    ///< Size of a column
-    int dx, dy;
     unsigned int currentScale;     ///< Current scale factor
+
+    void findIntersection();
 };
 
 } // namespace hdrmerge

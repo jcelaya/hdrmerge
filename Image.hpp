@@ -33,10 +33,13 @@ namespace hdrmerge {
 
 class Image {
 public:
+    static const int scaleSteps = 6;
+
+    Image(uint16_t * rawImage, const MetaData & md);
     Image(const char * f);
 
     bool good() const {
-        return pixel != nullptr && metaData.get() != nullptr;
+        return pixel != nullptr;
     }
     size_t getWidth() const {
         return width;
@@ -56,14 +59,15 @@ public:
         dx += newDx;
         dy += newDy;
     }
+    const uint16_t * getPixels(int i) {
+        return scaledData[i].get();
+    }
 
     static bool comparePointers(const std::unique_ptr<Image> & l, const std::unique_ptr<Image> & r) {
         return l->logExp > r->logExp;
     }
 
 private:
-    static const int scaleSteps = 6;
-
     std::unique_ptr<MetaData> metaData;
     uint16_t * pixel;
     std::vector<std::unique_ptr<uint16_t[]>> scaledData;
@@ -77,6 +81,7 @@ private:
     void subtractBlack();
     void computeRelExp();
     void preScale();
+    void buildImage(uint16_t * rawImage, MetaData * md);
 };
 
 } // namespace hdrmerge

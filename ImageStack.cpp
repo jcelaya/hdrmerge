@@ -46,23 +46,30 @@ bool ImageStack::addImage(std::unique_ptr<Image> & i) {
 
 void ImageStack::align() {
     if (images.size() > 1) {
-        dx = 0, dy = 0;
-        for (auto cur = images.begin(), prev = ++cur; cur != images.end(); prev = ++cur) {
-            dx += (*prev)->getDeltaX();
-            dy += (*prev)->getDeltaY();
-            (*cur)->alignWith(**prev, 0.5, 0.00025);
+        int dx = 0, dy = 0;
+        for (auto cur = images.begin(), prev = cur++; cur != images.end(); prev = cur++) {
+            dx = (*prev)->getDeltaX();
+            dy = (*prev)->getDeltaY();
+            (*cur)->alignWith(**prev, 0.5, 1.0/64);
             (*cur)->displace(dx, dy);
         }
-        dx = 0, dy = 0;
-        for (auto & i : images) {
-            int newDx = max(dx, i->getDeltaX());
-            int bound = min(dx + width, i->getDeltaX() + i->getWidth());
-            width = bound > newDx ? bound - newDx : 0;
-            dx = newDx;
-            int newDy = max(dy, i->getDeltaY());
-            bound = min(dy + height, i->getDeltaY() + i->getHeight());
-            height = bound > newDy ? bound - newDy : 0;
-            dy = newDy;
-        }
+        findIntersection();
+    }
+}
+
+void ImageStack::findIntersection() {
+    int dx = 0, dy = 0;
+    for (auto & i : images) {
+        int newDx = max(dx, i->getDeltaX());
+        int bound = min(dx + width, i->getDeltaX() + i->getWidth());
+        width = bound > newDx ? bound - newDx : 0;
+        dx = newDx;
+        int newDy = max(dy, i->getDeltaY());
+        bound = min(dy + height, i->getDeltaY() + i->getHeight());
+        height = bound > newDy ? bound - newDy : 0;
+        dy = newDy;
+    }
+    for (auto & i : images) {
+        i->displace(-dx, -dy);
     }
 }

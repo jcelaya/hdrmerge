@@ -37,6 +37,26 @@ using namespace std;
 using namespace hdrmerge;
 
 
+void Image::buildImage(uint16_t * rawImage, MetaData * md) {
+    metaData.reset(md);
+    width = metaData->width;
+    height = metaData->height;
+    max = metaData->max;
+    scaledData.emplace_back(new uint16_t[width*height]);
+    pixel = scaledData.back().get();
+    std::copy_n(rawImage, width*height, pixel);
+    subtractBlack();
+    logExp = metaData->logExp();
+    preScale();
+    metaData->dumpInfo();
+}
+
+
+Image::Image(uint16_t * rawImage, const MetaData & md) : dx(0), dy(0), relExp(1.0), immExp(1.0) {
+    buildImage(rawImage, new MetaData(md));
+}
+
+
 Image::Image(const char * f) : pixel(nullptr), dx(0), dy(0), max(0), relExp(1.0), immExp(1.0) {
     LibRaw rawData;
     int error = rawData.open_file(f);
@@ -44,24 +64,14 @@ Image::Image(const char * f) : pixel(nullptr), dx(0), dy(0), max(0), relExp(1.0)
         rawData.unpack();
         uint16_t * rawImage = rawData.imgdata.rawdata.raw_image;
         if (rawImage != nullptr) {
-            metaData.reset(new MetaData(f, rawData));
-            width = metaData->width;
-            height = metaData->height;
-            max = metaData->max;
-            scaledData.emplace_back(new uint16_t[width*height]);
-            pixel = scaledData.back().get();
-            std::copy_n(rawImage, width*height, pixel);
-            subtractBlack();
-            logExp = metaData->logExp();
-            preScale();
-            metaData->dumpInfo();
+            buildImage(rawImage, new MetaData(f, rawData));
         }
     }
 }
 
 
 bool Image::isSameFormat(const Image & ref) const {
-    return metaData->isSameFormat(*ref.metaData);
+    return metaData.get() && ref.metaData.get() && metaData->isSameFormat(*ref.metaData);
 }
 
 
@@ -99,34 +109,36 @@ void Image::computeRelExp() {
 
 
 void Image::alignWith(const Image & r, float threshold, float tolerance) {
+    if (!good() || !r.good()) return;
     dx = dy = 0;
-    size_t curWidth = width >> (scaleSteps - 1);
-    size_t curHeight = height >> (scaleSteps - 1);
     uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
     for (size_t s = scaleSteps - 1; s > 0; --s) {
-        Histogram hist1(scaledData[s].get(), scaledData[s].get() + curWidth*curHeight);
-        Histogram hist2(r.scaledData[s].get(), r.scaledData[s].get() + curWidth*curHeight);
+        size_t curWidth = width >> s;
+        size_t curHeight = height >> s;
+        Histogram hist1(r.scaledData[s].get(), r.scaledData[s].get() + curWidth*curHeight);
+        Histogram hist2(scaledData[s].get(), scaledData[s].get() + curWidth*curHeight);
         uint16_t mth1 = hist1.getMedian(threshold);
         uint16_t mth2 = hist2.getMedian(threshold);
-        Bitmap mtb1, mtb2, excl1, excl2;
-        mtb1.mtb(scaledData[s].get(), curWidth, curHeight, mth1);
-        mtb2.mtb(r.scaledData[s].get(), curWidth, curHeight, mth2);
-        excl1.exclusion(scaledData[s].get(), curWidth, curHeight, mth1, tolPixels);
-        excl2.exclusion(r.scaledData[s].get(), curWidth, curHeight, mth2, tolPixels);
+        Bitmap mtb1(curWidth, curHeight), mtb2(curWidth, curHeight),
+        excl1(curWidth, curHeight), excl2(curWidth, curHeight);
+        mtb1.mtb(r.scaledData[s].get(), mth1);
+        mtb2.mtb(scaledData[s].get(), mth2);
+        excl1.exclusion(r.scaledData[s].get(), mth1, tolPixels);
+        excl2.exclusion(scaledData[s].get(), mth2, tolPixels);
         size_t minError = curWidth*curHeight;
-        int curdx = dx, curdy = dy;
+        Bitmap shiftMtb(curWidth, curHeight), shiftExcl(curWidth, curHeight);
+        int curDx = dx, curDy = dy;
         for (int i : {-1, 0, 1}) {
             for (int j : {-1, 0, 1}) {
-                Bitmap shiftMtb, shiftExcl;
-                shiftMtb.shift(mtb2, curdx + i, curdy + j);
-                shiftExcl.shift(excl2, curdx + i, curdy + j);
+                shiftMtb.shift(mtb2, curDx + i, curDy + j);
+                shiftExcl.shift(excl2, curDx + i, curDy + j);
                 shiftMtb.bitwiseXor(mtb1);
                 shiftMtb.bitwiseAnd(excl1);
                 shiftMtb.bitwiseAnd(shiftExcl);
                 size_t err = shiftMtb.count();
                 if (err < minError) {
-                    dx = curdx + i;
-                    dy = curdy + j;
+                    dx = curDx + i;
+                    dy = curDy + j;
                     minError = err;
                 }
             }
@@ -138,7 +150,6 @@ void Image::alignWith(const Image & r, float threshold, float tolerance) {
 
 
 void Image::preScale() {
-    scaledData.resize(1);
     size_t curWidth = width;
     size_t curHeight = height;
     for (size_t s = 1; s < scaleSteps; ++s) {

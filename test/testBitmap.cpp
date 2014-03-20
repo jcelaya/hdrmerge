@@ -5,6 +5,7 @@ using namespace std;
 
 BOOST_AUTO_TEST_CASE(bitmap_create) {
     Bitmap b(100, 200);
+    b.reset();
     b.set(20, 30);
     b.set(45, 81);
     b.set(99, 199);
@@ -14,30 +15,51 @@ BOOST_AUTO_TEST_CASE(bitmap_create) {
     BOOST_CHECK_EQUAL(b.count(), 2);
 }
 
+static bool checkZeroArea(const Bitmap & b, int i0, int i1, int j0, int j1) {
+    for (int i = i0; i < i1; ++i) {
+        for (int j = j0; j < j1; ++j) {
+            if (b.get(i, j)) return false;
+        }
+    }
+    return true;
+}
+
 BOOST_AUTO_TEST_CASE(bitmap_shift) {
-    Bitmap b(10, 10);
-    b.set(2, 3);
-    b.set(4, 8);
-    b.set(9, 9);
-    Bitmap bshifted1, bshifted2, bshifted3, bshifted4;
-    bshifted1.shift(b, 3, 1);
-    bshifted2.shift(b, -3, 1);
-    bshifted3.shift(b, 1, -4);
-    bshifted4.shift(b, -3, -4);
-    BOOST_CHECK(bshifted1.get(5, 4));
-    BOOST_CHECK(bshifted1.get(7, 9));
-    BOOST_CHECK_EQUAL(bshifted1.count(), 2);
-    BOOST_CHECK(bshifted2.get(1, 9));
-    BOOST_CHECK_EQUAL(bshifted2.count(), 1);
-    BOOST_CHECK(bshifted3.get(5, 4));
-    BOOST_CHECK_EQUAL(bshifted3.count(), 1);
-    BOOST_CHECK(bshifted4.get(1, 4));
-    BOOST_CHECK(bshifted4.get(6, 5));
-    BOOST_CHECK_EQUAL(bshifted4.count(), 2);
+    Bitmap b(100, 100);
+    for (int i = 0; i < 100; ++i) {
+        for (int j = 0; j < 100; ++j) {
+            b.set(i, j);
+        }
+    }
+    b.reset(49, 49); b.reset(49, 50); b.reset(50, 49); b.reset(50, 50);
+    b.dumpFile();
+    Bitmap s(100, 100);
+    s.shift(b, 35, 35);
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 0, 35, 0, 100), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 0, 100, 0, 35), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 84, 86, 84, 86), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(s.count() == 4221, s.dumpInfo());
+    s.shift(b, -35, 35);
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 65, 100, 0, 100), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 0, 100, 0, 35), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 14, 16, 84, 86), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(s.count() == 4221, s.dumpInfo());
+    s.shift(b, 35, -35);
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 0, 35, 0, 100), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 0, 100, 65, 100), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 84, 86, 14, 16), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(s.count() == 4221, s.dumpInfo());
+    s.shift(b, -35, -35);
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 65, 100, 0, 100), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 0, 100, 65, 100), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(checkZeroArea(s, 14, 16, 14, 16), s.dumpInfo());
+    BOOST_CHECK_MESSAGE(s.count() == 4221, s.dumpInfo());
 }
 
 BOOST_AUTO_TEST_CASE(bitmap_xor) {
     Bitmap b1(10, 10), b2(10, 10);
+    b1.reset();
+    b2.reset();
     for (int i : { 1, 3, 4, 7, 8 }) {
         b1.set(i, 3);
         b2.set(i, 3);
@@ -54,6 +76,8 @@ BOOST_AUTO_TEST_CASE(bitmap_xor) {
 
 BOOST_AUTO_TEST_CASE(bitmap_and) {
     Bitmap b1(10, 10), b2(10, 10);
+    b1.reset();
+    b2.reset();
     for (int i : { 1, 3, 4, 7, 8 }) {
         b1.set(i, 3);
         b2.set(i, 3);
@@ -70,8 +94,8 @@ BOOST_AUTO_TEST_CASE(bitmap_and) {
 
 BOOST_AUTO_TEST_CASE(bitmap_mtb) {
     uint16_t data[] = { 1, 2, 3, 4, 3, 4, 5, 2, 3, 1, 4, 2, 5, 2, 3, 1, 2, 2, 2, 4, 5 };
-    Bitmap b;
-    b.mtb(data, 3, 7, 3);
+    Bitmap b(3, 7);
+    b.mtb(data, 3);
     BOOST_CHECK_EQUAL(b.count(), 7);
     BOOST_CHECK(b.get(0, 1));
     BOOST_CHECK(b.get(2, 1));
@@ -83,14 +107,18 @@ BOOST_AUTO_TEST_CASE(bitmap_mtb) {
 }
 
 BOOST_AUTO_TEST_CASE(bitmap_exclusion) {
-    uint16_t data[] = { 1, 2, 3, 4, 3, 4, 5, 2, 3, 1, 4, 2, 5, 2, 3, 1, 2, 2, 2, 4, 5 };
-    Bitmap b;
-    b.exclusion(data, 3, 7, 3, 1);
-    BOOST_CHECK_EQUAL(b.count(), 6);
+    uint16_t data[] = { 1, 2, 3, 4, 3, 4, 5, 2, 3, 1, 4, 3, 5, 2, 3, 1, 3, 4, 2, 4, 5 };
+    Bitmap b(3, 7);
+    b.exclusion(data, 3, 1);
+    BOOST_CHECK_EQUAL(b.count(), 10);
     BOOST_CHECK(b.get(0, 0));
+    BOOST_CHECK(b.get(1, 0));
     BOOST_CHECK(b.get(0, 2));
+    BOOST_CHECK(b.get(1, 2));
     BOOST_CHECK(b.get(0, 3));
     BOOST_CHECK(b.get(0, 4));
+    BOOST_CHECK(b.get(1, 4));
     BOOST_CHECK(b.get(0, 5));
+    BOOST_CHECK(b.get(0, 6));
     BOOST_CHECK(b.get(2, 6));
 }

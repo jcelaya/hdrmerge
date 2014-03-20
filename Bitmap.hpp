@@ -26,14 +26,18 @@ namespace hdrmerge {
 
 class Bitmap {
 public:
-    Bitmap() :rowWidth(0), size(0), numBits(0) {}
     Bitmap(size_t w, size_t h);
 
     void shift(const Bitmap & src, int dx, int dy);
     void bitwiseXor(const Bitmap & r);
     void bitwiseAnd(const Bitmap & r);
-    void mtb(const uint16_t * pixels, size_t w, size_t h, uint16_t mth);
-    void exclusion(const uint16_t * pixels, size_t w, size_t h, uint16_t mth, uint16_t tolerance);
+    void mtb(const uint16_t * pixels, uint16_t mth);
+    void exclusion(const uint16_t * pixels, uint16_t mth, uint16_t tolerance);
+    void reset() {
+        for (size_t i = 0; i < size; ++i) {
+            bits[i] = 0;
+        }
+    }
 
     void set(size_t x, size_t y) {
         size_t pos = y*rowWidth + x;
@@ -46,14 +50,15 @@ public:
         Position p(y*rowWidth + x);
         bits[p.div] &= ~p.mask;
     }
-    bool get(size_t x, size_t y) {
+    bool get(size_t x, size_t y) const {
         Position p(y*rowWidth + x);
         return bits[p.div] & p.mask;
     }
     size_t count() const;
     void resize(size_t w, size_t h);
 
-    void dumpInfo();
+    std::string dumpInfo();
+    void dumpFile();
 
 private:
     struct Position {

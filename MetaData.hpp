@@ -31,6 +31,7 @@ namespace hdrmerge {
 
 class MetaData {
 public:
+    MetaData();
     MetaData(const char * f, const LibRaw & rawData);
 
     // From LibRaw

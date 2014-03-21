@@ -1,6 +1,30 @@
+/*
+ *  HDRMerge - HDR exposure merging software.
+ *  Copyright 2012 Javier Celaya
+ *  jcelaya@gmail.com
+ *
+ *  This file is part of HDRMerge.
+ *
+ *  HDRMerge is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  HDRMerge is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with HDRMerge. If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #include "../ImageStack.hpp"
 #include "SampleImage.hpp"
+#include "time.hpp"
 #include <boost/test/unit_test.hpp>
+#include <boost/config/no_tr1/complex.hpp>
 using namespace hdrmerge;
 using namespace std;
 
@@ -112,7 +136,8 @@ BOOST_AUTO_TEST_CASE(stack_align) {
     BOOST_REQUIRE(images.addImage(e2));
     BOOST_REQUIRE(images.addImage(e3));
     BOOST_REQUIRE(images.addImage(e4));
-    images.align();
+    double alignTime = measureTime([&] () {images.align();});
+    cerr << "Images aligned in " << alignTime << " seconds." << endl;
     BOOST_CHECK_EQUAL(images.getWidth(), 962);
     BOOST_CHECK_EQUAL(images.getHeight(), 564);
     BOOST_CHECK_EQUAL(e1ref.getDeltaX(), -38);
@@ -123,4 +148,21 @@ BOOST_AUTO_TEST_CASE(stack_align) {
     BOOST_CHECK_EQUAL(e3ref.getDeltaY(), -6);
     BOOST_CHECK_EQUAL(e4ref.getDeltaX(), -6);
     BOOST_CHECK_EQUAL(e4ref.getDeltaY(), -36);
+}
+
+
+BOOST_AUTO_TEST_CASE(auto_exposure) {
+    ImageStack images;
+    unique_ptr<Image> e1(new Image(image1)), e2(new Image(image2));
+    BOOST_REQUIRE(e1->good());
+    BOOST_REQUIRE(e2->good());
+    images.addImage(e1);
+    images.addImage(e2);
+    Image & e1ref = images.getImage(0), & e2ref = images.getImage(1);
+    double alignTime = measureTime([&] () {images.align();});
+    cerr << "Images aligned in " << alignTime << " seconds." << endl;
+    double exposureTime = measureTime([&] () {images.computeRelExposures();});
+    double metaImmExp = std::pow(2, e2ref.getMetaData().logExp() - e1ref.getMetaData().logExp());
+    cerr << "Relative exposure from data: " << e1ref.getImmediateExposure() << " in " << exposureTime << " seconds." << endl;
+    cerr << "Relative exposure from metadata: " << metaImmExp << endl;
 }

@@ -87,28 +87,22 @@ void Image::subtractBlack() {
 }
 
 
-void Image::computeRelExp() {
-//     if (nextImage == nullptr) {
-//         relExp = immExp = 1.0;
-//     } else {
-//         // Calculate median relative exposure
-//         uint16_t min = (uint16_t)floor(max * 0.2);
-//         vector<float> samples;
-//         uint16_t * rpix = nextImage->pixel, * end = pixel + width*height;
-//         for (uint16_t * pix = pixel; pix < end; rpix++, pix++) {
-//             // Only sample those pixels that are in the linear zone
-//             if (*rpix < max && *rpix > min && *pix < max && *pix > min)
-//                 samples.push_back((float)*rpix / *pix);
-//         }
-//         std::sort(samples.begin(), samples.end());
-//         immExp = samples[samples.size() / 2];
-//         relExp = immExp * nextImage->relExp;
-//         cerr << "Relative exposure: " << (1.0/relExp) << '(' << log2(1.0/relExp) << " EV)" << endl;
-//     }
+void Image::relativeExposure(const Image & r, size_t w, size_t h) {
+    Histogram hist;
+    for (size_t y1 = -dy, y2 = -r.dy; y1 < h - dy; ++y1, ++y2) {
+        for (size_t x1 = -dx, x2= -r.dx; x1 < w - dx; ++x1, ++x2) {
+            uint32_t v = pixel[y1*width + x1], nv = r.pixel[y2*width + x2];
+            if (v > nv && v < max) {
+                hist.addValue((uint16_t)((65536 * nv) / v));
+            }
+        }
+    }
+    immExp = hist.getMedian(0.5) / 65536.0;
+    relExp = immExp * r.relExp;
 }
 
 
-void Image::alignWith(const Image & r, float threshold, float tolerance) {
+void Image::alignWith(const Image & r, double threshold, double tolerance) {
     if (!good() || !r.good()) return;
     dx = dy = 0;
     uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);

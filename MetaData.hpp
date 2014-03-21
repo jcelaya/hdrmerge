@@ -47,7 +47,7 @@ public:
         return black + cblack[FC(row, col)];
     }
 
-    float logExp() const;
+    double logExp() const;
 
     void dumpInfo() const;
 

@@ -20,41 +20,11 @@
  *
  */
 
-#ifndef _HISTOGRAM_H_
-#define _HISTOGRAM_H_
+#include <ctime>
+#include <iostream>
 
-#include <cmath>
-#include <cstdint>
-
-namespace hdrmerge {
-
-class Histogram {
-public:
-    Histogram() : bins{}, numSamples(0) {}
-    template <typename Iterator> Histogram(Iterator start, Iterator end) : Histogram() {
-        while (start != end) {
-            addValue((uint16_t)*start++);
-        }
-    }
-
-    void addValue(uint16_t v) {
-        ++bins[v];
-        ++numSamples;
-    }
-
-    uint16_t getMedian(double threshold) const {
-        std::size_t current = bins[0], limit = std::floor(numSamples * threshold);
-        uint16_t result = 0;
-        while (current < limit)
-                current += bins[++result];
-        return result;
-    }
-
-private:
-    unsigned int bins[65536];
-    std::size_t numSamples;
-};
-
+template <typename Func> double measureTime(Func f) {
+    std::clock_t start = std::clock();
+    f();
+    return (std::clock() - start) / (double) CLOCKS_PER_SEC;
 }
-
-#endif // _HISTOGRAM_H_

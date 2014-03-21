@@ -51,7 +51,7 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
 }
 
 
-float MetaData::logExp() const {
+double MetaData::logExp() const {
     return std::log2(isoSpeed * shutter / (100.0 * aperture * aperture));
 }
 

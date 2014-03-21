@@ -41,6 +41,9 @@ public:
     bool good() const {
         return pixel != nullptr;
     }
+    const MetaData & getMetaData() const {
+        return *metaData;
+    }
     size_t getWidth() const {
         return width;
     }
@@ -53,8 +56,18 @@ public:
     int getDeltaY() const {
         return dy;
     }
+    uint16_t exposureAt(size_t x, size_t y) const {
+        x -= dx; y -= dy;
+        return pixel[y*width + x];
+    }
+    double getImmediateExposure() const {
+        return immExp;
+    }
+    double getRelativeExposure() const {
+        return relExp;
+    }
     bool isSameFormat(const Image & ref) const;
-    void alignWith(const Image & r, float threshold, float tolerance);
+    void alignWith(const Image & r, double threshold, double tolerance);
     void displace(int newDx, int newDy) {
         dx += newDx;
         dy += newDy;
@@ -62,6 +75,7 @@ public:
     const uint16_t * getPixels(int i) {
         return scaledData[i].get();
     }
+    void relativeExposure(const Image & nextImage, size_t w, size_t h);
 
     static bool comparePointers(const std::unique_ptr<Image> & l, const std::unique_ptr<Image> & r) {
         return l->logExp > r->logExp;
@@ -74,12 +88,11 @@ private:
     size_t width, height;
     int dx, dy;
     uint16_t max;
-    double logExp;          ///< Logarithmic exposure, from metadata
+    double logExp;
     double relExp;          ///< Relative exposure, from data
     double immExp;          ///< Exposure relative to the next image
 
     void subtractBlack();
-    void computeRelExp();
     void preScale();
     void buildImage(uint16_t * rawImage, MetaData * md);
 };

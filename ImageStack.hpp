@@ -52,6 +52,11 @@ public:
 
     bool addImage(std::unique_ptr<Image> & i);
     void align();
+    void computeRelExposures() {
+        for (auto cur = images.rbegin(), next = cur++; cur != images.rend(); next = cur++) {
+            (*cur)->relativeExposure(**next, width, height);
+        }
+    }
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed

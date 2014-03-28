@@ -60,6 +60,12 @@ public:
         x -= dx; y -= dy;
         return pixel[y*width + x];
     }
+    double relativeValue(size_t x, size_t y) const {
+        return exposureAt(x, y) * relExp;
+    }
+    bool isSaturated(size_t x, size_t y) const {
+        return exposureAt(x, y) == max;
+    }
     double getImmediateExposure() const {
         return immExp;
     }

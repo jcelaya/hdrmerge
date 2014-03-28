@@ -28,10 +28,7 @@ will need the development files of these libraries, and CMake version
 
 In brief, the steps to compile and install HDRMerge are:
 
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
+$ make CONFIG=Release
 $ sudo make install
 
 You will probably need root access to install HDRMerge to its default
@@ -49,20 +46,8 @@ concepts presented by Guillermo Luijk in its program Zero Noise [3]. His
 tutorial on the internals of Zero Noise is very useful to understand HDRMerge.
 HDRMerge currently only runs on Linux.
 
-Source exposures MUST be 16-bit linear TIFF images, aligned and of same size.
-A common way to ensure these conditions is to use dcraw and align_image_stack,
-from the hugin project. Having a set of DNG raw pictures, you would proceed as
-follows:
-
-dcraw -T -4 -w -q 3 -m 1 -v *.dng
-align_image_stack -a foo *.tiff
-
-The resulting images foo0000.tif, foo0001.tif... are prepared to be used by
-HDRMerge. In the future, these raw processing and alignment steps are planned
-to be included in HDRMerge.
-
 Source exposures can be loaded from the Open option in the File menu, or just
-passed as arguments in the command line.
+passed as arguments in the command line. They must be made with the same camera.
 
 Once the source exposures are loaded, the interface presents you with a
 preview of the result, and some tools to tune it. The default tool is the pan
@@ -85,7 +70,7 @@ tunned, as it has no relative EV and the threshold must be 255.
 
 Once the preview is satisfactory, the Save HDR option of the File menu
 generates the HDR file. Currently, only PFS streams are supported as output
-format.
+format. Tiff LogLuv is under development.
 
 There are two more tools in the lower left corner. These tools add or remove
 pixels from the current exposure ignoring its threshold. Their purpose is to

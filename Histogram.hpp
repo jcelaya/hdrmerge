@@ -41,9 +41,11 @@ public:
         ++bins[v];
         ++numSamples;
     }
-
-    uint16_t getMedian(double threshold) const {
-        std::size_t current = bins[0], limit = std::floor(numSamples * threshold);
+    std::size_t getNumSamples() const {
+        return numSamples;
+    }
+    uint16_t getPercentile(double frac) const {
+        std::size_t current = bins[0], limit = std::floor(numSamples * frac);
         uint16_t result = 0;
         while (current < limit)
                 current += bins[++result];

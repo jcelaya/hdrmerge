@@ -20,6 +20,7 @@
  *
  */
 
+#include <list>
 #include <tiff.h>
 #include <tiffio.h>
 #include <libraw/libraw.h>
@@ -72,4 +73,33 @@ void ImageStack::findIntersection() {
     for (auto & i : images) {
         i->displace(-dx, -dy);
     }
+}
+
+
+double ImageStack::value(size_t x, size_t y) {
+    for (auto & i : images) {
+        uint16_t v = i->exposureAt(x, y);
+        if (!i->isSaturated(x, y))
+            return i->relativeValue(x, y);
+    }
+    return images.back()->relativeValue(x, y);
+}
+
+
+string ImageStack::buildOutputFileName() {
+    string name;
+    std::list<string> names;
+    for (auto & image : images) {
+        const string & f = image->getMetaData().fileName;
+        names.push_back(f.substr(0, f.find_last_of('.')));
+    }
+    names.sort();
+    if (names.size() > 1) {
+        int pos = 0;
+        while (names.front()[pos] == names.back()[pos]) pos++;
+        name = names.front() + '-' + names.back().substr(pos);
+    } else {
+        name = names.front().substr(0, names.front().find_last_of('.'));
+    }
+    return name;
 }

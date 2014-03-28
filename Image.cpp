@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <string>
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 #include <cstring>
 #include <algorithm>
@@ -46,6 +47,7 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     pixel = scaledData.back().get();
     std::copy_n(rawImage, width*height, pixel);
     subtractBlack();
+    relExp = 65535.0 / max;
     logExp = metaData->logExp();
     preScale();
     metaData->dumpInfo();
@@ -89,15 +91,22 @@ void Image::subtractBlack() {
 
 void Image::relativeExposure(const Image & r, size_t w, size_t h) {
     Histogram hist;
+    double metaImmExp = 1.0 / (1 << (int)(getMetaData().logExp() - r.getMetaData().logExp()));
     for (size_t y1 = -dy, y2 = -r.dy; y1 < h - dy; ++y1, ++y2) {
         for (size_t x1 = -dx, x2= -r.dx; x1 < w - dx; ++x1, ++x2) {
-            uint32_t v = pixel[y1*width + x1], nv = r.pixel[y2*width + x2];
-            if (v > nv && v < max) {
-                hist.addValue((uint16_t)((65536 * nv) / v));
+            double v = pixel[y1*width + x1], nv = r.pixel[y2*width + x2];
+            double ratio = nv / v;
+            if (abs(ratio - metaImmExp) / ratio <= 0.025 && abs(ratio - metaImmExp) / metaImmExp <= 0.025) {
+            //if (v > nv && v < max && nv > 0.125*max) {
+                hist.addValue((uint16_t)(65536 * ratio));
             }
         }
     }
-    immExp = hist.getMedian(0.5) / 65536.0;
+    immExp = hist.getPercentile(0.5) / 65536.0;
+    for (double i = 0.0; i <= 1.05; i += 0.1) {
+        cout << setprecision(5) << (hist.getPercentile(i) / 65536.0) << ',';
+    }
+    cout << hist.getNumSamples() << '/' << (width*height) << " samples" << endl;
     relExp = immExp * r.relExp;
 }
 
@@ -111,8 +120,8 @@ void Image::alignWith(const Image & r, double threshold, double tolerance) {
         size_t curHeight = height >> s;
         Histogram hist1(r.scaledData[s].get(), r.scaledData[s].get() + curWidth*curHeight);
         Histogram hist2(scaledData[s].get(), scaledData[s].get() + curWidth*curHeight);
-        uint16_t mth1 = hist1.getMedian(threshold);
-        uint16_t mth2 = hist2.getMedian(threshold);
+        uint16_t mth1 = hist1.getPercentile(threshold);
+        uint16_t mth2 = hist2.getPercentile(threshold);
         Bitmap mtb1(curWidth, curHeight), mtb2(curWidth, curHeight),
         excl1(curWidth, curHeight), excl2(curWidth, curHeight);
         mtb1.mtb(r.scaledData[s].get(), mth1);

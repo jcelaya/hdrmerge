@@ -44,6 +44,7 @@
 #include "AboutDialog.hpp"
 #include "config.h"
 using namespace std;
+using namespace hdrmerge;
 
 
 MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
@@ -102,7 +103,7 @@ void MainWindow::createGui() {
     sizePolicy.setVerticalStretch(0);
     sizePolicy.setHeightForWidth(imageTabs->sizePolicy().hasHeightForWidth());
     imageTabs->setSizePolicy(sizePolicy);
-    toolLayout->addWidget(imageTabs);
+    //toolLayout->addWidget(imageTabs);
 
     layout->addWidget(toolArea);
 
@@ -210,7 +211,7 @@ void MainWindow::loadImages() {
     QVariant lastDirSetting = settings.value("lastOpenDirectory");
     QStringList files = QFileDialog::getOpenFileNames(this, tr("Open exposures"),
         lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
-        tr("Linear TIFF images (*.tif *.tiff)"), NULL, QFileDialog::DontUseNativeDialog);
+        tr("Digital NeGatives (*.dng)"), NULL, QFileDialog::DontUseNativeDialog);
     if (!files.empty()) {
         // Save last dir
         QString lastDir = QDir(files.front()).absolutePath();
@@ -221,55 +222,56 @@ void MainWindow::loadImages() {
 }
 
 
+static Image * loadAsync(const char * fileName) {
+    return new Image(fileName);
+}
+
+
 void MainWindow::loadImages(const QStringList & files) {
     if (!files.empty()) {
         unsigned int numImages = files.size();
 
         // Load and sort images
-        ExposureStack * img = new ExposureStack();
+        ImageStack * newImages = new ImageStack();
         QProgressDialog progress(tr("Loading files..."), QString(), 0, numImages + 2, this);
         progress.setMinimumDuration(0);
         for (unsigned int i = 0; i < numImages; i++) {
             progress.setValue(i);
             QByteArray fileName = QDir::toNativeSeparators(files[i]).toLocal8Bit();//toUtf8();
-            QFuture<ExposureStack::LoadResult> result = QtConcurrent::run(img, &ExposureStack::loadImage, fileName.constData());
+            QFuture<Image *> result = QtConcurrent::run(&loadAsync, fileName.constData());
             while (result.isRunning())
                 QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
             // Check for error
-            if (result.result() != ExposureStack::LOAD_SUCCESS) {
-                switch (result.result()) {
-                    case ExposureStack::LOAD_OPEN_FAIL:
-                        QMessageBox::warning(this, tr("Error opening file"), tr("Unable to open file %1.").arg(files[i]));
-                        break;
-                    case ExposureStack::LOAD_PARAM_FAIL:
-                        QMessageBox::warning(this, tr("Error reading file"), tr("Unable to read parameters of file %1.").arg(files[i]));
-                        break;
-                    case ExposureStack::LOAD_FORMAT_FAIL:
-                        QMessageBox::warning(this, tr("Error in file format"), tr("Incorrect format of file %1. All images must have the same size, with 16-bit linear channels.").arg(files[i]));
-                        break;
-                }
-                delete img;
+            unique_ptr<Image> image(result.result());
+            if (image.get() == nullptr || !image->good()) {
+                QMessageBox::warning(this, tr("Error opening file"), tr("Unable to open file %1.").arg(files[i]));
+                delete newImages;
+                return;
+            }
+            if (!newImages->addImage(image)) {
+                QMessageBox::warning(this, tr("Error in file format"), tr("Incorrect format of file %1. All images must have the same size, with 16-bit linear channels.").arg(files[i]));
+                delete newImages;
                 return;
             }
         }
         progress.setValue(numImages);
-        progress.setLabelText(tr("Sorting..."));
-        images = img;
-        QFuture<void> result = QtConcurrent::run(images, &ExposureStack::sort);
+        progress.setLabelText(tr("Aligning..."));
+        images = newImages;
+        QFuture<void> result = QtConcurrent::run(images, &ImageStack::align);
         while (result.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         progress.setValue(numImages + 1);
-        progress.setLabelText(tr("Prescaling..."));
-        result = QtConcurrent::run(images, &ExposureStack::preScale);
+        progress.setLabelText(tr("Referencing..."));
+        result = QtConcurrent::run(images, &ImageStack::computeRelExposures);
         while (result.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         progress.setValue(numImages + 2);
 
         // Clean previous state
-        while (imageTabs->count() > 0) {
-            delete imageTabs->widget(0);
-            imageTabs->removeTab(0);
-        }
+//         while (imageTabs->count() > 0) {
+//             delete imageTabs->widget(0);
+//             imageTabs->removeTab(0);
+//         }
         if (rt != NULL)
             delete rt;
 
@@ -283,16 +285,16 @@ void MainWindow::loadImages(const QStringList & files) {
         rt->start(QThread::LowPriority);
 
         // Create GUI
-        for (unsigned int i = 0; i < numImages - 1; i++) {
-            // Create ImageControl widgets for every exposure except the last one
-            ImageControl * ic =
-                new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
-            connect(ic, SIGNAL(relativeEVChanged(int, double)),
-                    rt, SLOT(setExposureRelativeEV(int, double)));
-            connect(ic, SIGNAL(thresholdChanged(int, int)),
-                    rt, SLOT(setExposureThreshold(int, int)));
-            imageTabs->addTab(ic, tr("Exposure %1").arg(i));
-        }
+//         for (unsigned int i = 0; i < numImages - 1; i++) {
+//             // Create ImageControl widgets for every exposure except the last one
+//             ImageControl * ic =
+//                 new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
+//             connect(ic, SIGNAL(relativeEVChanged(int, double)),
+//                     rt, SLOT(setExposureRelativeEV(int, double)));
+//             connect(ic, SIGNAL(thresholdChanged(int, int)),
+//                     rt, SLOT(setExposureThreshold(int, int)));
+//             imageTabs->addTab(ic, tr("Exposure %1").arg(i));
+//         }
     }
 }
 
@@ -300,28 +302,18 @@ void MainWindow::loadImages(const QStringList & files) {
 void MainWindow::saveResult() {
     if (images) {
         // Take the prefix and add the first and last suffix
-        QString name;
-        if (images->size() > 1) {
-            list<string> names;
-            for (unsigned int i = 0; i < images->size(); i++)
-                names.push_back(images->getFileName(i).substr(0, images->getFileName(i).find_last_of('.')));
-            names.sort();
-            int pos = 0;
-            while (names.front()[pos] == names.back()[pos]) pos++;
-            name = (names.front() + '-' + names.back().substr(pos) + ".pfs").c_str();
-        } else name = images->getFileName(0).c_str();
-
+        QString name = (images->buildOutputFileName() + ".pfs").c_str();
         QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), name,
             tr("PFS stream files (*.pfs)"), NULL, QFileDialog::DontUseNativeDialog);
         if (!file.isEmpty()) {
-            QProgressDialog progress(tr("Saving %1").arg(file), QString(), 0, 1, this);
-            progress.setMinimumDuration(0);
-            progress.setValue(0);
-            QByteArray fileName = QDir::toNativeSeparators(file).toUtf8();
-            QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, fileName.constData());
-            while (result.isRunning())
-                QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-            progress.setValue(1);
+//             QProgressDialog progress(tr("Saving %1").arg(file), QString(), 0, 1, this);
+//             progress.setMinimumDuration(0);
+//             progress.setValue(0);
+//             QByteArray fileName = QDir::toNativeSeparators(file).toUtf8();
+//             QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, fileName.constData());
+//             while (result.isRunning())
+//                 QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+//             progress.setValue(1);
         }
     }
 }
@@ -362,12 +354,12 @@ void MainWindow::setTool(QAction * action) {
 
 void MainWindow::painted(int x, int y) {
     // TODO: configure radius
-    if (rt != NULL) {
-        if (addGhostAction->isChecked())
-            rt->addPixels(imageTabs->currentIndex(), x, y, 5);
-        else
-            rt->removePixels(imageTabs->currentIndex(), x, y, 5);
-    }
+//     if (rt != NULL) {
+//         if (addGhostAction->isChecked())
+//             rt->addPixels(imageTabs->currentIndex(), x, y, 5);
+//         else
+//             rt->removePixels(imageTabs->currentIndex(), x, y, 5);
+//     }
 }
 
 

@@ -34,11 +34,13 @@
 #include <QEvent>
 #include <QMutex>
 #include <QStringList>
-#include "Exposure.hpp"
+#include "ImageStack.hpp"
 #include "RenderThread.hpp"
 #include "PreviewWidget.hpp"
 #include "DraggableScrollArea.hpp"
 
+
+namespace hdrmerge {
 
 class MainWindow : public QMainWindow {
 public:
@@ -92,11 +94,13 @@ private:
     QTabWidget * imageTabs;
     QStatusBar * statusbar;
 
-    ExposureStack * images;
+    ImageStack * images;
     RenderThread * rt;
 
     QStringList preLoadFiles;
     bool shiftPressed, controlPressed;
 };
+
+} // namespace hdrmerge
 
 #endif // UI_HDRMERGEMAINWINDOW_H

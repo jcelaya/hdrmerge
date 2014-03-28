@@ -27,8 +27,10 @@
 #include <QImage>
 #include <QMutex>
 #include <QWaitCondition>
-#include "Exposure.hpp"
+#include "ImageStack.hpp"
 
+
+namespace hdrmerge {
 
 class RenderThread : public QThread {
     Q_OBJECT
@@ -37,7 +39,7 @@ class RenderThread : public QThread {
     QWaitCondition condition;
     bool restart;
     bool abort;
-    ExposureStack * images;
+    ImageStack * images;
     unsigned int minx, miny, maxx, maxy;
     int gamma[65536];
     int scale;
@@ -48,7 +50,7 @@ protected:
     void run();
 
 public:
-    RenderThread(ExposureStack * es, float gamma = 1.0f, QObject *parent = 0);
+    RenderThread(ImageStack * es, float gamma = 1.0f, QObject *parent = 0);
     ~RenderThread();
 
 public slots:
@@ -62,5 +64,7 @@ public slots:
 signals:
     void renderedImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
 };
+
+} // namespace hdrmerge
 
 #endif // _RENDERTHREAD_H_

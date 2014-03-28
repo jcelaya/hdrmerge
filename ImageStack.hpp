@@ -57,6 +57,8 @@ public:
             (*cur)->relativeExposure(**next, width, height);
         }
     }
+    std::string buildOutputFileName();
+    double value(size_t x, size_t y);
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed

@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(auto_exposure) {
     double alignTime = measureTime([&] () {images.align();});
     cerr << "Images aligned in " << alignTime << " seconds." << endl;
     double exposureTime = measureTime([&] () {images.computeRelExposures();});
-    double metaImmExp = std::pow(2, e2ref.getMetaData().logExp() - e1ref.getMetaData().logExp());
+    double metaImmExp = 1.0 / (1 << (int)(e1ref.getMetaData().logExp() - e2ref.getMetaData().logExp()));
     cerr << "Relative exposure from data: " << e1ref.getImmediateExposure() << " in " << exposureTime << " seconds." << endl;
     cerr << "Relative exposure from metadata: " << metaImmExp << endl;
 }

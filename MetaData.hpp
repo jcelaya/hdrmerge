@@ -58,6 +58,7 @@ public:
     uint16_t max;
     uint16_t black;
     uint16_t cblack[4];
+    float preMul[4];
     float isoSpeed;
     float shutter;
     float aperture;

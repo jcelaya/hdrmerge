@@ -49,6 +49,9 @@ public:
     Image & getImage(unsigned int i) {
         return *images[i];
     }
+    const Image & getImage(unsigned int i) const {
+        return *images[i];
+    }
 
     bool addImage(std::unique_ptr<Image> & i);
     void align();
@@ -59,6 +62,7 @@ public:
     }
     std::string buildOutputFileName();
     double value(size_t x, size_t y);
+    void demosaic();
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed

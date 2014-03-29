@@ -28,7 +28,7 @@ using namespace std;
 
 
 MetaData::MetaData() : width(0), height(0), filter(0), max(0), black(0),
-cblack{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
+cblack{}, preMul{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
 MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
@@ -41,6 +41,7 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     black = r.color.black;
     for (int i : {0, 1, 2, 3}) {
         cblack[i] = r.color.cblack[i];
+        preMul[i] = r.color.pre_mul[i];
     }
     isoSpeed = r.other.iso_speed;
     shutter = r.other.shutter;

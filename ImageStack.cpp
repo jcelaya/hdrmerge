@@ -76,17 +76,60 @@ void ImageStack::findIntersection() {
 }
 
 
-double ImageStack::value(size_t x, size_t y) {
+double ImageStack::value(size_t x, size_t y) const {
     for (auto & i : images) {
         uint16_t v = i->exposureAt(x, y);
-        if (!i->isSaturated(x, y))
-            return i->relativeValue(x, y);
+        if (!i->isSaturated(v))
+            return i->relativeValue(v);
     }
-    return images.back()->relativeValue(x, y);
+    return images.back()->relativeValue(images.back()->exposureAt(x, y));
 }
 
 
-string ImageStack::buildOutputFileName() {
+int ImageStack::getImageAt(size_t x, size_t y) const {
+    for (int i = 0; i < images.size(); ++i) {
+        uint16_t v = images[i]->exposureAt(x, y);
+        if (!images[i]->isSaturated(v))
+            return i;
+    }
+    return images.size() - 1;
+}
+
+
+void ImageStack::compose(float (* dst)[4]) const {
+    // Create merge map
+    unique_ptr<float[]> map(new float[width * height]);
+    for (size_t row = 0, i = 0; row < height; ++row) {
+        for (size_t col = 0; col < width; ++col, ++i) {
+            map[i] = getImageAt(col, row);
+        }
+    }
+
+    // Progressive merge: gaussian blur
+    // TODO: configure radius and sigma
+    const int radius = width > height ? height / 200 : width / 200;
+    const float sigma = radius / 3.0f;
+    gaussianBlur(map.get(), radius, sigma);
+
+    // Apply map
+    const MetaData & md = images.front()->getMetaData();
+    for (size_t row = 0, i = 0; row < height; ++row) {
+        for (size_t col = 0; col < width; ++col, ++i) {
+            size_t pos = row*width + col;
+            int j = ceil(map[i]);
+            double v = images[j]->relativeValue(images[j]->exposureAt(col, row));
+            if (j > 0) {
+                double p = j - map[i];
+                double vv = images[j - 1]->relativeValue(images[j - 1]->exposureAt(col, row));
+                v = v*(1.0 -p) + vv*p;
+            }
+            dst[pos][md.FC(row, col)] = v;
+        }
+    }
+}
+
+
+string ImageStack::buildOutputFileName() const {
     string name;
     std::list<string> names;
     for (auto & image : images) {
@@ -102,4 +145,50 @@ string ImageStack::buildOutputFileName() {
         name = names.front().substr(0, names.front().find_last_of('.'));
     }
     return name;
+}
+
+
+void ImageStack::gaussianBlur(float * m, int radius, float sigma) const {
+    const float pi = 3.14159265358979323846;
+    int size = width * height;
+    int samples = radius * 2 + 1;
+    vector<float> weight(samples);
+    float tss = 2.0 * sigma * sigma;
+    float div = sqrt(pi * tss);
+
+    // Calculate weights
+    weight[radius] = 1.0 / div;
+    for (int i = 1; i <= radius; i++)
+        weight[radius - i] = weight[radius + i] = exp(-i*i / tss) / div;
+    float norm = 0.0;
+    for (int i = 0; i < samples; i++)
+        norm += weight[i];
+    for (int i = 0; i < samples; i++)
+        weight[i] /= norm;
+
+    vector<float> m2(size, 0.0);
+    // Horizontal blur
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            for (int k = 0; k < samples; k++) {
+                int kk = j + k - radius;
+                if (kk < 0) kk = 0;
+                else if (kk >= width) kk = width - 1;
+                m2[i * width + j] += m[i * width + kk] * weight[k];
+            }
+        }
+    }
+
+    fill_n(m, size, 0.0);
+    // Vertical blur
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            for (int k = 0; k < samples; k++) {
+                int kk = i + k - radius;
+                if (kk < 0) kk = 0;
+                else if (kk >= height) kk = height - 1;
+                m[i * width + j] += m2[kk * width + j] * weight[k];
+            }
+        }
+    }
 }

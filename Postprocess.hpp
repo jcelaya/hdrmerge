@@ -20,18 +20,19 @@
  *
  */
 
-#ifndef _DEMOSAIC_HPP_
-#define _DEMOSAIC_HPP_
+#ifndef _POSTPROESS_HPP_
+#define _POSTPROESS_HPP_
 
 #include <memory>
 #include "ImageStack.hpp"
 
 namespace hdrmerge {
 
-class Demosaic {
+class Postprocess {
 public:
-    Demosaic(const ImageStack & stack);
+    Postprocess(const ImageStack & stack);
 
+    void process();
     void save(const std::string fileName);
 
 private:
@@ -39,13 +40,21 @@ private:
     int FC(int row, int col) const {
         return md.FC(row, col);
     }
+    void moveG2toG1();
+    void convertToRgb();
+    void buildOutputMatrix();
+    void convertPixels();
+    void buildOutputProfile();
 
-    const MetaData & md;
+    const int colors = 3;
+    MetaData md;
     size_t width, height;
     const float * pre_mul;
     std::unique_ptr<float[][4]> image;
+    float outCam[3][4];
+    int outputColor;
 };
 
 }
 
-#endif // _DEMOSAIC_HPP_
+#endif // _POSTPROESS_HPP_

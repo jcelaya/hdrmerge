@@ -20,7 +20,7 @@
  *
  */
 
-#include <stdexcept>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -38,15 +38,20 @@ using namespace std;
 using namespace hdrmerge;
 
 
-void Image::buildImage(uint16_t * rawImage, MetaData * md) {
-    metaData.reset(md);
-    width = metaData->width;
-    height = metaData->height;
+Image::Image(uint16_t * rawImage, const MetaData & md) : rawPixels(nullptr), image(nullptr), dx(0), dy(0) {
+    rawProcessor.imgdata.rawdata.raw_alloc = rawPixels = rawImage;
+    metaData.reset(new MetaData(md));
+    rwidth = iwidth = metaData->width;
+    rheight = iheight = metaData->height;
+    size_t size = iwidth*iheight;
+    image = rawProcessor.imgdata.image = (uint16_t (*)[4])calloc(size, 4*2);
+    for (size_t row = 0; row < iheight; ++row) {
+        for (size_t col = 0; col < iwidth; ++col) {
+            size_t pos = row*iwidth + col;
+            image[pos][md.FC(row, col)] = rawPixels[pos];
+        }
+    }
     max = metaData->max;
-    scaledData.emplace_back(new uint16_t[width*height]);
-    pixel = scaledData.back().get();
-    std::copy_n(rawImage, width*height, pixel);
-    subtractBlack();
     relExp = 65535.0 / max;
     logExp = metaData->logExp();
     preScale();
@@ -54,19 +59,28 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
 }
 
 
-Image::Image(uint16_t * rawImage, const MetaData & md) : dx(0), dy(0), relExp(1.0), immExp(1.0) {
-    buildImage(rawImage, new MetaData(md));
-}
-
-
-Image::Image(const char * f) : pixel(nullptr), dx(0), dy(0), max(0), relExp(1.0), immExp(1.0) {
-    LibRaw rawData;
-    int error = rawData.open_file(f);
-    if (error == 0) {
-        rawData.unpack();
-        uint16_t * rawImage = rawData.imgdata.rawdata.raw_image;
-        if (rawImage != nullptr) {
-            buildImage(rawImage, new MetaData(f, rawData));
+Image::Image(const char * f) : rawPixels(nullptr), image(nullptr), dx(0), dy(0) {
+    auto & d = rawProcessor.imgdata;
+    if (rawProcessor.open_file(f) == LIBRAW_SUCCESS) {
+        libraw_decoder_info_t decoder_info;
+        rawProcessor.get_decoder_info(&decoder_info);
+        if(decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD
+                && d.idata.colors == 3 && d.idata.filters > 1000
+                && rawProcessor.unpack() == LIBRAW_SUCCESS) {
+            rawProcessor.raw2image();
+            rawProcessor.subtract_black();
+            rawPixels = d.rawdata.raw_image;
+            rwidth = d.sizes.raw_width;
+            rheight = d.sizes.raw_height;
+            image = d.image;
+            metaData.reset(new MetaData(f, rawProcessor));
+            iwidth = metaData->width;
+            iheight = metaData->height;
+            max = metaData->max;
+            relExp = 65535.0 / max;
+            logExp = metaData->logExp();
+            preScale();
+            metaData->dumpInfo();
         }
     }
 }
@@ -77,36 +91,29 @@ bool Image::isSameFormat(const Image & ref) const {
 }
 
 
-void Image::subtractBlack() {
-    size_t rowDisp = 0;
-    for (size_t row = 0; row < height; ++row) {
-        for (size_t col = 0; col < width; ++col) {
-            pixel[rowDisp + col] -= metaData->blackAt(row, col);
-        }
-        rowDisp += width;
-    }
-    max -= metaData->black;
-}
-
-
 void Image::relativeExposure(const Image & r, size_t w, size_t h) {
     Histogram hist;
     double metaImmExp = 1.0 / (1 << (int)(getMetaData().logExp() - r.getMetaData().logExp()));
-    for (size_t y1 = -dy, y2 = -r.dy; y1 < h - dy; ++y1, ++y2) {
-        for (size_t x1 = -dx, x2= -r.dx; x1 < w - dx; ++x1, ++x2) {
-            double v = pixel[y1*width + x1], nv = r.pixel[y2*width + x2];
-            double ratio = nv / v;
-            if (abs(ratio - metaImmExp) / ratio <= 0.025 && abs(ratio - metaImmExp) / metaImmExp <= 0.025) {
-            //if (v > nv && v < max && nv > 0.125*max) {
-                hist.addValue((uint16_t)(65536 * ratio));
+    for (size_t y = 0; y < h; ++y) {
+        size_t pos = (y - dy) * iwidth - dx, rpos = (y - r.dy) * iwidth - r.dx;
+        for (size_t x = 0; x < w; ++x, ++pos, ++rpos) {
+            int color = 0;
+            while (color < 4 && image[pos][color] == 0) ++color;
+            if (color < 4) {
+                double v = image[pos][color], nv = r.image[rpos][color];
+                double ratio = nv / v;
+                if (abs(ratio - metaImmExp) / ratio <= 0.025 && abs(ratio - metaImmExp) / metaImmExp <= 0.025) {
+                //if (v > nv && v < max && nv > 0.125*max) {
+                    hist.addValue((uint16_t)(65536 * ratio));
+                }
             }
         }
     }
-    immExp = hist.getPercentile(0.5) / 65536.0;
+    double immExp = hist.getPercentile(0.5) / 65536.0;
     for (double i = 0.0; i <= 1.05; i += 0.1) {
         cout << setprecision(5) << (hist.getPercentile(i) / 65536.0) << ',';
     }
-    cout << hist.getNumSamples() << '/' << (width*height) << " samples" << endl;
+    cout << hist.getNumSamples() << '/' << (rwidth*rheight) << " samples" << endl;
     relExp = immExp * r.relExp;
 }
 
@@ -115,24 +122,24 @@ void Image::alignWith(const Image & r, double threshold, double tolerance) {
     if (!good() || !r.good()) return;
     dx = dy = 0;
     uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
-    for (size_t s = scaleSteps - 1; s > 0; --s) {
-        size_t curWidth = width >> s;
-        size_t curHeight = height >> s;
-        Histogram hist1(r.scaledData[s].get(), r.scaledData[s].get() + curWidth*curHeight);
-        Histogram hist2(scaledData[s].get(), scaledData[s].get() + curWidth*curHeight);
+    for (int s = scaleSteps - 1; s >= 0; --s) {
+        size_t curWidth = rwidth >> (s + 1);
+        size_t curHeight = rheight >> (s + 1);
+        Histogram hist1(r.grayscalePics[s].get(), r.grayscalePics[s].get() + curWidth*curHeight);
+        Histogram hist2(grayscalePics[s].get(), grayscalePics[s].get() + curWidth*curHeight);
         uint16_t mth1 = hist1.getPercentile(threshold);
         uint16_t mth2 = hist2.getPercentile(threshold);
         Bitmap mtb1(curWidth, curHeight), mtb2(curWidth, curHeight),
         excl1(curWidth, curHeight), excl2(curWidth, curHeight);
-        mtb1.mtb(r.scaledData[s].get(), mth1);
-        mtb2.mtb(scaledData[s].get(), mth2);
-        excl1.exclusion(r.scaledData[s].get(), mth1, tolPixels);
-        excl2.exclusion(scaledData[s].get(), mth2, tolPixels);
+        mtb1.mtb(r.grayscalePics[s].get(), mth1);
+        mtb2.mtb(grayscalePics[s].get(), mth2);
+        excl1.exclusion(r.grayscalePics[s].get(), mth1, tolPixels);
+        excl2.exclusion(grayscalePics[s].get(), mth2, tolPixels);
         size_t minError = curWidth*curHeight;
         Bitmap shiftMtb(curWidth, curHeight), shiftExcl(curWidth, curHeight);
         int curDx = dx, curDy = dy;
-        for (int i : {-1, 0, 1}) {
-            for (int j : {-1, 0, 1}) {
+        for (int i = -1; i <= 1; ++i) {
+            for (int j = -1; j <= 1; ++j) {
                 shiftMtb.shift(mtb2, curDx + i, curDy + j);
                 shiftExcl.shift(excl2, curDx + i, curDy + j);
                 shiftMtb.bitwiseXor(mtb1);
@@ -153,13 +160,14 @@ void Image::alignWith(const Image & r, double threshold, double tolerance) {
 
 
 void Image::preScale() {
-    size_t curWidth = width;
-    size_t curHeight = height;
-    for (size_t s = 1; s < scaleSteps; ++s) {
+    size_t curWidth = rwidth;
+    size_t curHeight = rheight;
+    uint16_t * r2 = rawPixels;
+    for (int s = 0; s < scaleSteps; ++s) {
         size_t prevWidth = curWidth;
         curWidth >>= 1;
         curHeight >>= 1;
-        uint16_t * r = new uint16_t[curWidth * curHeight], * r2 = scaledData.back().get();
+        uint16_t * r = new uint16_t[curWidth * curHeight];
         for (size_t y = 0, prevY = 0; y < curHeight; ++y, prevY += 2) {
             for (size_t x = 0, prevX = 0; x < curWidth; ++x, prevX += 2) {
                 uint32_t value1 = r2[prevY*prevWidth + prevX],
@@ -169,6 +177,7 @@ void Image::preScale() {
                 r[y*curWidth + x] = (value1 + value2 + value3 + value4) >> 2;
             }
         }
-        scaledData.emplace_back(r);
+        grayscalePics.emplace_back(r);
+        r2 = r;
     }
 }

@@ -20,6 +20,7 @@
  *
  */
 
+#include <cstdlib>
 #include "../MetaData.hpp"
 #include <OpenImageIO/imageio.h>
 
@@ -35,14 +36,10 @@ struct SampleImage {
         md.width = spec.width;
         md.height = spec.height;
         md.max = 65535;
-        pixelData = new uint16_t[md.width*md.height*2];
+        pixelData = (uint16_t *)std::malloc(md.width*md.height*2);
         in->read_image(OpenImageIO::TypeDesc::UINT16, pixelData);
         in->close();
         delete in;
-    }
-    ~SampleImage() {
-        if (pixelData)
-            delete[] pixelData;
     }
 };
 

@@ -163,6 +163,7 @@ BOOST_AUTO_TEST_CASE(auto_exposure) {
     cerr << "Images aligned in " << alignTime << " seconds." << endl;
     double exposureTime = measureTime([&] () {images.computeRelExposures();});
     double metaImmExp = 1.0 / (1 << (int)(e1ref.getMetaData().logExp() - e2ref.getMetaData().logExp()));
-    cerr << "Relative exposure from data: " << e1ref.getImmediateExposure() << " in " << exposureTime << " seconds." << endl;
+    double dataImmExp = e1ref.getRelativeExposure() / e2ref.getRelativeExposure();
+    cerr << "Relative exposure from data: " << dataImmExp << " in " << exposureTime << " seconds." << endl;
     cerr << "Relative exposure from metadata: " << metaImmExp << endl;
 }

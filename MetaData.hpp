@@ -34,31 +34,25 @@ public:
     MetaData();
     MetaData(const char * f, const LibRaw & rawData);
 
-    // From LibRaw
-    int FC(int row, int col) const {
-        return (filter >> (((row << 1 & 14) | (col & 1)) << 1) & 3);
-    }
-
     bool isSameFormat(const MetaData & r) {
-        return width == r.width && height == r.height && filter == r.filter && cdesc == r.cdesc;
+        return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc;
     }
-
-    uint16_t blackAt(size_t row, size_t col) {
-        return black + cblack[FC(row, col)];
+    int FC(int row, int col) const {
+        return (filters >> (((row << 1 & 14) | (col & 1)) << 1) & 3);
     }
-
+    void moveG2toG1() {
+        filters &= ~((filters & 0x55555555) << 1);
+    }
     double logExp() const;
-
     void dumpInfo() const;
 
     std::string fileName;
     size_t width, height;
     std::string cdesc;
-    uint32_t filter;
+    uint32_t filters;
     uint16_t max;
-    uint16_t black;
-    uint16_t cblack[4];
     float preMul[4];
+    float rgbCam[3][4];
     float isoSpeed;
     float shutter;
     float aperture;

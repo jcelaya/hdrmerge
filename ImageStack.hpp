@@ -60,9 +60,13 @@ public:
             (*cur)->relativeExposure(**next, width, height);
         }
     }
-    std::string buildOutputFileName();
-    double value(size_t x, size_t y);
-    void demosaic();
+    std::string buildOutputFileName() const;
+    double value(size_t x, size_t y) const;
+    int getImageAt(size_t x, size_t y) const;
+    void compose(float (* dst)[4]) const;
+
+    /// Apply a gaussian blur on a mask
+    void gaussianBlur(float * m, int radius, float sigma) const;
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed

@@ -39,16 +39,16 @@ public:
     Image(const char * f);
 
     bool good() const {
-        return pixel != nullptr;
+        return rawPixels != nullptr;
     }
     const MetaData & getMetaData() const {
         return *metaData;
     }
     size_t getWidth() const {
-        return width;
+        return iwidth;
     }
     size_t getHeight() const {
-        return height;
+        return iheight;
     }
     int getDeltaX() const {
         return dx;
@@ -58,16 +58,13 @@ public:
     }
     uint16_t exposureAt(size_t x, size_t y) const {
         x -= dx; y -= dy;
-        return pixel[y*width + x];
+        return image[y*iwidth + x][metaData->FC(y, x)];
     }
-    double relativeValue(size_t x, size_t y) const {
-        return exposureAt(x, y) * relExp;
+    double relativeValue(uint16_t v) const {
+        return v * relExp;
     }
-    bool isSaturated(size_t x, size_t y) const {
-        return exposureAt(x, y) == max;
-    }
-    double getImmediateExposure() const {
-        return immExp;
+    bool isSaturated(uint16_t v) const {
+        return v == max;
     }
     double getRelativeExposure() const {
         return relExp;
@@ -78,9 +75,6 @@ public:
         dx += newDx;
         dy += newDy;
     }
-    const uint16_t * getPixels(int i) {
-        return scaledData[i].get();
-    }
     void relativeExposure(const Image & nextImage, size_t w, size_t h);
 
     static bool comparePointers(const std::unique_ptr<Image> & l, const std::unique_ptr<Image> & r) {
@@ -88,19 +82,19 @@ public:
     }
 
 private:
+    LibRaw rawProcessor;
     std::unique_ptr<MetaData> metaData;
-    uint16_t * pixel;
-    std::vector<std::unique_ptr<uint16_t[]>> scaledData;
-    size_t width, height;
+    uint16_t * rawPixels;
+    size_t rwidth, rheight;
+    std::vector<std::unique_ptr<uint16_t[]>> grayscalePics;
+    uint16_t (* image)[4];
+    size_t iwidth, iheight;
     int dx, dy;
     uint16_t max;
     double logExp;
     double relExp;          ///< Relative exposure, from data
-    double immExp;          ///< Exposure relative to the next image
 
-    void subtractBlack();
     void preScale();
-    void buildImage(uint16_t * rawImage, MetaData * md);
 };
 
 } // namespace hdrmerge

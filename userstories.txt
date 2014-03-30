@@ -8,7 +8,6 @@ US6: As a user, I want to apply a noise reduction algorithm to the final image. 
 US7: As a user, I want to correct the chromatic aberrations. PR4
 US8: As a user, I want to transform the colorspace to an apropriate one. PR4
 US9: As a user, I want to correct color artifacts after demosaicing. PR4
-US10: As a user, I want to demosaic the image with the AMAzE algorithm. PR1
 US13 As a user, I want to see the representation in color. PR5
     Apply a fast demosaicing.
 US14 As a user, I want to be able to add and remove pixels from each image. PR2
@@ -16,12 +15,13 @@ US14 As a user, I want to be able to add and remove pixels from each image. PR2
 US15 As a user, I want shortcuts to the most common operations: move, add and remove.
 
 Doing:
-US12 As a user, I want to see a representation of the result. PR1
-    The representation will be done in greyscale.
+US10: As a user, I want to demosaic the image with the AMAzE algorithm. PR1
 
 Done:
 US1: As a user, I want to load RAW files directly. PR1
     The loader also subtracts the black point and computes the logarithmic exposure.
 US2: As a user, I want the software to align my images using the MTB algorithm on RAW space. PR1
 US11: As a user, I want the software to automatically compute the relative exposure between adjancent images. PR1
+US12 As a user, I want to see a representation of the result. PR1
+    The representation will be done in greyscale.
 

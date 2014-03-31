@@ -27,12 +27,14 @@
  *
  */
 
+#include <iostream>
 #include <cmath>
 #include <ctime>
 #include <cstdint>
 #include <cstdlib>
 #include <algorithm>
 #include "Postprocess.hpp"
+#include <pfs-1.2/pfs.h>
 using namespace std;
 using namespace hdrmerge;
 
@@ -40,7 +42,10 @@ using namespace hdrmerge;
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define LIM(x,min,max) MAX(min,MIN(x,max))
-#define CLIP(x) LIM(x,0,65535)
+#define CLIP(x) x
+#define DCRAW_VERBOSE
+#define _(x) x
+static int verbose = 1;
 #include "amaze_demosaic_RT.cc"
 
 
@@ -86,11 +91,14 @@ static const unsigned pwhite[] = { 0xf351, 0x10000, 0x116cc };
 static unsigned pcurve[] = { 0x63757276, 0, 1, 0x1000000 };
 
 
-Postprocess::Postprocess(const ImageStack & stack)
-: md(stack.getImage(0).getMetaData()), width(stack.getWidth()), height(stack.getHeight()), pre_mul(md.preMul), outputColor(1) {
+Postprocess::Postprocess(const ImageStack & stack, ProgressIndicator & p)
+: progress(p), md(stack.getImage(0).getMetaData()), width(stack.getWidth()),
+height(stack.getHeight()), pre_mul(md.preMul), outputColor(1) {
+    progress.advance("Composing image.");
     image.reset(new float[width*height][4]);
     fill_n((float *)image.get(), width*height*4, 0.0);
     stack.compose(image.get());
+    cerr << "Composing done." << endl;
 }
 
 
@@ -98,13 +106,16 @@ void Postprocess::process() {
     // Here, we could do several things:
     //  wavelet denoise
     //  scale_colors: basically WB and fix chromatic aberrations. Can we do this later??
+    progress.advance("White balance");
     moveG2toG1();
     //  lots of other things (see LibRaw::dcraw_proc)
     //  noise reduction
+    progress.advance("Demosaicing");
     amaze_demosaic_RT();
     //  median filter
     //  recover highlights. Is this needed??
     //  apply color profile
+    progress.advance("Converting to sRGB");
     convertToRgb();
 }
 
@@ -131,16 +142,15 @@ void Postprocess::buildOutputMatrix() {
 
 void Postprocess::convertPixels() {
     float * end = image[0] + 4*width*height;
-    float out[3];
+    float out[3] = {0.0f, 0.0f, 0.0f };
     for (float * img = image[0]; img < end; img += 4) {
-        out[0] = out[1] = out[2] = 0;
         for(int c = 0; c < colors; ++c) {
             out[0] += outCam[0][c] * img[c];
             out[1] += outCam[1][c] * img[c];
             out[2] += outCam[2][c] * img[c];
         }
         for(int c = 0; c < colors; ++c) {
-            img[c] = CLIP((int) out[c]);
+            img[c] = out[c]; //CLIP((int) out[c]);
         }
     }
 }
@@ -191,6 +201,36 @@ void Postprocess::moveG2toG1() {
 
 
 
-void Postprocess::save(const std::string fileName) {
-
+void Postprocess::save(const string & fileName) {
+    progress.advance("Saving");
+    if (fileName.substr(fileName.find_last_of('.')) == ".pfs") {
+        savePFS(fileName);
+    }
 }
+
+
+void Postprocess::savePFS (const string & fileName) {
+    pfs::DOMIO pfsio;
+    pfs::Frame * frame = pfsio.createFrame(width, height);
+
+    // create channels for output
+    pfs::Channel * r = NULL;
+    pfs::Channel * g = NULL;
+    pfs::Channel * b = NULL;
+    frame->createXYZChannels(r, g, b);
+
+    unsigned int size = width * height;
+    for (size_t i = 0; i < size; ++i) {
+        (*r)(i) = image[i][0] / 65536.0;
+        (*g)(i) = image[i][1] / 65536.0;
+        (*b)(i) = image[i][2] / 65536.0;
+    }
+
+    // Save output
+    pfs::transformColorSpace(pfs::CS_RGB, r, g, b, pfs::CS_XYZ, r, g, b);
+    FILE * file = fopen(fileName.c_str(), "w");
+    pfsio.writeFrame(frame, file);
+    fclose(file);
+    pfsio.freeFrame(frame);
+}
+

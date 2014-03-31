@@ -42,6 +42,7 @@
 #include <QKeyEvent>
 #include "ImageControl.hpp"
 #include "AboutDialog.hpp"
+#include "SaveProgress.hpp"
 #include "config.h"
 using namespace std;
 using namespace hdrmerge;
@@ -306,14 +307,13 @@ void MainWindow::saveResult() {
         QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), name,
             tr("PFS stream files (*.pfs)"), NULL, QFileDialog::DontUseNativeDialog);
         if (!file.isEmpty()) {
-//             QProgressDialog progress(tr("Saving %1").arg(file), QString(), 0, 1, this);
-//             progress.setMinimumDuration(0);
-//             progress.setValue(0);
-//             QByteArray fileName = QDir::toNativeSeparators(file).toUtf8();
-//             QFuture<void> result = QtConcurrent::run(images, &ExposureStack::savePFS, fileName.constData());
-//             while (result.isRunning())
-//                 QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-//             progress.setValue(1);
+            QProgressDialog progress(this);
+            progress.setMinimumDuration(0);
+            std::string fileName = QDir::toNativeSeparators(file).toUtf8().constData();
+            SaveProgress sp(images, fileName, &progress);
+            QFuture<void> result = QtConcurrent::run(&sp, &SaveProgress::save);
+            while (result.isRunning())
+                QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         }
     }
 }

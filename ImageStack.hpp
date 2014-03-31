@@ -55,21 +55,17 @@ public:
 
     bool addImage(std::unique_ptr<Image> & i);
     void align();
-    void computeRelExposures() {
-        for (auto cur = images.rbegin(), next = cur++; cur != images.rend(); next = cur++) {
-            (*cur)->relativeExposure(**next, width, height);
-        }
-    }
+    void computeRelExposures();
     std::string buildOutputFileName() const;
     double value(size_t x, size_t y) const;
-    int getImageAt(size_t x, size_t y) const;
+    int getImageAt(size_t x, size_t y) const {
+        return imageIndex[y*width + x];
+    }
     void compose(float (* dst)[4]) const;
-
-    /// Apply a gaussian blur on a mask
-    void gaussianBlur(float * m, int radius, float sigma) const;
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
+    std::unique_ptr<uint8_t[]> imageIndex;
     size_t width;     ///< Size of a row
     size_t height;    ///< Size of a column
     unsigned int currentScale;     ///< Current scale factor

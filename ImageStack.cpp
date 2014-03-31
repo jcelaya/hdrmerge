@@ -20,6 +20,7 @@
  *
  */
 
+#include <iostream>
 #include <list>
 #include <tiff.h>
 #include <tiffio.h>
@@ -27,6 +28,7 @@
 #include <pfs-1.2/pfs.h>
 #include <algorithm>
 #include "ImageStack.hpp"
+#include "MergeMap.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -76,40 +78,38 @@ void ImageStack::findIntersection() {
 }
 
 
-double ImageStack::value(size_t x, size_t y) const {
-    for (auto & i : images) {
-        uint16_t v = i->exposureAt(x, y);
-        if (!i->isSaturated(v))
-            return i->relativeValue(v);
+void ImageStack::computeRelExposures() {
+    for (auto cur = images.rbegin(), next = cur++; cur != images.rend(); next = cur++) {
+        (*cur)->relativeExposure(**next, width, height);
     }
-    return images.back()->relativeValue(images.back()->exposureAt(x, y));
+    imageIndex.reset(new uint8_t[width*height]);
+    int i = images.size() - 1;
+    fill_n(imageIndex.get(), width*height, (uint8_t)i);
+    --i;
+    for (;i >= 0; --i) {
+        Image & img = *images[i];
+        for (size_t row = 0; row < height; ++row) {
+            for (size_t col = 0; col < width; ++col) {
+                if (!img.isSaturated(img.exposureAt(col, row))) {
+                    imageIndex[row*width + col] = (uint8_t)i;
+                }
+            }
+        }
+    }
 }
 
 
-int ImageStack::getImageAt(size_t x, size_t y) const {
-    for (int i = 0; i < images.size(); ++i) {
-        uint16_t v = images[i]->exposureAt(x, y);
-        if (!images[i]->isSaturated(v))
-            return i;
-    }
-    return images.size() - 1;
+double ImageStack::value(size_t x, size_t y) const {
+    Image & img = *images[getImageAt(x, y)];
+    return img.relativeValue(img.exposureAt(x, y));
 }
 
 
 void ImageStack::compose(float (* dst)[4]) const {
-    // Create merge map
-    unique_ptr<float[]> map(new float[width * height]);
-    for (size_t row = 0, i = 0; row < height; ++row) {
-        for (size_t col = 0; col < width; ++col, ++i) {
-            map[i] = getImageAt(col, row);
-        }
-    }
-
-    // Progressive merge: gaussian blur
-    // TODO: configure radius and sigma
-    const int radius = width > height ? height / 200 : width / 200;
-    const float sigma = radius / 3.0f;
-    gaussianBlur(map.get(), radius, sigma);
+    // TODO: configure radius
+    const int radius = width > height ? height / 500 : width / 500;
+    MergeMap map(*this);
+    map.blur(radius);
 
     // Apply map
     const MetaData & md = images.front()->getMetaData();
@@ -145,50 +145,4 @@ string ImageStack::buildOutputFileName() const {
         name = names.front().substr(0, names.front().find_last_of('.'));
     }
     return name;
-}
-
-
-void ImageStack::gaussianBlur(float * m, int radius, float sigma) const {
-    const float pi = 3.14159265358979323846;
-    int size = width * height;
-    int samples = radius * 2 + 1;
-    vector<float> weight(samples);
-    float tss = 2.0 * sigma * sigma;
-    float div = sqrt(pi * tss);
-
-    // Calculate weights
-    weight[radius] = 1.0 / div;
-    for (int i = 1; i <= radius; i++)
-        weight[radius - i] = weight[radius + i] = exp(-i*i / tss) / div;
-    float norm = 0.0;
-    for (int i = 0; i < samples; i++)
-        norm += weight[i];
-    for (int i = 0; i < samples; i++)
-        weight[i] /= norm;
-
-    vector<float> m2(size, 0.0);
-    // Horizontal blur
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            for (int k = 0; k < samples; k++) {
-                int kk = j + k - radius;
-                if (kk < 0) kk = 0;
-                else if (kk >= width) kk = width - 1;
-                m2[i * width + j] += m[i * width + kk] * weight[k];
-            }
-        }
-    }
-
-    fill_n(m, size, 0.0);
-    // Vertical blur
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            for (int k = 0; k < samples; k++) {
-                int kk = i + k - radius;
-                if (kk < 0) kk = 0;
-                else if (kk >= height) kk = height - 1;
-                m[i * width + j] += m2[kk * width + j] * weight[k];
-            }
-        }
-    }
 }

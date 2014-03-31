@@ -20,49 +20,34 @@
  *
  */
 
-#ifndef _POSTPROESS_HPP_
-#define _POSTPROESS_HPP_
+#ifndef _MERGEMAP_HPP_
+#define _MERGEMAP_HPP_
 
-#include <memory>
 #include "ImageStack.hpp"
 
 namespace hdrmerge {
 
-class ProgressIndicator {
+class MergeMap {
 public:
-    virtual void advance(const std::string & message) = 0;
-};
-
-
-class Postprocess {
-public:
-    Postprocess(const ImageStack & stack, ProgressIndicator & p);
-
-    void process();
-    void save(const std::string & fileName);
+    MergeMap(size_t w, size_t h) : map(new float[w*h]), width(w), height(h) {}
+    MergeMap(const ImageStack & stack);
+    float operator[](size_t i) const {
+        return map[i];
+    }
+    float & operator[](size_t i) {
+        return map[i];
+    }
+    void blur(size_t radius);
 
 private:
-    void amaze_demosaic_RT();
-    int FC(int row, int col) const {
-        return md.FC(row, col);
-    }
-    void moveG2toG1();
-    void convertToRgb();
-    void buildOutputMatrix();
-    void convertPixels();
-    void buildOutputProfile();
-    void savePFS(const std::string & fileName);
+    void boxBlur_4(size_t radius);
+    void boxBlurH_4(size_t radius);
+    void boxBlurT_4(size_t radius);
 
-    ProgressIndicator & progress;
-    const int colors = 3;
-    MetaData md;
-    int width, height;
-    const float * pre_mul;
-    std::unique_ptr<float[][4]> image;
-    float outCam[3][4];
-    int outputColor;
+    std::unique_ptr<float[]> map, blurTmp;
+    size_t width, height;
 };
 
-}
+} // namespace hdrmerge
 
-#endif // _POSTPROESS_HPP_
+#endif // _MERGEMAP_HPP_

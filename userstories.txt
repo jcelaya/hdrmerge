@@ -1,6 +1,4 @@
 #: As a <role>, I want <goal/desire> [so that <benefit>]. PR priority (1 highest)
-US3: As a user, I want to be able to save the result in PFS or Tiff LogLuv32 formats. PR1
-    In the Tiff case, the metadata of the source images must be transferred, using either the wider apperture or the longer exposure time. Other metadata is supposed to be the same in all the source images.
 US4: As a user, I want the software to detect the output format based on the file extension. PR2
 US5: As a user, I want to apply a custom white balance to the final image. PR3
     Choose among camera, average, zone.
@@ -15,6 +13,8 @@ US14 As a user, I want to be able to add and remove pixels from each image. PR2
 US15 As a user, I want shortcuts to the most common operations: move, add and remove.
 
 Doing:
+US3: As a user, I want to be able to save the result in PFS or Tiff LogLuv32 formats. PR1
+    In the Tiff case, the metadata of the source images must be transferred, using either the wider apperture or the longer exposure time. Other metadata is supposed to be the same in all the source images.
 US10: As a user, I want to demosaic the image with the AMAzE algorithm. PR1
 
 Done:

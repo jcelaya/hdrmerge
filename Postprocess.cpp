@@ -36,6 +36,7 @@
 #include <algorithm>
 #include "Postprocess.hpp"
 #include <pfs-1.2/pfs.h>
+#include <tiffio.h>
 using namespace std;
 using namespace hdrmerge;
 
@@ -324,8 +325,11 @@ void Postprocess::moveG2toG1() {
 
 void Postprocess::save(const string & fileName) {
     progress.advance("Saving");
-    if (fileName.substr(fileName.find_last_of('.')) == ".pfs") {
+    string ext = fileName.substr(fileName.find_last_of('.'));
+    if (ext == ".pfs") {
         savePFS(fileName);
+    } else if (ext == ".tif" || ext == ".tiff") {
+        saveTiff(fileName);
     }
 }
 
@@ -354,3 +358,46 @@ void Postprocess::savePFS (const string & fileName) {
     pfsio.freeFrame(frame);
 }
 
+
+void Postprocess::saveTiff (const string & fileName) {
+    TIFF * out = TIFFOpen(fileName.c_str(), "w");
+
+    int sampleperpixel = 3;
+    float * logluv = new float[width*height*sampleperpixel];
+    unsigned int size = width * height;
+    for (size_t i = 0, j = 0; i < size; ++i) {
+        logluv[j++] = image[i][0] / 65536.0;
+        logluv[j++] = image[i][1] / 65536.0;
+        logluv[j++] = image[i][2] / 65536.0;
+    }
+
+    TIFFSetField(out, TIFFTAG_IMAGEWIDTH, width);
+    TIFFSetField(out, TIFFTAG_IMAGELENGTH, height);
+    TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, sampleperpixel);
+    TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, sizeof(float)*8);
+    TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+    TIFFSetField(out, TIFFTAG_COMPRESSION, COMPRESSION_SGILOG);
+    TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_LOGLUV);
+    TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(out, TIFFTAG_SGILOGDATAFMT, SGILOGDATAFMT_FLOAT);
+    //TIFFSetField(out, TIFFTAG_STONITS, stonits);   /* if known */
+
+    tsize_t linesamples = width*sampleperpixel;
+    tsize_t linebytes = linesamples*sizeof(float);
+    float * buf = nullptr;
+    if (TIFFScanlineSize(out) < linebytes) {
+        buf = (float *)_TIFFmalloc(linebytes);
+    } else {
+        buf = (float *)_TIFFmalloc(TIFFScanlineSize(out));
+    }
+    TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, linebytes));
+    for (uint32_t row = 0; row < height; ++row) {
+        copy_n(&logluv[row*linesamples], linesamples, buf);
+        if (TIFFWriteScanline(out, buf, row, 0) < 0)
+            break;
+    }
+
+    TIFFClose(out);
+    if (buf)
+        _TIFFfree(buf);
+}

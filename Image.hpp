@@ -24,8 +24,8 @@
 #define _IMAGE_H_
 
 #include <vector>
-#include <string>
 #include <memory>
+#include <libraw/libraw.h>
 #include "MetaData.hpp"
 
 

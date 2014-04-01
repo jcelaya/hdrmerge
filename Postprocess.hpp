@@ -56,6 +56,7 @@ private:
     void autoWB();
     void cameraWB();
     void chromaticAberration();
+    void saveTiff(const std::string& fileName);
 
     ProgressIndicator & progress;
     const int colors = 3;

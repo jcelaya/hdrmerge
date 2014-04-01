@@ -16,6 +16,7 @@ Doing:
 US3: As a user, I want to be able to save the result in PFS or Tiff LogLuv32 formats. PR1
     In the Tiff case, the metadata of the source images must be transferred, using either the wider apperture or the longer exposure time. Other metadata is supposed to be the same in all the source images.
 US10: As a user, I want to demosaic the image with the AMAzE algorithm. PR1
+	Apply camera white balance prior to demosaicing.
 
 Done:
 US1: As a user, I want to load RAW files directly. PR1

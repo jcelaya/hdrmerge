@@ -21,16 +21,8 @@
  */
 
 #include <cstdlib>
-#include <string>
 #include <iostream>
 #include <iomanip>
-#include <cmath>
-#include <cstring>
-#include <algorithm>
-#include <tiff.h>
-#include <tiffio.h>
-#include <libraw/libraw.h>
-#include <pfs-1.2/pfs.h>
 #include "Image.hpp"
 #include "Bitmap.hpp"
 #include "Histogram.hpp"

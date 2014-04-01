@@ -1009,7 +1009,7 @@ void CLASS amaze_demosaic_RT() {
 
 					//for dcraw implementation
 					for (c=0; c<3; c++){
-						image[indx][c] = CLIP((int)(65535.0f*rgb[rr*TS+cc][c] + 0.5f)); 
+						image[indx][c] = 65535.0f*rgb[rr*TS+cc][c] + 0.5f;//CLIP((int)(65535.0f*rgb[rr*TS+cc][c] + 0.5f)); 
 					} 
 
 

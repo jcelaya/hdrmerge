@@ -28,7 +28,7 @@ using namespace hdrmerge;
 using namespace std;
 
 
-MetaData::MetaData() : width(0), height(0), filters(0), max(0),
+MetaData::MetaData() : width(0), height(0), filters(0), max(0), black(0), cblack{},
 preMul{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
@@ -39,7 +39,11 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     filters = r.idata.filters;
     cdesc = r.idata.cdesc;
     max = r.color.maximum;
+    black = r.color.black;
+    copy_n(r.color.cblack, 4, cblack);
+    copy_n((uint16_t *)r.color.white, 8*8, (uint16_t *)white);
     copy_n(r.color.pre_mul, 4, preMul);
+    copy_n(r.color.cam_mul, 4, camMul);
     copy_n((float *)r.color.rgb_cam, 3*4, (float *)rgbCam);
     isoSpeed = r.other.iso_speed;
     shutter = r.other.shutter;

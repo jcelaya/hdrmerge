@@ -20,10 +20,22 @@
  *
  */
 
+#include <iostream>
 #include <list>
 #include <string>
 #include "gui.hpp"
-#include "Exposure.hpp"
+#include "ImageStack.hpp"
+#include "Postprocess.hpp"
+using namespace hdrmerge;
+
+
+class CoutProgress : public ProgressIndicator {
+public:
+    virtual void advance(const std::string & message) {
+        std::cout << message << std::endl;
+    }
+};
+
 
 int main(int argc, char * argv[]) {
     hdrmerge::GUI app(argc, argv);
@@ -42,11 +54,19 @@ int main(int argc, char * argv[]) {
     if (outFileName == NULL || inFileNames.empty()) {
         return app.startGUI(inFileNames);
     } else {
-        ExposureStack image;
-        for (auto name : inFileNames)
-            image.loadImage(name);
-        image.sort();
-        image.savePFS(outFileName);
+        ImageStack stack;
+        for (auto name : inFileNames) {
+            std::unique_ptr<Image> image(new Image(name));
+            if (!image->good() || !stack.addImage(image)) {
+                return 1;
+            }
+        }
+        stack.align();
+        stack.computeRelExposures();
+        CoutProgress progress;
+        Postprocess p(stack, progress);
+        p.process();
+        p.save(outFileName);
         return 0;
     }
 }

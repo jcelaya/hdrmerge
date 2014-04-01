@@ -121,7 +121,7 @@ void ImageStack::compose(float (* dst)[4]) const {
             if (j > 0) {
                 double p = j - map[i];
                 double vv = images[j - 1]->relativeValue(images[j - 1]->exposureAt(col, row));
-                v = v*(1.0 -p) + vv*p;
+                v = v*(1.0 - p) + vv*p;
             }
             dst[pos][md.FC(row, col)] = v;
         }

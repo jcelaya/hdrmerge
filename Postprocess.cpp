@@ -28,6 +28,7 @@
  */
 
 #include <iostream>
+#include <cfloat>
 #include <cmath>
 #include <ctime>
 #include <cstdint>
@@ -42,7 +43,7 @@ using namespace hdrmerge;
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define LIM(x,min,max) MAX(min,MIN(x,max))
-#define CLIP(x) x
+//#define CLIP(x) MIN(65535, x)
 #define DCRAW_VERBOSE
 #define _(x) x
 static int verbose = 1;
@@ -93,20 +94,19 @@ static unsigned pcurve[] = { 0x63757276, 0, 1, 0x1000000 };
 
 Postprocess::Postprocess(const ImageStack & stack, ProgressIndicator & p)
 : progress(p), md(stack.getImage(0).getMetaData()), width(stack.getWidth()),
-height(stack.getHeight()), pre_mul(md.preMul), outputColor(1) {
+height(stack.getHeight()), pre_mul(md.preMul), outputColor(5) {
     progress.advance("Composing image.");
     image.reset(new float[width*height][4]);
     fill_n((float *)image.get(), width*height*4, 0.0);
     stack.compose(image.get());
-    cerr << "Composing done." << endl;
 }
 
 
 void Postprocess::process() {
     // Here, we could do several things:
     //  wavelet denoise
-    //  scale_colors: basically WB and fix chromatic aberrations. Can we do this later??
     progress.advance("White balance");
+    //whiteBalance(); // And chromatic aberrations.
     moveG2toG1();
     //  lots of other things (see LibRaw::dcraw_proc)
     //  noise reduction
@@ -115,13 +115,134 @@ void Postprocess::process() {
     //  median filter
     //  recover highlights. Is this needed??
     //  apply color profile
-    progress.advance("Converting to sRGB");
+    progress.advance("Converting to XYZ");
     convertToRgb();
 }
 
 
+void Postprocess::whiteBalance() {
+//     if (user_mul[0])
+//         memcpy (pre_mul, user_mul, sizeof pre_mul);
+    cameraWB();
+    if (pre_mul[1] == 0) pre_mul[1] = 1;
+    if (pre_mul[3] == 0) pre_mul[3] = colors < 4 ? pre_mul[1] : 1;
+    //if (threshold) wavelet_denoise();
+    size_t maximum = md.max - md.black;
+    double dmin = DBL_MAX, dmax = 0;
+    for (int c = 0; c < 4; ++c) {
+        if (dmin > pre_mul[c])
+            dmin = pre_mul[c];
+        if (dmax < pre_mul[c])
+            dmax = pre_mul[c];
+    }
+    //if (!highlight)
+        dmax = dmin;
+    float scale_mul[4];
+    for (int c = 0; c < 4; ++c) {
+        scale_mul[c] = (pre_mul[c] /= dmax) * 65535.0 / maximum;
+    }
+    size_t size = height*width;
+    for (size_t i = 0; i < size*4; ++i) {
+        double val = image[0][i];
+        if (val == 0.0) continue;
+        val -= md.cblack[i & 3];
+        val *= scale_mul[i & 3];
+        image[0][i] = val;
+    }
+}
+
+
+void Postprocess::cameraWB() {
+    if (md.camMul[0] != -1) {
+        uint16_t sum[8] = {};
+        for (int row = 0; row < 8; ++row) {
+            for (int col = 0; col < 8; ++col) {
+                int c = FC(row,col);
+                uint16_t val = md.white[row][col] - md.cblack[c];
+                if (val > 0)
+                    sum[c] += val;
+                sum[c + 4]++;
+            }
+        }
+        if (sum[0] && sum[1] && sum[2] && sum[3]) {
+            for (int c = 0; c < 4; ++c) {
+                pre_mul[c] = (float) sum[c+4] / sum[c];
+            }
+        } else if (md.camMul[0] && md.camMul[2]) {
+            copy_n(md.camMul, 4, pre_mul);
+        }
+    }
+}
+
+
+void Postprocess::chromaticAberration() {
+//     unsigned ur, uc;
+//     float fr, fc;
+//     ushort *img=0, *pix;
+//     if ((aber[0] != 1 || aber[2] != 1) && colors == 3) {
+//         #ifdef DCRAW_VERBOSE
+//         if (verbose)
+//             fprintf (stderr,_("Correcting chromatic aberration...\n"));
+//         #endif
+//         for (c=0; c < 4; c+=2) {
+//             if (aber[c] == 1) continue;
+//             img = (ushort *) malloc (size * sizeof *img);
+//             merror (img, "scale_colors()");
+//             for (i=0; i < size; i++)
+//                 img[i] = image[i][c];
+//             for (row=0; row < iheight; row++) {
+//                 ur = fr = (row - iheight*0.5) * aber[c] + iheight*0.5;
+//                 if (ur > iheight-2) continue;
+//                 fr -= ur;
+//                 for (col=0; col < iwidth; col++) {
+//                     uc = fc = (col - iwidth*0.5) * aber[c] + iwidth*0.5;
+//                     if (uc > iwidth-2) continue;
+//                     fc -= uc;
+//                     pix = img + ur*iwidth + uc;
+//                     image[row*iwidth+col][c] =
+//                     (pix[     0]*(1-fc) + pix[       1]*fc) * (1-fr) +
+//                     (pix[iwidth]*(1-fc) + pix[iwidth+1]*fc) * fr;
+//                 }
+//             }
+//             free(img);
+//         }
+//     }
+}
+
+
+void Postprocess::autoWB() {
+//     unsigned bottom, right, sum[8];
+//     double dsum[8];
+//     if (use_auto_wb || (use_camera_wb && md.camMul[0] == -1)) {
+//         memset (dsum, 0, sizeof dsum);
+//         bottom = MIN (greybox[1]+greybox[3], height);
+//         right  = MIN (greybox[0]+greybox[2], width);
+//         for (row=greybox[1]; row < bottom; row += 8)
+//             for (col=greybox[0]; col < right; col += 8) {
+//                 memset (sum, 0, sizeof sum);
+//                 for (y=row; y < row+8 && y < bottom; y++)
+//                     for (x=col; x < col+8 && x < right; x++)
+//                         FORC4 {
+//                             if (filters) {
+//                                 c = fcol(y,x);
+//                                 val = BAYER2(y,x);
+//                             } else
+//                                 val = image[y*width+x][c];
+//                             if (val > maximum-25) goto skip_block;
+//                             if ((val -= cblack[c]) < 0) val = 0;
+//                             sum[c] += val;
+//                             sum[c+4]++;
+//                             if (filters) break;
+//                         }
+//                         FORC(8) dsum[c] += sum[c];
+//                         skip_block: ;
+//             }
+//             FORC4 if (dsum[c]) pre_mul[c] = dsum[c+4] / dsum[c];
+//     }
+}
+
+
 void Postprocess::convertToRgb() {
-    //gamma_curve (gamm[0], gamm[1], 0, 0); sets curve & gamm, but we want linear
     buildOutputProfile();
     buildOutputMatrix();
     convertPixels();
@@ -142,8 +263,8 @@ void Postprocess::buildOutputMatrix() {
 
 void Postprocess::convertPixels() {
     float * end = image[0] + 4*width*height;
-    float out[3] = {0.0f, 0.0f, 0.0f };
     for (float * img = image[0]; img < end; img += 4) {
+        float out[3] = {0.0f, 0.0f, 0.0f };
         for(int c = 0; c < colors; ++c) {
             out[0] += outCam[0][c] * img[c];
             out[1] += outCam[1][c] * img[c];
@@ -227,7 +348,6 @@ void Postprocess::savePFS (const string & fileName) {
     }
 
     // Save output
-    pfs::transformColorSpace(pfs::CS_RGB, r, g, b, pfs::CS_XYZ, r, g, b);
     FILE * file = fopen(fileName.c_str(), "w");
     pfsio.writeFrame(frame, file);
     fclose(file);

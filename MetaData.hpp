@@ -51,6 +51,10 @@ public:
     std::string cdesc;
     uint32_t filters;
     uint16_t max;
+    uint16_t black;
+    uint16_t cblack[4];
+    uint16_t white[8][8];
+    float camMul[4];
     float preMul[4];
     float rgbCam[3][4];
     float isoSpeed;

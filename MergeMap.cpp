@@ -34,6 +34,7 @@ MergeMap::MergeMap(const ImageStack & stack) : MergeMap(stack.getWidth(), stack.
 
 
 void MergeMap::blur(size_t radius) {
+    // From http://blog.ivank.net/fastest-gaussian-blur.html
     size_t hr = std::round(radius*0.39);
     blurTmp.reset(new float[width*height]);
     boxBlur_4(hr);

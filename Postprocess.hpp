@@ -52,12 +52,16 @@ private:
     void convertPixels();
     void buildOutputProfile();
     void savePFS(const std::string & fileName);
+    void whiteBalance();
+    void autoWB();
+    void cameraWB();
+    void chromaticAberration();
 
     ProgressIndicator & progress;
     const int colors = 3;
     MetaData md;
     int width, height;
-    const float * pre_mul;
+    float * pre_mul;
     std::unique_ptr<float[][4]> image;
     float outCam[3][4];
     int outputColor;

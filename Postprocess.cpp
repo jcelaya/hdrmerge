@@ -381,6 +381,7 @@ void Postprocess::saveTiff (const string & fileName) {
     TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     TIFFSetField(out, TIFFTAG_SGILOGDATAFMT, SGILOGDATAFMT_FLOAT);
     //TIFFSetField(out, TIFFTAG_STONITS, stonits);   /* if known */
+    TIFFSetField(out, EXIFTAG_FNUMBER, md.aperture);
 
     tsize_t linesamples = width*sampleperpixel;
     tsize_t linebytes = linesamples*sizeof(float);
@@ -397,7 +398,6 @@ void Postprocess::saveTiff (const string & fileName) {
             break;
     }
 
+    _TIFFfree(buf);
     TIFFClose(out);
-    if (buf)
-        _TIFFfree(buf);
 }

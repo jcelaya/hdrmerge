@@ -90,7 +90,7 @@ void ImageStack::computeRelExposures() {
         Image & img = *images[i];
         for (size_t row = 0; row < height; ++row) {
             for (size_t col = 0; col < width; ++col) {
-                if (!img.isSaturated(img.exposureAt(col, row))) {
+                if (!img.isSaturated(col, row)) {
                     imageIndex[row*width + col] = (uint8_t)i;
                 }
             }
@@ -101,7 +101,7 @@ void ImageStack::computeRelExposures() {
 
 double ImageStack::value(size_t x, size_t y) const {
     Image & img = *images[getImageAt(x, y)];
-    return img.relativeValue(img.exposureAt(x, y));
+    return img.exposureAt(x, y);
 }
 
 
@@ -117,10 +117,10 @@ void ImageStack::compose(float (* dst)[4]) const {
         for (size_t col = 0; col < width; ++col, ++i) {
             size_t pos = row*width + col;
             int j = ceil(map[i]);
-            double v = images[j]->relativeValue(images[j]->exposureAt(col, row));
+            double v = images[j]->exposureAt(col, row);
             if (j > 0) {
                 double p = j - map[i];
-                double vv = images[j - 1]->relativeValue(images[j - 1]->exposureAt(col, row));
+                double vv = images[j - 1]->exposureAt(col, row);
                 v = v*(1.0 - p) + vv*p;
             }
             dst[pos][md.FC(row, col)] = v;

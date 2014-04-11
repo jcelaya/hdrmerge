@@ -45,10 +45,10 @@ public:
         return *metaData;
     }
     size_t getWidth() const {
-        return iwidth;
+        return width;
     }
     size_t getHeight() const {
-        return iheight;
+        return height;
     }
     int getDeltaX() const {
         return dx;
@@ -56,14 +56,13 @@ public:
     int getDeltaY() const {
         return dy;
     }
-    uint16_t exposureAt(size_t x, size_t y) const {
+    double exposureAt(size_t x, size_t y) const {
         x -= dx; y -= dy;
-        return image[y*iwidth + x][metaData->FC(y, x)];
+        return rawPixels[y*width + x] * relExp;
     }
-    double relativeValue(uint16_t v) const {
-        return v * relExp;
-    }
-    bool isSaturated(uint16_t v) const {
+    bool isSaturated(size_t x, size_t y) const {
+        x -= dx; y -= dy;
+        uint16_t v = rawPixels[y*width + x];
         return v == max;
     }
     double getRelativeExposure() const {
@@ -85,16 +84,16 @@ private:
     LibRaw rawProcessor;
     std::unique_ptr<MetaData> metaData;
     uint16_t * rawPixels;
-    size_t rwidth, rheight;
+    size_t width, height;
     std::vector<std::unique_ptr<uint16_t[]>> grayscalePics;
-    uint16_t (* image)[4];
-    size_t iwidth, iheight;
     int dx, dy;
     uint16_t max;
     double logExp;
     double relExp;          ///< Relative exposure, from data
 
     void preScale();
+    void subtractBlack();
+    void buildImage(uint16_t * rawImage, MetaData * md);
 };
 
 } // namespace hdrmerge

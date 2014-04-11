@@ -45,6 +45,13 @@ public:
     }
     double logExp() const;
     void dumpInfo() const;
+    uint16_t blackAt(int row, int col) {
+        return cblack[FC(row, col)];
+    }
+    bool hasBlack() const {
+        return black || cblack[0] || cblack[1] || cblack[2] || cblack[3];
+    }
+    void adjustBlack();
 
     std::string fileName;
     size_t width, height;

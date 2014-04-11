@@ -41,6 +41,7 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     max = r.color.maximum;
     black = r.color.black;
     copy_n(r.color.cblack, 4, cblack);
+    adjustBlack();
     copy_n((uint16_t *)r.color.white, 8*8, (uint16_t *)white);
     copy_n(r.color.pre_mul, 4, preMul);
     copy_n(r.color.cam_mul, 4, camMul);
@@ -56,6 +57,18 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
 
 double MetaData::logExp() const {
     return std::log2(isoSpeed * shutter / (100.0 * aperture * aperture));
+}
+
+
+void MetaData::adjustBlack() {
+    uint16_t minb = cblack[0] + black;
+    for (int i = 0; i < 4; ++i) {
+        cblack[i] += black;
+        if (minb > cblack[i]) {
+            minb = cblack[i];
+        }
+    }
+    black = minb;
 }
 
 

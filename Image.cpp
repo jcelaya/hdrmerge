@@ -30,28 +30,29 @@ using namespace std;
 using namespace hdrmerge;
 
 
-Image::Image(uint16_t * rawImage, const MetaData & md) : rawPixels(nullptr), image(nullptr), dx(0), dy(0) {
-    rawProcessor.imgdata.rawdata.raw_alloc = rawPixels = rawImage;
-    metaData.reset(new MetaData(md));
-    rwidth = iwidth = metaData->width;
-    rheight = iheight = metaData->height;
-    size_t size = iwidth*iheight;
-    image = rawProcessor.imgdata.image = (uint16_t (*)[4])calloc(size, 4*2);
-    for (size_t row = 0; row < iheight; ++row) {
-        for (size_t col = 0; col < iwidth; ++col) {
-            size_t pos = row*iwidth + col;
-            image[pos][md.FC(row, col)] = rawPixels[pos];
-        }
-    }
+Image::Image(uint16_t * rawImage, const MetaData & md) {
+    rawProcessor.imgdata.rawdata.raw_alloc = rawImage;
+    buildImage(rawImage, new MetaData(md));
+}
+
+
+void Image::buildImage(uint16_t * rawImage, MetaData * md) {
+    rawPixels = rawImage;
+    metaData.reset(md);
+    dx = dy = 0;
+    width = metaData->width;
+    height = metaData->height;
+    size_t size = width*height;
     max = metaData->max;
     relExp = 65535.0 / max;
     logExp = metaData->logExp();
+    subtractBlack();
     preScale();
     metaData->dumpInfo();
 }
 
 
-Image::Image(const char * f) : rawPixels(nullptr), image(nullptr), dx(0), dy(0) {
+Image::Image(const char * f) : rawPixels(nullptr) {
     auto & d = rawProcessor.imgdata;
     if (rawProcessor.open_file(f) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
@@ -59,21 +60,24 @@ Image::Image(const char * f) : rawPixels(nullptr), image(nullptr), dx(0), dy(0) 
         if(decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD
                 && d.idata.colors == 3 && d.idata.filters > 1000
                 && rawProcessor.unpack() == LIBRAW_SUCCESS) {
-            rawProcessor.raw2image();
-            rawProcessor.subtract_black();
-            rawPixels = d.rawdata.raw_image;
-            rwidth = d.sizes.raw_width;
-            rheight = d.sizes.raw_height;
-            image = d.image;
-            metaData.reset(new MetaData(f, rawProcessor));
-            iwidth = metaData->width;
-            iheight = metaData->height;
-            max = metaData->max;
-            relExp = 65535.0 / max;
-            logExp = metaData->logExp();
-            preScale();
-            metaData->dumpInfo();
+            buildImage(d.rawdata.raw_image, new MetaData(f, rawProcessor));
         }
+    }
+}
+
+
+void Image::subtractBlack() {
+    if (metaData->hasBlack()) {
+        for (size_t row = 0; row < height; ++row) {
+            for (size_t col = 0; col < width; ++col) {
+                if (rawPixels[row*width + col] > metaData->blackAt(row, col)) {
+                    rawPixels[row*width + col] -= metaData->blackAt(row, col);
+                } else {
+                    rawPixels[row*width + col] = 0;
+                }
+            }
+        }
+        max -= metaData->black;
     }
 }
 
@@ -87,12 +91,10 @@ void Image::relativeExposure(const Image & r, size_t w, size_t h) {
     Histogram hist;
     double metaImmExp = 1.0 / (1 << (int)(getMetaData().logExp() - r.getMetaData().logExp()));
     for (size_t y = 0; y < h; ++y) {
-        size_t pos = (y - dy) * iwidth - dx, rpos = (y - r.dy) * iwidth - r.dx;
+        size_t pos = (y - dy) * width - dx, rpos = (y - r.dy) * width - r.dx;
         for (size_t x = 0; x < w; ++x, ++pos, ++rpos) {
-            int color = 0;
-            while (color < 4 && image[pos][color] == 0) ++color;
-            if (color < 4) {
-                double v = image[pos][color], nv = r.image[rpos][color];
+            if (rawPixels[pos] > 0) {
+                double v = rawPixels[pos], nv = r.rawPixels[pos];
                 double ratio = nv / v;
                 if (abs(ratio - metaImmExp) / ratio <= 0.025 && abs(ratio - metaImmExp) / metaImmExp <= 0.025) {
                 //if (v > nv && v < max && nv > 0.125*max) {
@@ -105,7 +107,7 @@ void Image::relativeExposure(const Image & r, size_t w, size_t h) {
     for (double i = 0.0; i <= 1.05; i += 0.1) {
         cout << setprecision(5) << (hist.getPercentile(i) / 65536.0) << ',';
     }
-    cout << hist.getNumSamples() << '/' << (rwidth*rheight) << " samples" << endl;
+    cout << hist.getNumSamples() << '/' << (width*height) << " samples" << endl;
     relExp = immExp * r.relExp;
 }
 
@@ -115,8 +117,8 @@ void Image::alignWith(const Image & r, double threshold, double tolerance) {
     dx = dy = 0;
     uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
     for (int s = scaleSteps - 1; s >= 0; --s) {
-        size_t curWidth = rwidth >> (s + 1);
-        size_t curHeight = rheight >> (s + 1);
+        size_t curWidth = width >> (s + 1);
+        size_t curHeight = height >> (s + 1);
         Histogram hist1(r.grayscalePics[s].get(), r.grayscalePics[s].get() + curWidth*curHeight);
         Histogram hist2(grayscalePics[s].get(), grayscalePics[s].get() + curWidth*curHeight);
         uint16_t mth1 = hist1.getPercentile(threshold);
@@ -152,8 +154,8 @@ void Image::alignWith(const Image & r, double threshold, double tolerance) {
 
 
 void Image::preScale() {
-    size_t curWidth = rwidth;
-    size_t curHeight = rheight;
+    size_t curWidth = width;
+    size_t curHeight = height;
     uint16_t * r2 = rawPixels;
     for (int s = 0; s < scaleSteps; ++s) {
         size_t prevWidth = curWidth;

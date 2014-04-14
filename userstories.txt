@@ -11,6 +11,8 @@ US13 As a user, I want to see the representation in color. PR5
 US14 As a user, I want to be able to add and remove pixels from each image. PR2
     The software must be able to highlight the pixels of a certain image, like shading the pixels that are not selected from that image. Other possibilities might be interesting.
 US15 As a user, I want shortcuts to the most common operations: move, add and remove.
+US16 As a user, I want to be able to save the raw result as DNG with 32-bit floating point sample format.
+	Take other parameters from one of the images.
 
 Doing:
 US3: As a user, I want to be able to save the result in PFS or Tiff LogLuv32 formats. PR1

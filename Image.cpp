@@ -89,16 +89,17 @@ bool Image::isSameFormat(const Image & ref) const {
 
 void Image::relativeExposure(const Image & r, size_t w, size_t h) {
     Histogram hist;
-    double metaImmExp = 1.0 / (1 << (int)(getMetaData().logExp() - r.getMetaData().logExp()));
+    uint16_t metaImmExp = std::round(65536.0 / (1 << (int)(getMetaData().logExp() - r.getMetaData().logExp())));
+    int margin = std::floor(metaImmExp * 0.025);
     for (size_t y = 0; y < h; ++y) {
-        size_t pos = (y - dy) * width - dx, rpos = (y - r.dy) * width - r.dx;
-        for (size_t x = 0; x < w; ++x, ++pos, ++rpos) {
-            if (rawPixels[pos] > 0) {
-                double v = rawPixels[pos], nv = r.rawPixels[pos];
-                double ratio = nv / v;
-                if (abs(ratio - metaImmExp) / ratio <= 0.025 && abs(ratio - metaImmExp) / metaImmExp <= 0.025) {
-                //if (v > nv && v < max && nv > 0.125*max) {
-                    hist.addValue((uint16_t)(65536 * ratio));
+        for (size_t x = 0; x < w; ++x) {
+            size_t pos = (y - dy) * width - dx + x, rpos = (y - r.dy) * width - r.dx + x;
+            uint32_t v = rawPixels[pos], nv = r.rawPixels[rpos];
+            if (v) {
+                uint16_t ratio = (nv << 16) / v;
+                int diff = ratio - metaImmExp;
+                if (diff <= margin && diff >= -margin) {
+                    hist.addValue(ratio);
                 }
             }
         }

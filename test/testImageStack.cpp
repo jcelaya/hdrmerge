@@ -31,17 +31,12 @@ using namespace std;
 
 static const char * image1 = "test/sample1.dng";
 static const char * image2 = "test/sample2.dng";
+static const char * image3 = "test/sample3.dng";
 // Sample images with deviation
-static const char * image3 = "test/sample1.png"; // (0, 0)
-static const char * image4 = "test/sample2.png"; // (20, 32)
-static const char * image5 = "test/sample3.png"; // (38, 26)
-static const char * image6 = "test/sample4.png"; // (34, -4)
-
-
-// BOOST_AUTO_TEST_CASE(testSampleImage) {
-//     SampleImage si(image3);
-//     save("sample1bis.png", si.pixelData, si.md.width, si.md.height);
-// }
+static const char * sample1 = "test/sample1.png"; // (0, 0)
+static const char * sample2 = "test/sample2.png"; // (20, 32)
+static const char * sample3 = "test/sample3.png"; // (38, 26)
+static const char * sample4 = "test/sample4.png"; // (34, -4)
 
 
 BOOST_AUTO_TEST_CASE( image_load ) {
@@ -50,13 +45,13 @@ BOOST_AUTO_TEST_CASE( image_load ) {
     Image e2(image2);
     BOOST_REQUIRE(e2.good());
     BOOST_REQUIRE(e2.isSameFormat(e1));
-    Image e3(image3);
+    Image e3(sample1);
     BOOST_CHECK(!e3.good());
 }
 
 
 // BOOST_AUTO_TEST_CASE(image_scale) {
-//     SampleImage si1(image3);
+//     SampleImage si1(sample1);
 //     Image im(si1.pixelData, si1.md);
 //     BOOST_REQUIRE(im.good());
 //     char filename[] = "scaledx.png";
@@ -70,10 +65,10 @@ BOOST_AUTO_TEST_CASE( image_load ) {
 // }
 
 BOOST_AUTO_TEST_CASE(image_align) {
-    SampleImage si1(image3);
-    SampleImage si2(image4);
-    SampleImage si3(image5);
-    SampleImage si4(image6);
+    SampleImage si1(sample1);
+    SampleImage si2(sample2);
+    SampleImage si3(sample3);
+    SampleImage si4(sample4);
     Image e1(si1.pixelData, si1.md);
     Image e2(si2.pixelData, si2.md);
     Image e3(si3.pixelData, si3.md);
@@ -119,10 +114,10 @@ BOOST_AUTO_TEST_CASE(stack_load) {
 
 BOOST_AUTO_TEST_CASE(stack_align) {
     ImageStack images;
-    SampleImage si1(image3);
-    SampleImage si2(image4);
-    SampleImage si3(image5);
-    SampleImage si4(image6);
+    SampleImage si1(sample1);
+    SampleImage si2(sample2);
+    SampleImage si3(sample3);
+    SampleImage si4(sample4);
     unique_ptr<Image> e1(new Image(si1.pixelData, si1.md)),
         e2(new Image(si2.pixelData, si2.md)),
         e3(new Image(si3.pixelData, si3.md)),
@@ -153,17 +148,31 @@ BOOST_AUTO_TEST_CASE(stack_align) {
 
 BOOST_AUTO_TEST_CASE(auto_exposure) {
     ImageStack images;
-    unique_ptr<Image> e1(new Image(image1)), e2(new Image(image2));
+    unique_ptr<Image> e1, e2, e3;
+    double time = measureTime([&] () {
+        e1.reset(new Image(image1));
+        e2.reset(new Image(image2));
+        e3.reset(new Image(image3));
+    });
+    cerr << "Images loaded in " << time << " seconds." << endl;
     BOOST_REQUIRE(e1->good());
     BOOST_REQUIRE(e2->good());
+    BOOST_REQUIRE(e3->good());
+
     images.addImage(e1);
     images.addImage(e2);
-    Image & e1ref = images.getImage(0), & e2ref = images.getImage(1);
-    double alignTime = measureTime([&] () {images.align();});
-    cerr << "Images aligned in " << alignTime << " seconds." << endl;
-    double exposureTime = measureTime([&] () {images.computeRelExposures();});
+    images.addImage(e3);
+    Image & e1ref = images.getImage(0), & e2ref = images.getImage(1), & e3ref = images.getImage(2);
+    time = measureTime([&] () {
+        images.align();
+    });
+    cerr << "Images aligned in " << time << " seconds." << endl;
+
+    time = measureTime([&] () {
+        images.computeRelExposures();
+    });
     double metaImmExp = 1.0 / (1 << (int)(e1ref.getMetaData().logExp() - e2ref.getMetaData().logExp()));
     double dataImmExp = e1ref.getRelativeExposure() / e2ref.getRelativeExposure();
-    cerr << "Relative exposure from data: " << dataImmExp << " in " << exposureTime << " seconds." << endl;
+    cerr << "Relative exposure from data: " << dataImmExp << " in " << time << " seconds." << endl;
     cerr << "Relative exposure from metadata: " << metaImmExp << endl;
 }

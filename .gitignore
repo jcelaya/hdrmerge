@@ -2,6 +2,6 @@ Makefile
 *.o
 *~
 moc_*
-build
-samples
+build/
+samples/
 hdrmerge.kdev4

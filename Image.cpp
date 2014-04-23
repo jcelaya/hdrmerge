@@ -182,6 +182,19 @@ void Image::preScale() {
 }
 
 
+void Image::buildSaturationMap(Bitmap & satMap) const {
+    size_t x = -dx, y = -dy;
+    size_t w = satMap.getWidth() + x;
+    for (Bitmap::Position p = satMap.position(0, 0); p != satMap.end(); ++p) {
+        p.set(rawPixels[y*width + x] >= max);
+        if (++x == w) {
+            x = -dx;
+            ++y;
+        }
+    }
+}
+
+
 bool Image::isSaturated(size_t x, size_t y) const {
     x -= dx; y -= dy;
     size_t base = y*width + x;

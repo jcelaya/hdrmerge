@@ -19,6 +19,10 @@
  *  along with HDRMerge. If not, see <http://www.gnu.org/licenses/>.
  *
  */
+
+#ifndef _BITMAP_HPP_
+#define _BITMAP_HPP_
+
 #include <cstdint>
 #include <memory>
 
@@ -33,44 +37,68 @@ public:
     void bitwiseAnd(const Bitmap & r);
     void mtb(const uint16_t * pixels, uint16_t mth);
     void exclusion(const uint16_t * pixels, uint16_t mth, uint16_t tolerance);
+    void or3by3();
     void reset() {
         for (size_t i = 0; i < size; ++i) {
             bits[i] = 0;
         }
     }
 
-    void set(size_t x, size_t y) {
-        size_t pos = y*rowWidth + x;
-        if (pos < numBits) {
-            Position p(y*rowWidth + x);
-            bits[p.div] |= p.mask;
+    class Position {
+    public:
+        void set(bool v = true) const {
+            *div = v ? *div | mask : *div & ~mask;
         }
+        void reset() {
+            *div &= ~mask;
+        }
+        bool get() const {
+            return *div & mask;
+        }
+        bool operator==(const Position & r) const {
+            return div == r.div && mask == r.mask;
+        }
+        bool operator!=(const Position & r) const {
+            return !(*this == r);
+        }
+        Position & operator++() {
+            mask <<= 1;
+            if (!mask) {
+                mask = 1;
+                div++;
+            }
+            return *this;
+        }
+    private:
+        friend class Bitmap;
+        uint32_t * div;
+        uint32_t mask;
+        Position(Bitmap & b, size_t pos) {
+            div = &b.bits[pos >> 5];
+            mask = 1 << (pos & 31);
+        }
+    };
+
+    Position position(size_t x, size_t y) {
+        return Position(*this, y*rowWidth + x);
     }
-    void reset(size_t x, size_t y) {
-        Position p(y*rowWidth + x);
-        bits[p.div] &= ~p.mask;
+    const Position position(size_t x, size_t y) const {
+        return Position(*const_cast<Bitmap *>(this), y*rowWidth + x);
     }
-    bool get(size_t x, size_t y) const {
-        Position p(y*rowWidth + x);
-        return bits[p.div] & p.mask;
+    const Position end() const {
+        return Position(*const_cast<Bitmap *>(this), numBits);
     }
+
     size_t count() const;
+    size_t getWidth() const {
+        return rowWidth;
+    }
     void resize(size_t w, size_t h);
 
     std::string dumpInfo();
     void dumpFile();
 
 private:
-    struct Position {
-        size_t div;
-        size_t mod;
-        uint32_t mask;
-        Position(size_t pos) {
-            div = pos >> 5;
-            mod = pos & 31;
-            mask = 1 << mod;
-        }
-    };
     static const int ones[256];
     static const uint32_t allOnes = -1;
 
@@ -78,6 +106,10 @@ private:
     size_t rowWidth, size, numBits;
 
     void applyRowMask(int dx);
+    void or3H(const Bitmap & r);
+    void or3V(const Bitmap & r);
 };
 
 } // namespace hdrmerge
+
+#endif // _BITMAP_HPP_

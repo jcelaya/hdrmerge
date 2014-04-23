@@ -28,19 +28,19 @@ using namespace std;
 BOOST_AUTO_TEST_CASE(bitmap_create) {
     Bitmap b(100, 200);
     b.reset();
-    b.set(20, 30);
-    b.set(45, 81);
-    b.set(99, 199);
-    BOOST_CHECK(b.get(45, 81));
+    b.position(20, 30).set();
+    b.position(45, 81).set();
+    b.position(99, 199).set();
+    BOOST_CHECK(b.position(45, 81).get());
     BOOST_CHECK_EQUAL(b.count(), 3);
-    b.reset(20, 30);
+    b.position(20, 30).reset();
     BOOST_CHECK_EQUAL(b.count(), 2);
 }
 
 static bool checkZeroArea(const Bitmap & b, int i0, int i1, int j0, int j1) {
     for (int i = i0; i < i1; ++i) {
         for (int j = j0; j < j1; ++j) {
-            if (b.get(i, j)) return false;
+            if (b.position(i, j).get()) return false;
         }
     }
     return true;
@@ -48,12 +48,10 @@ static bool checkZeroArea(const Bitmap & b, int i0, int i1, int j0, int j1) {
 
 BOOST_AUTO_TEST_CASE(bitmap_shift) {
     Bitmap b(100, 100);
-    for (int i = 0; i < 100; ++i) {
-        for (int j = 0; j < 100; ++j) {
-            b.set(i, j);
-        }
+    for (Bitmap::Position p = b.position(0, 0); p != b.end(); ++p) {
+        p.set();
     }
-    b.reset(49, 49); b.reset(49, 50); b.reset(50, 49); b.reset(50, 50);
+    b.position(49, 49).reset(); b.position(49, 50).reset(); b.position(50, 49).reset(); b.position(50, 50).reset();
     b.dumpFile();
     Bitmap s(100, 100);
     s.shift(b, 35, 35);
@@ -83,17 +81,17 @@ BOOST_AUTO_TEST_CASE(bitmap_xor) {
     b1.reset();
     b2.reset();
     for (int i : { 1, 3, 4, 7, 8 }) {
-        b1.set(i, 3);
-        b2.set(i, 3);
+        b1.position(i, 3).set();
+        b2.position(i, 3).set();
     }
-    b1.set(1, 5);
-    b1.set(3, 7);
-    b2.set(6, 6);
+    b1.position(1, 5).set();
+    b1.position(3, 7).set();
+    b2.position(6, 6).set();
     b2.bitwiseXor(b1);
     BOOST_CHECK_EQUAL(b2.count(), 3);
-    BOOST_CHECK(b2.get(1, 5));
-    BOOST_CHECK(b2.get(3, 7));
-    BOOST_CHECK(b2.get(6, 6));
+    BOOST_CHECK(b2.position(1, 5).get());
+    BOOST_CHECK(b2.position(3, 7).get());
+    BOOST_CHECK(b2.position(6, 6).get());
 }
 
 BOOST_AUTO_TEST_CASE(bitmap_and) {
@@ -101,16 +99,16 @@ BOOST_AUTO_TEST_CASE(bitmap_and) {
     b1.reset();
     b2.reset();
     for (int i : { 1, 3, 4, 7, 8 }) {
-        b1.set(i, 3);
-        b2.set(i, 3);
+        b1.position(i, 3).set();
+        b2.position(i, 3).set();
     }
-    b1.set(1, 5);
-    b1.set(3, 7);
-    b2.set(6, 6);
+    b1.position(1, 5).set();
+    b1.position(3, 7).set();
+    b2.position(6, 6).set();
     b2.bitwiseAnd(b1);
     BOOST_CHECK_EQUAL(b2.count(), 5);
     for (int i : { 1, 3, 4, 7, 8 }) {
-        BOOST_CHECK(b2.get(i, 3));
+        BOOST_CHECK(b2.position(i, 3).get());
     }
 }
 
@@ -119,13 +117,13 @@ BOOST_AUTO_TEST_CASE(bitmap_mtb) {
     Bitmap b(3, 7);
     b.mtb(data, 3);
     BOOST_CHECK_EQUAL(b.count(), 7);
-    BOOST_CHECK(b.get(0, 1));
-    BOOST_CHECK(b.get(2, 1));
-    BOOST_CHECK(b.get(0, 2));
-    BOOST_CHECK(b.get(1, 3));
-    BOOST_CHECK(b.get(0, 4));
-    BOOST_CHECK(b.get(1, 6));
-    BOOST_CHECK(b.get(2, 6));
+    BOOST_CHECK(b.position(0, 1).get());
+    BOOST_CHECK(b.position(2, 1).get());
+    BOOST_CHECK(b.position(0, 2).get());
+    BOOST_CHECK(b.position(1, 3).get());
+    BOOST_CHECK(b.position(0, 4).get());
+    BOOST_CHECK(b.position(1, 6).get());
+    BOOST_CHECK(b.position(2, 6).get());
 }
 
 BOOST_AUTO_TEST_CASE(bitmap_exclusion) {
@@ -133,14 +131,14 @@ BOOST_AUTO_TEST_CASE(bitmap_exclusion) {
     Bitmap b(3, 7);
     b.exclusion(data, 3, 1);
     BOOST_CHECK_EQUAL(b.count(), 10);
-    BOOST_CHECK(b.get(0, 0));
-    BOOST_CHECK(b.get(1, 0));
-    BOOST_CHECK(b.get(0, 2));
-    BOOST_CHECK(b.get(1, 2));
-    BOOST_CHECK(b.get(0, 3));
-    BOOST_CHECK(b.get(0, 4));
-    BOOST_CHECK(b.get(1, 4));
-    BOOST_CHECK(b.get(0, 5));
-    BOOST_CHECK(b.get(0, 6));
-    BOOST_CHECK(b.get(2, 6));
+    BOOST_CHECK(b.position(0, 0).get());
+    BOOST_CHECK(b.position(1, 0).get());
+    BOOST_CHECK(b.position(0, 2).get());
+    BOOST_CHECK(b.position(1, 2).get());
+    BOOST_CHECK(b.position(0, 3).get());
+    BOOST_CHECK(b.position(0, 4).get());
+    BOOST_CHECK(b.position(1, 4).get());
+    BOOST_CHECK(b.position(0, 5).get());
+    BOOST_CHECK(b.position(0, 6).get());
+    BOOST_CHECK(b.position(2, 6).get());
 }

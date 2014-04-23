@@ -26,6 +26,7 @@
 #include <vector>
 #include <memory>
 #include "MetaData.hpp"
+#include "Bitmap.hpp"
 
 
 namespace hdrmerge {
@@ -70,6 +71,7 @@ public:
         dy += newDy;
     }
     void relativeExposure(const Image & nextImage, size_t w, size_t h);
+    void buildSaturationMap(Bitmap & satMap) const;
 
     static bool comparePointers(const std::unique_ptr<Image> & l, const std::unique_ptr<Image> & r) {
         return l->logExp > r->logExp;

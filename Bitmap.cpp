@@ -91,17 +91,18 @@ void Bitmap::applyRowMask(int dx) {
         b = rowWidth;
     } else return;
     for (size_t disp = 0; disp < numBits; disp += rowWidth) {
-        Position pa(disp + a), pb(disp + b);
-        uint32_t amask = pa.mod ? allOnes >> (32 - pa.mod) : 0;
-        uint32_t bmask = allOnes << pb.mod;
-        if (pa.div == pb.div) {
+        size_t padiv = (disp + a) >> 5, pbdiv = (disp + b) >> 5;
+        size_t pamod = (disp + a) & 31, pbmod = (disp + b) & 31;
+        uint32_t amask = pamod ? allOnes >> (32 - pamod) : 0;
+        uint32_t bmask = allOnes << pbmod;
+        if (padiv == pbdiv) {
             uint32_t mask = amask | bmask;
-            bits[pa.div] &= mask;
+            bits[padiv] &= mask;
         } else {
-            bits[pa.div] &= amask;
-            for (size_t i = pa.div + 1; i < pb.div; ++i)
+            bits[padiv] &= amask;
+            for (size_t i = padiv + 1; i < pbdiv; ++i)
                 bits[i] &= 0;
-            bits[pb.div] &= bmask;
+            bits[pbdiv] &= bmask;
         }
     }
 }
@@ -124,18 +125,9 @@ void Bitmap::bitwiseAnd(const Bitmap & r) {
 
 
 void Bitmap::mtb(const uint16_t * pixels, uint16_t mth) {
-    uint32_t mask = 1;
-    for (size_t i = 0, pos = 0; i < numBits; ++i) {
-        if (pixels[i] > mth) {
-            bits[pos] |= mask;
-        } else {
-            bits[pos] &= ~mask;
-        }
-        mask <<= 1;
-        if (!mask) {
-            mask = 1;
-            ++pos;
-        }
+    size_t i = 0;
+    for (Position p = position(0, 0); p != end(); ++p) {
+        p.set(pixels[i++] > mth);
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
     dumpFile();
@@ -143,22 +135,31 @@ void Bitmap::mtb(const uint16_t * pixels, uint16_t mth) {
 
 
 void Bitmap::exclusion(const uint16_t * pixels, uint16_t mth, uint16_t tolerance) {
-    uint32_t mask = 1;
+    size_t i = 0;
     uint16_t min = mth - tolerance, max = mth + tolerance;
-    for (size_t i = 0, pos = 0; i < numBits; ++i) {
-        if (pixels[i] <= min || pixels[i] > max) {
-            bits[pos] |= mask;
-        } else {
-            bits[pos] &= ~mask;
-        }
-        mask <<= 1;
-        if (!mask) {
-            mask = 1;
-            ++pos;
-        }
+    for (Position p = position(0, 0); p != end(); ++p) {
+        p.set(pixels[i] <= min || pixels[i] > max);
+        ++i;
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
     dumpFile();
+}
+
+
+void Bitmap::or3by3() {
+    Bitmap tmp(rowWidth, size/rowWidth);
+    tmp.or3H(*this);
+    or3V(tmp);
+}
+
+
+void Bitmap::or3H(const Bitmap & r) {
+
+}
+
+
+void Bitmap::or3V(const Bitmap & r) {
+
 }
 
 

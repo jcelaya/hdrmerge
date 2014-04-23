@@ -117,8 +117,14 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 //             int r = (int)rr, g = (int)gg, b = (int)bb;
 //             // Apply gamma correction
 //             *scanLine++ = qRgb(gamma[r], gamma[g], gamma[b]);
-            int v = (int) images->value(col, row);
-            *scanLine++ = qRgb(gamma[v], gamma[v], gamma[v]);
+            int v = gamma[(int) images->value(col, row)];
+            int color = images->getImageAt(col, row);
+            if (color >= 3) {
+                *scanLine++ = qRgb(v, v, v);
+            } else {
+                v >>= 1;
+                *scanLine++ = qRgb(v, v, v) + (v << 8*color);
+            }
         }
     }
 }

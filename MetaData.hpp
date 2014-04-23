@@ -24,7 +24,7 @@
 #define _METADATA_H_
 
 #include <string>
-#include <libraw/libraw.h>
+class LibRaw;
 
 
 namespace hdrmerge {
@@ -64,6 +64,7 @@ public:
     float camMul[4];
     float preMul[4];
     float rgbCam[3][4];
+    float camXyz[3][4];
     float isoSpeed;
     float shutter;
     float aperture;

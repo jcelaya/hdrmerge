@@ -112,19 +112,51 @@ void ImageStack::compose(float (* dst)[4]) const {
     map.blur(radius);
 
     // Apply map
+    int imageMax = images.size() - 1;
     const MetaData & md = images.front()->getMetaData();
-    for (size_t row = 0, i = 0; row < height; ++row) {
-        for (size_t col = 0; col < width; ++col, ++i) {
+    for (size_t row = 0; row < height; ++row) {
+        for (size_t col = 0; col < width; ++col) {
             size_t pos = row*width + col;
-            int j = ceil(map[i]);
+            int j = map[pos] > imageMax ? imageMax : ceil(map[pos]);
             double v = images[j]->exposureAt(col, row);
             if (j > 0) {
-                double p = j - map[i];
+                double p = j - map[pos];
                 double vv = images[j - 1]->exposureAt(col, row);
                 v = v*(1.0 - p) + vv*p;
             }
             dst[pos][md.FC(row, col)] = v;
         }
+    }
+}
+
+
+void ImageStack::compose(float * dst) const {
+    // TODO: configure radius
+    const int radius = width > height ? height / 500 : width / 500;
+    MergeMap map(*this);
+    map.blur(radius);
+
+    // Apply map
+    int imageMax = images.size() - 1;
+    float max = 0.0;
+    for (size_t row = 0; row < height; ++row) {
+        for (size_t col = 0; col < width; ++col) {
+            size_t pos = row*width + col;
+            int j = map[pos] > imageMax ? imageMax : ceil(map[pos]);
+            double v = images[j]->exposureAt(col, row);
+            if (j > 0) {
+                double p = j - map[pos];
+                double vv = images[j - 1]->exposureAt(col, row);
+                v = v*(1.0 - p) + vv*p;
+            }
+            dst[pos] = v;
+            if (v > max) {
+                max = v;
+            }
+        }
+    }
+    for (size_t pos = 0; pos < width * height; ++pos) {
+        dst[pos] /= max;
     }
 }
 
@@ -142,7 +174,7 @@ string ImageStack::buildOutputFileName() const {
         while (names.front()[pos] == names.back()[pos]) pos++;
         name = names.front() + '-' + names.back().substr(pos);
     } else {
-        name = names.front().substr(0, names.front().find_last_of('.'));
+        name = names.front();
     }
     return name;
 }

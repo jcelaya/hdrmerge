@@ -176,3 +176,23 @@ BOOST_AUTO_TEST_CASE(auto_exposure) {
     cerr << "Relative exposure from data: " << dataImmExp << " in " << time << " seconds." << endl;
     cerr << "Relative exposure from metadata: " << metaImmExp << endl;
 }
+
+
+BOOST_AUTO_TEST_CASE(output_filename) {
+    ImageStack images;
+    unique_ptr<Image> e1, e2, e3;
+    e1.reset(new Image(image1));
+    e2.reset(new Image(image2));
+    e3.reset(new Image(image3));
+    BOOST_REQUIRE(e1->good());
+    BOOST_REQUIRE(e2->good());
+    BOOST_REQUIRE(e3->good());
+
+    images.addImage(e1);
+    string oneFile = images.buildOutputFileName();
+    BOOST_CHECK_EQUAL(oneFile, "test/sample1");
+    images.addImage(e2);
+    images.addImage(e3);
+    string threeFile = images.buildOutputFileName();
+    BOOST_CHECK_EQUAL(threeFile, "test/sample1-3");
+}

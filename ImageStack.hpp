@@ -62,6 +62,7 @@ public:
         return imageIndex[y*width + x];
     }
     void compose(float (* dst)[4]) const;
+    void compose(float * dst) const;
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed

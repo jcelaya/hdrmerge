@@ -23,6 +23,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <libraw/libraw.h>
 #include "MetaData.hpp"
 using namespace hdrmerge;
 using namespace std;
@@ -46,6 +47,7 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     copy_n(r.color.pre_mul, 4, preMul);
     copy_n(r.color.cam_mul, 4, camMul);
     copy_n((float *)r.color.rgb_cam, 3*4, (float *)rgbCam);
+    copy_n((float *)r.color.cam_xyz, 3*4, (float *)camXyz);
     isoSpeed = r.other.iso_speed;
     shutter = r.other.shutter;
     aperture = r.other.aperture;

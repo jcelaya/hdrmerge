@@ -25,7 +25,6 @@
 
 #include <vector>
 #include <memory>
-#include <libraw/libraw.h>
 #include "MetaData.hpp"
 
 
@@ -60,11 +59,7 @@ public:
         x -= dx; y -= dy;
         return rawPixels[y*width + x] * relExp;
     }
-    bool isSaturated(size_t x, size_t y) const {
-        x -= dx; y -= dy;
-        uint16_t v = rawPixels[y*width + x];
-        return v == max;
-    }
+    bool isSaturated(size_t x, size_t y) const;
     double getRelativeExposure() const {
         return relExp;
     }
@@ -81,9 +76,8 @@ public:
     }
 
 private:
-    LibRaw rawProcessor;
     std::unique_ptr<MetaData> metaData;
-    uint16_t * rawPixels;
+    std::unique_ptr<uint16_t[]> rawPixels;
     size_t width, height;
     std::vector<std::unique_ptr<uint16_t[]>> grayscalePics;
     int dx, dy;

@@ -36,10 +36,15 @@ struct SampleImage {
         md.width = spec.width;
         md.height = spec.height;
         md.max = 65535;
-        pixelData = (uint16_t *)std::malloc(md.width*md.height*2);
+        pixelData = new uint16_t[md.width * md.height];
         in->read_image(OpenImageIO::TypeDesc::UINT16, pixelData);
         in->close();
         delete in;
+    }
+    ~SampleImage() {
+        if (pixelData != nullptr) {
+            delete[] pixelData;
+        }
     }
 
     void save(const std::string & f) {

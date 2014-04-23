@@ -23,6 +23,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
+#include <libraw/libraw.h>
 #include "Image.hpp"
 #include "Bitmap.hpp"
 #include "Histogram.hpp"
@@ -31,13 +33,11 @@ using namespace hdrmerge;
 
 
 Image::Image(uint16_t * rawImage, const MetaData & md) {
-    rawProcessor.imgdata.rawdata.raw_alloc = rawImage;
     buildImage(rawImage, new MetaData(md));
 }
 
 
 void Image::buildImage(uint16_t * rawImage, MetaData * md) {
-    rawPixels = rawImage;
     metaData.reset(md);
     dx = dy = 0;
     width = metaData->width;
@@ -46,6 +46,9 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     max = metaData->max;
     relExp = 65535.0 / max;
     logExp = metaData->logExp();
+    rawPixels.reset(new uint16_t[size]);
+    // TODO: Flip when copying
+    copy_n(rawImage, size, rawPixels.get());;
     subtractBlack();
     preScale();
     metaData->dumpInfo();
@@ -53,6 +56,7 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
 
 
 Image::Image(const char * f) : rawPixels(nullptr) {
+    LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
     if (rawProcessor.open_file(f) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
@@ -89,7 +93,7 @@ bool Image::isSameFormat(const Image & ref) const {
 
 void Image::relativeExposure(const Image & r, size_t w, size_t h) {
     Histogram hist;
-    uint16_t metaImmExp = std::round(65536.0 / (1 << (int)(getMetaData().logExp() - r.getMetaData().logExp())));
+    uint16_t metaImmExp = std::round(65536.0 / std::pow(2.0, getMetaData().logExp() - r.getMetaData().logExp()));
     int margin = std::floor(metaImmExp * 0.025);
     for (size_t y = 0; y < h; ++y) {
         for (size_t x = 0; x < w; ++x) {
@@ -157,7 +161,7 @@ void Image::alignWith(const Image & r, double threshold, double tolerance) {
 void Image::preScale() {
     size_t curWidth = width;
     size_t curHeight = height;
-    uint16_t * r2 = rawPixels;
+    uint16_t * r2 = rawPixels.get();
     for (int s = 0; s < scaleSteps; ++s) {
         size_t prevWidth = curWidth;
         curWidth >>= 1;
@@ -175,4 +179,25 @@ void Image::preScale() {
         grayscalePics.emplace_back(r);
         r2 = r;
     }
+}
+
+
+bool Image::isSaturated(size_t x, size_t y) const {
+    x -= dx; y -= dy;
+    size_t base = y*width + x;
+    size_t size = width*height;
+    size_t positions[9] = {
+        base - width - 1,
+        base - width,
+        base - width + 1,
+        base - 1,
+        base,
+        base + 1,
+        base + width - 1,
+        base + width,
+        base + width + 1 };
+    for (size_t pos : positions) {
+        if (pos < size && rawPixels[pos] >= max) return true;
+    }
+    return false;
 }

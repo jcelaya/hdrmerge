@@ -48,6 +48,5 @@ BOOST_AUTO_TEST_CASE(testMergeMap1) {
         fileName << "test/testMapblur_" << radius << ".png";
         image.save(fileName.str());
     }
-    delete[] image.pixelData;
-    free(src);
+    delete[] src;
 }

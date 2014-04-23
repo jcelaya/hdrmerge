@@ -5,3 +5,5 @@ moc_*
 build/
 samples/
 hdrmerge.kdev4
+.kde*
+third_party/xmp_sdk

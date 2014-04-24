@@ -118,10 +118,6 @@ void Image::relativeExposure(const Image & r, size_t w, size_t h) {
         }
     }
     double immExp = hist.getPercentile(0.5) / 65536.0;
-    for (double i = 0.0; i <= 1.05; i += 0.1) {
-        cout << setprecision(5) << (hist.getPercentile(i) / 65536.0) << ',';
-    }
-    cout << hist.getNumSamples() << '/' << (width*height) << " samples" << endl;
     relExp = immExp * r.relExp;
 }
 

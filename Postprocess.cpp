@@ -107,7 +107,7 @@ void Postprocess::process() {
     // Here, we could do several things:
     //  wavelet denoise
     progress.advance("White balance");
-    //whiteBalance(); // And chromatic aberrations.
+    whiteBalance(); // And chromatic aberrations.
     moveG2toG1();
     //  lots of other things (see LibRaw::dcraw_proc)
     //  noise reduction

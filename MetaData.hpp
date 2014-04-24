@@ -64,7 +64,7 @@ public:
     float camMul[4];
     float preMul[4];
     float rgbCam[3][4];
-    float camXyz[3][4];
+    float camXyz[4][3];
     float isoSpeed;
     float shutter;
     float aperture;

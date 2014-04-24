@@ -29,6 +29,9 @@ using namespace hdrmerge;
 using namespace std;
 
 
+void adobe_cam_xyz(const string & t_make, const string & t_model, float * cam_xyz);
+
+
 MetaData::MetaData() : width(0), height(0), filters(0), max(0), black(0), cblack{},
 preMul{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
@@ -54,6 +57,10 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     maker = r.idata.make;
     model = r.idata.model;
     colors = r.idata.colors;
+    // LibRaw does not create this matrix for DNG files!!!
+    if (!camXyz[0][0]) {
+        adobe_cam_xyz(maker, model, (float *)camXyz);
+    }
 }
 
 
@@ -80,5 +87,10 @@ void MetaData::dumpInfo() const {
     cerr << colors << " colors with mask " << hex << filters << dec << ", " << cdesc << ", " << max << " max value" << endl;
     // Show other
     cerr << "ISO:" << isoSpeed << " shutter:1/" << (1.0/shutter) << " aperture:f" << aperture << " exposure:" << logExp() << " steps" << endl;
-    // Show rawdata
+    // Show matrices
+    cerr << "Camera multipliers:";
+    for (int c = 0; c < 4; ++c) {
+        cerr << " " << camMul[c];
+    }
+    cerr << endl;
 }

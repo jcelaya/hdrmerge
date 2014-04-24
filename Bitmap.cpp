@@ -126,7 +126,7 @@ void Bitmap::bitwiseAnd(const Bitmap & r) {
 
 void Bitmap::mtb(const uint16_t * pixels, uint16_t mth) {
     size_t i = 0;
-    for (Position p = position(0, 0); p != end(); ++p) {
+    for (iterator p = position(0, 0); p != end(); ++p) {
         p.set(pixels[i++] > mth);
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
@@ -137,29 +137,12 @@ void Bitmap::mtb(const uint16_t * pixels, uint16_t mth) {
 void Bitmap::exclusion(const uint16_t * pixels, uint16_t mth, uint16_t tolerance) {
     size_t i = 0;
     uint16_t min = mth - tolerance, max = mth + tolerance;
-    for (Position p = position(0, 0); p != end(); ++p) {
+    for (iterator p = position(0, 0); p != end(); ++p) {
         p.set(pixels[i] <= min || pixels[i] > max);
         ++i;
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
     dumpFile();
-}
-
-
-void Bitmap::or3by3() {
-    Bitmap tmp(rowWidth, size/rowWidth);
-    tmp.or3H(*this);
-    or3V(tmp);
-}
-
-
-void Bitmap::or3H(const Bitmap & r) {
-
-}
-
-
-void Bitmap::or3V(const Bitmap & r) {
-
 }
 
 

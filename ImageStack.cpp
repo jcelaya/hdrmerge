@@ -83,18 +83,14 @@ void ImageStack::computeRelExposures() {
         (*cur)->relativeExposure(**next, width, height);
     }
 
-    Bitmap satMap(width, height);
     imageIndex.reset(new uint8_t[width*height]);
-    int i = images.size() - 1;
-    fill_n(imageIndex.get(), width*height, (uint8_t)i);
-    --i;
-    for (;i >= 0; --i) {
+    fill_n(imageIndex.get(), width*height, 0);
+    for (int i = 0; i < images.size() - 1; ++i) {
         Image & img = *images[i];
-        img.buildSaturationMap(satMap);
-        for (size_t row = 0; row < height; ++row) {
-            for (size_t col = 0; col < width; ++col) {
-                if (!img.isSaturated(col, row)) {
-                    imageIndex[row*width + col] = (uint8_t)i;
+        for (size_t row = 0, pos = 0; row < height; ++row) {
+            for (size_t col = 0; col < width; ++col, ++pos) {
+                if (img.isSaturated(col, row)) {
+                    ++imageIndex[pos];
                 }
             }
         }

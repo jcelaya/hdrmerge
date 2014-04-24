@@ -119,12 +119,18 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 //             *scanLine++ = qRgb(gamma[r], gamma[g], gamma[b]);
             int v = gamma[(int) images->value(col, row)];
             int color = images->getImageAt(col, row);
-            if (color >= 3) {
-                *scanLine++ = qRgb(v, v, v);
-            } else {
-                v >>= 1;
-                *scanLine++ = qRgb(v, v, v) + (v << 8*color);
+            QRgb pixel;
+            switch (color) {
+                case 0:
+                    pixel = qRgb(v*7/10, v, v*7/10); break;
+                case 1:
+                    pixel = qRgb(v*7/10, v*7/10, v); break;
+                case 2:
+                    pixel = qRgb(v, v*7/10, v*7/10); break;
+                default:
+                    pixel = qRgb(v, v, v); break;
             }
+            *scanLine++ = pixel;
         }
     }
 }

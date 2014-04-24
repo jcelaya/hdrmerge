@@ -37,14 +37,13 @@ public:
     void bitwiseAnd(const Bitmap & r);
     void mtb(const uint16_t * pixels, uint16_t mth);
     void exclusion(const uint16_t * pixels, uint16_t mth, uint16_t tolerance);
-    void or3by3();
     void reset() {
         for (size_t i = 0; i < size; ++i) {
             bits[i] = 0;
         }
     }
 
-    class Position {
+    class iterator {
     public:
         void set(bool v = true) const {
             *div = v ? *div | mask : *div & ~mask;
@@ -55,13 +54,13 @@ public:
         bool get() const {
             return *div & mask;
         }
-        bool operator==(const Position & r) const {
+        bool operator==(const iterator & r) const {
             return div == r.div && mask == r.mask;
         }
-        bool operator!=(const Position & r) const {
+        bool operator!=(const iterator & r) const {
             return !(*this == r);
         }
-        Position & operator++() {
+        iterator & operator++() {
             mask <<= 1;
             if (!mask) {
                 mask = 1;
@@ -69,24 +68,36 @@ public:
             }
             return *this;
         }
+        iterator & operator+=(size_t h) {
+            size_t rem = h & 31;
+            div += h >> 5;
+            uint32_t newmask = mask << rem;
+            if (newmask) {
+                mask = newmask;
+            } else {
+                mask >>= 32 - rem;
+                ++div;
+            }
+            return *this;
+        }
     private:
         friend class Bitmap;
         uint32_t * div;
         uint32_t mask;
-        Position(Bitmap & b, size_t pos) {
+        iterator(Bitmap & b, size_t pos) {
             div = &b.bits[pos >> 5];
             mask = 1 << (pos & 31);
         }
     };
 
-    Position position(size_t x, size_t y) {
-        return Position(*this, y*rowWidth + x);
+    iterator position(size_t x, size_t y) {
+        return iterator(*this, y*rowWidth + x);
     }
-    const Position position(size_t x, size_t y) const {
-        return Position(*const_cast<Bitmap *>(this), y*rowWidth + x);
+    const iterator position(size_t x, size_t y) const {
+        return iterator(*const_cast<Bitmap *>(this), y*rowWidth + x);
     }
-    const Position end() const {
-        return Position(*const_cast<Bitmap *>(this), numBits);
+    const iterator end() const {
+        return iterator(*const_cast<Bitmap *>(this), numBits);
     }
 
     size_t count() const;
@@ -106,8 +117,6 @@ private:
     size_t rowWidth, size, numBits;
 
     void applyRowMask(int dx);
-    void or3H(const Bitmap & r);
-    void or3V(const Bitmap & r);
 };
 
 } // namespace hdrmerge

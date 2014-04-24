@@ -52,6 +52,15 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     subtractBlack();
     preScale();
     metaData->dumpInfo();
+    delta[0] = -width - 1;
+    delta[1] = -width;
+    delta[2] = -width + 1;
+    delta[3] = -1;
+    delta[4] = 0;
+    delta[5] = 1;
+    delta[6] = width - 1;
+    delta[7] = width;
+    delta[8] = width + 1;
 }
 
 
@@ -182,35 +191,12 @@ void Image::preScale() {
 }
 
 
-void Image::buildSaturationMap(Bitmap & satMap) const {
-    size_t x = -dx, y = -dy;
-    size_t w = satMap.getWidth() + x;
-    for (Bitmap::Position p = satMap.position(0, 0); p != satMap.end(); ++p) {
-        p.set(rawPixels[y*width + x] >= max);
-        if (++x == w) {
-            x = -dx;
-            ++y;
-        }
-    }
-}
-
-
 bool Image::isSaturated(size_t x, size_t y) const {
     x -= dx; y -= dy;
     size_t base = y*width + x;
     size_t size = width*height;
-    size_t positions[9] = {
-        base - width - 1,
-        base - width,
-        base - width + 1,
-        base - 1,
-        base,
-        base + 1,
-        base + width - 1,
-        base + width,
-        base + width + 1 };
-    for (size_t pos : positions) {
-        if (pos < size && rawPixels[pos] >= max) return true;
+    for (size_t d : delta) {
+        if (base + d < size && rawPixels[base + d] >= max) return true;
     }
     return false;
 }

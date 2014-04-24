@@ -48,7 +48,7 @@ static bool checkZeroArea(const Bitmap & b, int i0, int i1, int j0, int j1) {
 
 BOOST_AUTO_TEST_CASE(bitmap_shift) {
     Bitmap b(100, 100);
-    for (Bitmap::Position p = b.position(0, 0); p != b.end(); ++p) {
+    for (Bitmap::iterator p = b.position(0, 0); p != b.end(); ++p) {
         p.set();
     }
     b.position(49, 49).reset(); b.position(49, 50).reset(); b.position(50, 49).reset(); b.position(50, 50).reset();

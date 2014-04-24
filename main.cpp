@@ -40,8 +40,6 @@ public:
 
 
 int main(int argc, char * argv[]) {
-    hdrmerge::GUI app(argc, argv);
-
     // Parse the list of images in command line
     std::list<char *> inFileNames;
     char * outFileName = NULL;
@@ -49,11 +47,13 @@ int main(int argc, char * argv[]) {
         if (std::string("-o") == argv[i]) {
             if (++i < argc)
                 outFileName = argv[i];
-        } else
+        } else if (argv[i][0] != '-') {
             inFileNames.push_back(argv[i]);
+        }
     }
 
     if (outFileName == NULL || inFileNames.empty()) {
+        hdrmerge::GUI app(argc, argv);
         return app.startGUI(inFileNames);
     } else {
         ImageStack stack;

@@ -226,13 +226,20 @@ void DngWriter::buildPreviewList() {
     ((dng_image_preview *)thumbnail.Get())->fImage.Reset(thumbnail_render.Render());
     previewList.Append(thumbnail);
 
+    if (previewWidth) {
+        addJpegPreview();
+    }
+}
+
+
+void DngWriter::addJpegPreview() {
     // From kipi-plugins DngWriter:
     // Construct a preview image as TIFF format.
     AutoPtr<dng_image> tiffImage;
     dng_render tiff_render(host, negative);
     tiff_render.SetFinalSpace(dng_space_sRGB::Get());
     tiff_render.SetFinalPixelType(ttByte);
-    tiff_render.SetMaximumSize(1024);
+    tiff_render.SetMaximumSize(previewWidth);
     tiffImage.Reset(tiff_render.Render());
 
     dng_image_writer tiff_writer;
@@ -297,7 +304,7 @@ void DngWriter::write(const std::string & filename) {
 
     dng_image_writer writer;
     dng_file_stream filestream(filename.c_str(), true);
-    writer.WriteDNG(host, filestream, negative, NULL);//&previewList);
+    writer.WriteDNG(host, filestream, negative, &previewList);
 
     dng_xmp_sdk::TerminateSDK();
 }

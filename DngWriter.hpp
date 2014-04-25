@@ -38,13 +38,16 @@ class DngWriter {
 public:
     DngWriter(const ImageStack & s)
     : memalloc(gDefaultDNGMemoryAllocator), host(&memalloc, NULL), negative(host),
-    stack(s), appVersion("HDRMerge " HDRMERGE_VERSION_STRING) {
+    stack(s), appVersion("HDRMerge " HDRMERGE_VERSION_STRING), previewWidth(s.getWidth()) {
         host.SetSaveDNGVersion(dngVersion_SaveDefault);
         host.SetSaveLinearDNG(false);
         host.SetKeepOriginalFile(false);
         CurrentDateTimeAndZone(dateTimeNow);
     }
 
+    void setPreviewWidth(size_t w) {
+        previewWidth = w;
+    }
     void write(const std::string & filename);
 
 private:
@@ -60,10 +63,12 @@ private:
     dng_date_time_info dateTimeNow;
     const ImageStack & stack;
     const std::string appVersion;
+    size_t previewWidth;
 
     void buildNegative();
     void buildPreviewList();
     void buildExifMetadata();
+    void addJpegPreview();
 };
 
 } // namespace hdrmerge

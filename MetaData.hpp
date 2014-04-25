@@ -52,6 +52,7 @@ public:
 
     std::string fileName;
     size_t width, height;
+    size_t rawWidth, topMargin, leftMargin;
     std::string cdesc;
     uint32_t filters;
     uint16_t max;

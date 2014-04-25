@@ -40,9 +40,6 @@ public:
     int FC(int row, int col) const {
         return (filters >> (((row << 1 & 14) | (col & 1)) << 1) & 3);
     }
-    void moveG2toG1() {
-        filters &= ~((filters & 0x55555555) << 1);
-    }
     double logExp() const;
     void dumpInfo() const;
     uint16_t blackAt(int row, int col) {
@@ -60,10 +57,7 @@ public:
     uint16_t max;
     uint16_t black;
     uint16_t cblack[4];
-    uint16_t white[8][8];
     float camMul[4];
-    float preMul[4];
-    float rgbCam[3][4];
     float camXyz[4][3];
     float isoSpeed;
     float shutter;

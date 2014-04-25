@@ -61,7 +61,6 @@ public:
     int getImageAt(size_t x, size_t y) const {
         return imageIndex[y*width + x];
     }
-    void compose(float (* dst)[4]) const;
     void compose(float * dst) const;
 
 private:

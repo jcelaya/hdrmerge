@@ -28,11 +28,11 @@
 #include <QObject>
 #include <QString>
 #include <QProgressDialog>
-#include "Postprocess.hpp"
+#include "DngWriter.hpp"
 
 namespace hdrmerge {
 
-class SaveProgress : public QObject, public ProgressIndicator {
+class SaveProgress : public QObject {//, public ProgressIndicator {
 public:
     SaveProgress(const ImageStack * i, const std::string & f, QProgressDialog * p) :
             QObject(NULL), images(i), fileName(f), state(-1) {
@@ -44,9 +44,8 @@ public:
     }
 
     void save() {
-        Postprocess p(*images, *this);
-        p.process();
-        p.save(fileName);
+        DngWriter writer(*images);
+        writer.write(fileName);
         advance("Done!");
     }
 

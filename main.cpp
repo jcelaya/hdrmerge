@@ -25,18 +25,9 @@
 #include <string>
 #include "gui.hpp"
 #include "ImageStack.hpp"
-#include "Postprocess.hpp"
 #include "DngWriter.hpp"
 using namespace hdrmerge;
 using namespace std;
-
-
-class CoutProgress : public ProgressIndicator {
-public:
-    virtual void advance(const std::string & message) {
-        std::cout << message << std::endl;
-    }
-};
 
 
 int main(int argc, char * argv[]) {
@@ -65,17 +56,12 @@ int main(int argc, char * argv[]) {
         }
         stack.align();
         stack.computeRelExposures();
-        string ext(outFileName);
-        ext.erase(0, ext.find_last_of('.'));
-        if (ext == ".dng") {
-            DngWriter writer(stack);
-            writer.write(outFileName);
-        } else {
-            CoutProgress progress;
-            Postprocess p(stack, progress);
-            p.process();
-            p.save(outFileName);
+        string fileName(outFileName);
+        if (fileName.substr(fileName.find_last_of('.')) != ".dng") {
+            fileName += ".dng";
         }
+        DngWriter writer(stack);
+        writer.write(fileName);
         return 0;
     }
 }

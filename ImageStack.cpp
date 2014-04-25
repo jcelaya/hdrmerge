@@ -104,31 +104,6 @@ double ImageStack::value(size_t x, size_t y) const {
 }
 
 
-void ImageStack::compose(float (* dst)[4]) const {
-    // TODO: configure radius
-    const int radius = width > height ? height / 500 : width / 500;
-    MergeMap map(*this);
-    map.blur(radius);
-
-    // Apply map
-    int imageMax = images.size() - 1;
-    const MetaData & md = images.front()->getMetaData();
-    for (size_t row = 0; row < height; ++row) {
-        for (size_t col = 0; col < width; ++col) {
-            size_t pos = row*width + col;
-            int j = map[pos] > imageMax ? imageMax : ceil(map[pos]);
-            double v = images[j]->exposureAt(col, row);
-            if (j > 0) {
-                double p = j - map[pos];
-                double vv = images[j - 1]->exposureAt(col, row);
-                v = v*(1.0 - p) + vv*p;
-            }
-            dst[pos][md.FC(row, col)] = v;
-        }
-    }
-}
-
-
 void ImageStack::compose(float * dst) const {
     // TODO: configure radius
     const int radius = width > height ? height / 500 : width / 500;

@@ -303,9 +303,9 @@ void MainWindow::loadImages(const QStringList & files) {
 void MainWindow::saveResult() {
     if (images) {
         // Take the prefix and add the first and last suffix
-        QString name = (images->buildOutputFileName() + ".pfs").c_str();
-        QString file = QFileDialog::getSaveFileName(this, tr("Save PFS file"), name,
-            tr("PFS stream files (*.pfs)"), NULL, QFileDialog::DontUseNativeDialog);
+        QString name = (images->buildOutputFileName() + ".dng").c_str();
+        QString file = QFileDialog::getSaveFileName(this, tr("Save DNG file"), name,
+            tr("Digital Negatives (*.dng)"), NULL, QFileDialog::DontUseNativeDialog);
         if (!file.isEmpty()) {
             QProgressDialog progress(this);
             progress.setMinimumDuration(0);

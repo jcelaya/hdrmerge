@@ -11,10 +11,6 @@ find_package(Qt4 REQUIRED)
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 
-# libtiff
-find_package(TIFF REQUIRED)
-include(${TIFF_INCLUDE_DIR})
-
 # Boost Test
 find_package(Boost 1.46 COMPONENTS unit_test_framework)
 
@@ -31,7 +27,7 @@ if(WIN32) # Set Windows rules.
 else(WIN32) # Set Linux & co rules.
     add_definitions(-DqWinOS=0 -DqMacOS=0 -DqLinux=1 -DqAndroid=1 -DUNIX_ENV=1 -DqDNGUseStdInt=1 -DqDNGThreadSafe=1)
 endif(WIN32)
-add_definitions(-DqDNGDebug=0 -DqDNGValidateTarget=0 -DqDNGUseLibJPEG=0 -DqDNGXMPDocOps=0)
+add_definitions(-DqDNGDebug=0 -DqDNGValidateTarget=1 -DqDNGUseLibJPEG=0 -DqDNGXMPDocOps=0)
 
 # Check processor endianness
 include(TestBigEndian)
@@ -49,7 +45,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 # The version number.
 set (HDRMERGE_VERSION_MAJOR 0)
-set (HDRMERGE_VERSION_MINOR 2)
+set (HDRMERGE_VERSION_MINOR 3)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -65,14 +61,14 @@ include_directories("${PROJECT_BINARY_DIR}")
 # Sources and headers
 set(hdrmerge_sources
     gui.cpp MainWindow.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp
-    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp Postprocess.cpp MergeMap.cpp DngWriter.cpp camxyz.cpp)
+    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp MergeMap.cpp DngWriter.cpp camxyz.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp RenderThread.hpp ImageControl.hpp PreviewWidget.hpp
     DraggableScrollArea.hpp AboutDialog.hpp SaveProgress.hpp)
 set(hdrmerge_translations hdrmerge_en.ts hdrmerge_es.ts)
 
-# Link with qt4, libtiff and libpfs-1.2
+# Libs
 # TODO: find them at build time
-set(hdrmerge_libs ${QT_LIBRARIES} ${TIFF_LIBRARIES} pfs-1.2 raw dngsdk ${XMP_LIBRARIES} pthread dl)
+set(hdrmerge_libs ${QT_LIBRARIES} raw dngsdk ${XMP_LIBRARIES} pthread dl)
 
 # Qt4 intermediate files
 QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})

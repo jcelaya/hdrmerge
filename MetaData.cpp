@@ -33,7 +33,7 @@ void adobe_cam_xyz(const string & t_make, const string & t_model, float * cam_xy
 
 
 MetaData::MetaData() : width(0), height(0), rawWidth(0), topMargin(0), leftMargin(0), filters(0),
-    max(0), black(0), cblack{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
+max(0), black(0), cblack{}, camMul{}, camXyz{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
 MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {

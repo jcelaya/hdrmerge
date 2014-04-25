@@ -33,7 +33,7 @@ struct SampleImage {
             return;
         OpenImageIO::ImageSpec spec;
         in->open(f, spec);
-        md.width = spec.width;
+        md.width = md.rawWidth = spec.width;
         md.height = spec.height;
         md.max = 65535;
         pixelData = new uint16_t[md.width * md.height];

@@ -39,7 +39,7 @@ static const char * sample3 = "test/sample3.png"; // (38, 26)
 static const char * sample4 = "test/sample4.png"; // (34, -4)
 
 
-BOOST_AUTO_TEST_CASE( image_load ) {
+BOOST_AUTO_TEST_CASE(image_load) {
     Image e1(image1);
     BOOST_REQUIRE(e1.good());
     Image e2(image2);

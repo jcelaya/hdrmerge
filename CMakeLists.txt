@@ -21,6 +21,12 @@ if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+# LibRaw
+find_package(LibRaw REQUIRED)
+
+# Exiv2
+find_package(Exiv2 REQUIRED)
+
 # Build dngsdk and xdrsdk
 if(WIN32) # Set Windows rules.
     add_definitions(-DqWinOS=1 -DqMacOS=0 -DWIN_ENV=1)
@@ -61,14 +67,13 @@ include_directories("${PROJECT_BINARY_DIR}")
 # Sources and headers
 set(hdrmerge_sources
     gui.cpp MainWindow.cpp RenderThread.cpp ImageControl.cpp PreviewWidget.cpp DraggableScrollArea.cpp
-    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp MergeMap.cpp DngWriter.cpp camxyz.cpp)
+    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp MergeMap.cpp DngWriter.cpp camxyz.cpp exiv2dngstreamio.cpp exiv2meta.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp RenderThread.hpp ImageControl.hpp PreviewWidget.hpp
     DraggableScrollArea.hpp AboutDialog.hpp SaveProgress.hpp)
 set(hdrmerge_translations hdrmerge_en.ts hdrmerge_es.ts)
 
 # Libs
-# TODO: find them at build time
-set(hdrmerge_libs ${QT_LIBRARIES} raw dngsdk ${XMP_LIBRARIES} pthread dl)
+set(hdrmerge_libs ${QT_LIBRARIES} ${EXIV2_LIBRARY} ${LibRaw_LIBRARIES} dngsdk ${XMP_LIBRARIES} pthread dl)
 
 # Qt4 intermediate files
 QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})

@@ -20,6 +20,8 @@
  *
  */
 
+#include <QImage>
+#include <QTemporaryFile>
 #include "config.h"
 #include "DngWriter.hpp"
 #include "dng_image.h"
@@ -35,6 +37,7 @@
 #include "dng_image_writer.h"
 #include "dng_camera_profile.h"
 #include "dng_render.h"
+#include "exiv2meta.h"
 using namespace std;
 
 
@@ -95,50 +98,50 @@ void DngWriter::buildExifMetadata() {
         }
     }
 
-//     dng_file_stream stream(stack.getImage(0).getMetaData().fileName.c_str());
-//     Exiv2Meta exiv2Meta;
-//     exiv2Meta.Parse(host, stream);
-//     exiv2Meta.PostParse(host);
-//
-//     // Exif Data
-//     dng_xmp xmpSync(memalloc);
-//     dng_exif * exifData = exiv2Meta.GetExif();
-//     exifData->fDateTime = dateTimeNow;
-//     exifData->fSoftware.Set_ASCII(appVersion.c_str());
-//     if (exifData != nullptr) {
-//         xmpSync.SyncExif(*exifData);
-//         AutoPtr<dng_memory_block> xmpBlock(xmpSync.Serialize());
-//         negative.SetXMP(host, xmpBlock->Buffer(), xmpBlock->LogicalSize());
-//         negative.SynchronizeMetadata();
-//     }
-//
-//     // XMP Data
-//     dng_xmp* xmpData = exiv2Meta.GetXMP();
-//     if (xmpData != nullptr) {
-//         AutoPtr<dng_memory_block> xmpBlock(xmpData->Serialize());
-//         negative.SetXMP(host, xmpBlock->Buffer(), xmpBlock->LogicalSize(), false);
-//         negative.SynchronizeMetadata();
-//     }
-//
-//     // Makernote backup.
-//     if ((exiv2Meta.MakerNoteLength() > 0) && (exiv2Meta.MakerNoteByteOrder().Length() == 2)) {
-//         dng_memory_stream streamPriv(memalloc);
-//         streamPriv.SetBigEndian();
-//         streamPriv.Put("Adobe", 5);
-//         streamPriv.Put_uint8(0x00);
-//         streamPriv.Put("MakN", 4);
-//         streamPriv.Put_uint32(exiv2Meta.MakerNoteLength() + exiv2Meta.MakerNoteByteOrder().Length() + 4);
-//         streamPriv.Put(exiv2Meta.MakerNoteByteOrder().Get(), exiv2Meta.MakerNoteByteOrder().Length());
-//         streamPriv.Put_uint32(exiv2Meta.MakerNoteOffset());
-//         streamPriv.Put(exiv2Meta.MakerNoteData(), exiv2Meta.MakerNoteLength());
-//         AutoPtr<dng_memory_block> blockPriv(host.Allocate(static_cast<uint32>(streamPriv.Length())));
-//         streamPriv.SetReadPosition(0);
-//         streamPriv.Get(blockPriv->Buffer(), static_cast<uint32>(streamPriv.Length()));
-//         negative.SetPrivateData(blockPriv);
-//     }
-//
-//     negative.RebuildIPTC(true);
-//     negative.SetModelName(negative.GetExif()->fModel.Get());
+    dng_file_stream stream(stack.getImage(0).getMetaData().fileName.c_str());
+    Exiv2Meta exiv2Meta;
+    exiv2Meta.Parse(host, stream);
+    exiv2Meta.PostParse(host);
+
+    // Exif Data
+    dng_xmp xmpSync(memalloc);
+    dng_exif * exifData = exiv2Meta.GetExif();
+    exifData->fDateTime = dateTimeNow;
+    exifData->fSoftware.Set_ASCII(appVersion.c_str());
+    if (exifData != nullptr) {
+        xmpSync.SyncExif(*exifData);
+        AutoPtr<dng_memory_block> xmpBlock(xmpSync.Serialize());
+        negative.SetXMP(host, xmpBlock->Buffer(), xmpBlock->LogicalSize());
+        negative.SynchronizeMetadata();
+    }
+
+    // XMP Data
+    dng_xmp* xmpData = exiv2Meta.GetXMP();
+    if (xmpData != nullptr) {
+        AutoPtr<dng_memory_block> xmpBlock(xmpData->Serialize());
+        negative.SetXMP(host, xmpBlock->Buffer(), xmpBlock->LogicalSize(), false);
+        negative.SynchronizeMetadata();
+    }
+
+    // Makernote backup.
+    if ((exiv2Meta.MakerNoteLength() > 0) && (exiv2Meta.MakerNoteByteOrder().Length() == 2)) {
+        dng_memory_stream streamPriv(memalloc);
+        streamPriv.SetBigEndian();
+        streamPriv.Put("Adobe", 5);
+        streamPriv.Put_uint8(0x00);
+        streamPriv.Put("MakN", 4);
+        streamPriv.Put_uint32(exiv2Meta.MakerNoteLength() + exiv2Meta.MakerNoteByteOrder().Length() + 4);
+        streamPriv.Put(exiv2Meta.MakerNoteByteOrder().Get(), exiv2Meta.MakerNoteByteOrder().Length());
+        streamPriv.Put_uint32(exiv2Meta.MakerNoteOffset());
+        streamPriv.Put(exiv2Meta.MakerNoteData(), exiv2Meta.MakerNoteLength());
+        AutoPtr<dng_memory_block> blockPriv(host.Allocate(static_cast<uint32>(streamPriv.Length())));
+        streamPriv.SetReadPosition(0);
+        streamPriv.Get(blockPriv->Buffer(), static_cast<uint32>(streamPriv.Length()));
+        negative.SetPrivateData(blockPriv);
+    }
+
+    negative.RebuildIPTC(true);
+    negative.SetModelName(negative.GetExif()->fModel.Get());
 }
 
 
@@ -201,8 +204,8 @@ void DngWriter::buildNegative() {
         prof->SetCalibrationIlluminant1(lsD65);
     }
     negative.AddProfile(prof);
-    dng_vector cameraNeutral(4);
-    for (int c = 0; c < 4; ++c) {
+    dng_vector cameraNeutral(3);
+    for (int c = 0; c < 3; ++c) {
         cameraNeutral[c] = 1.0 / md.camMul[c];
     }
     negative.SetCameraNeutral(cameraNeutral);
@@ -215,33 +218,6 @@ void DngWriter::buildPreviewList() {
     negative.BuildStage2Image(host);
     negative.BuildStage3Image(host);
 
-//     AutoPtr<dng_image> jpegImage;
-//     dng_render jpeg_render(host, negative);
-//     jpeg_render.SetFinalSpace(dng_space_sRGB::Get());
-//     jpeg_render.SetFinalPixelType(ttByte);
-//     jpeg_render.SetMaximumSize(1024);
-//     jpegImage.Reset(jpeg_render.Render());
-//
-//     DngImageWriter jpeg_writer;
-//     dng_memory_stream dms(gDefaultDNGMemoryAllocator);
-//     jpeg_writer.WriteJPEG(host, dms, *jpegImage.Get(), 75, 1);
-//     dms.SetReadPosition(0);
-//
-//     AutoPtr<dng_jpeg_preview> jpeg_preview;
-//     jpeg_preview.Reset(new dng_jpeg_preview);
-//     jpeg_preview->fPhotometricInterpretation = piYCbCr;
-//     jpeg_preview->fPreviewSize               = jpegImage->Size();
-//     jpeg_preview->fYCbCrSubSampling          = dng_point(2, 2);
-//     jpeg_preview->fCompressedData.Reset(host.Allocate(static_cast<uint32>(dms.Length())));
-//     dms.Get(jpeg_preview->fCompressedData->Buffer_char(), static_cast<uint32>(dms.Length()));
-//     jpeg_preview->fInfo.fApplicationName.Set_ASCII("HDRMerge");
-//     jpeg_preview->fInfo.fApplicationVersion.Set_ASCII(appVersion.c_str());
-//     jpeg_preview->fInfo.fDateTime = dateTimeNow.Encode_ISO_8601();
-//     jpeg_preview->fInfo.fColorSpace = previewColorSpace_sRGB;
-//
-//     AutoPtr<dng_preview> pp(dynamic_cast<dng_preview*>(jpeg_preview.Release()));
-//     previewList.Append(pp);
-
     AutoPtr<dng_preview> thumbnail(new dng_image_preview);
     dng_render thumbnail_render(host, negative);
     thumbnail_render.SetFinalSpace(dng_space_sRGB::Get());
@@ -249,6 +225,61 @@ void DngWriter::buildPreviewList() {
     thumbnail_render.SetMaximumSize(256);
     ((dng_image_preview *)thumbnail.Get())->fImage.Reset(thumbnail_render.Render());
     previewList.Append(thumbnail);
+
+    // From kipi-plugins DngWriter:
+    // Construct a preview image as TIFF format.
+    AutoPtr<dng_image> tiffImage;
+    dng_render tiff_render(host, negative);
+    tiff_render.SetFinalSpace(dng_space_sRGB::Get());
+    tiff_render.SetFinalPixelType(ttByte);
+    tiff_render.SetMaximumSize(1024);
+    tiffImage.Reset(tiff_render.Render());
+
+    dng_image_writer tiff_writer;
+    AutoPtr<dng_memory_stream> dms(new dng_memory_stream(gDefaultDNGMemoryAllocator));
+    tiff_writer.WriteTIFF(host, *dms, *tiffImage.Get(), piRGB,
+                          ccUncompressed, &negative, &tiff_render.FinalSpace());
+
+    // Write TIFF preview image data to a temp JPEG file
+    std::vector<char> tiff_mem_buffer(dms->Length());
+    dms->SetReadPosition(0);
+    dms->Get(&tiff_mem_buffer.front(), tiff_mem_buffer.size());
+    dms.Reset();
+
+    QImage pre_image;
+    QTemporaryFile previewFile;
+
+    if (!pre_image.loadFromData((uchar*)&tiff_mem_buffer.front(), tiff_mem_buffer.size(), "TIFF")) {
+//         kDebug() << "DNGWriter: Cannot load TIFF preview data in memory. Aborted..." ;
+        return;
+    }
+    if (!previewFile.open()) {
+//         kDebug() << "DNGWriter: Cannot open temporary file to write JPEG preview. Aborted..." ;
+        return;
+    }
+    if (!pre_image.save(previewFile.fileName(), "JPEG", 90)) {
+//         kDebug() << "DNGWriter: Cannot save file to write JPEG preview. Aborted..." ;
+        return;
+    }
+
+    // Load JPEG preview file data in DNG preview container.
+    AutoPtr<dng_jpeg_preview> jpeg_preview;
+    jpeg_preview.Reset(new dng_jpeg_preview);
+    jpeg_preview->fPhotometricInterpretation = piYCbCr;
+    jpeg_preview->fYCbCrSubSampling          = dng_point(2, 2);
+    jpeg_preview->fPreviewSize.v             = pre_image.height();
+    jpeg_preview->fPreviewSize.h             = pre_image.width();
+    jpeg_preview->fCompressedData.Reset(host.Allocate(previewFile.size()));
+    jpeg_preview->fInfo.fApplicationName.Set_ASCII("HDRMerge");
+    jpeg_preview->fInfo.fApplicationVersion.Set_ASCII(appVersion.c_str());
+    jpeg_preview->fInfo.fDateTime = dateTimeNow.Encode_ISO_8601();
+    jpeg_preview->fInfo.fColorSpace = previewColorSpace_sRGB;
+    QDataStream previewStream(&previewFile);
+    previewStream.readRawData(jpeg_preview->fCompressedData->Buffer_char(), previewFile.size());
+    previewFile.remove();
+
+    AutoPtr<dng_preview> pp(dynamic_cast<dng_preview*>(jpeg_preview.Release()));
+    previewList.Append(pp);
 }
 
 
@@ -262,7 +293,7 @@ void DngWriter::write(const std::string & filename) {
     negative.SetStage1Image(imageData);
     negative.SetRawFloatBitDepth(32);
 
-    //buildPreviewList();
+    buildPreviewList();
 
     dng_image_writer writer;
     dng_file_stream filestream(filename.c_str(), true);

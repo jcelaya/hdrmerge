@@ -4,8 +4,6 @@ US14 As a user, I want to be able to add and remove pixels from each image. PR2
 US15 As a user, I want shortcuts to the most common operations: move, add and remove.
 
 Doing:
-US16 As a user, I want to be able to save the raw result as DNG with 32-bit floating point sample format.
-	Take other parameters from one of the images.
 
 Done:
 US1: As a user, I want to load RAW files directly. PR1
@@ -14,4 +12,6 @@ US2: As a user, I want the software to align my images using the MTB algorithm o
 US11: As a user, I want the software to automatically compute the relative exposure between adjancent images. PR1
 US12 As a user, I want to see a representation of the result. PR1
     The representation will be done in greyscale.
+US16 As a user, I want to be able to save the raw result as DNG with 32-bit floating point sample format. PR1
+	Take other parameters from one of the images.
 

@@ -40,7 +40,6 @@
 #include <QPen>
 #include <QBitmap>
 #include <QKeyEvent>
-#include "ImageControl.hpp"
 #include "AboutDialog.hpp"
 #include "SaveProgress.hpp"
 #include "config.h"
@@ -71,7 +70,6 @@ void MainWindow::createGui() {
 
     preview = new PreviewWidget(previewArea);
     previewArea->setWidget(preview);
-    connect(preview, SIGNAL(focus(int, int)), previewArea, SLOT(show(int, int)));
     connect(previewArea, SIGNAL(drag(int, int)), this, SLOT(painted(int, int)));
 
     QWidget * toolArea = new QWidget(centralwidget);
@@ -97,14 +95,6 @@ void MainWindow::createGui() {
     dragToolAction->setChecked(true);
     preview->setCursor(Qt::OpenHandCursor);
     toolLayout->addWidget(toolBar);
-
-    imageTabs = new QTabWidget(toolArea);
-    QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
-    sizePolicy.setHorizontalStretch(0);
-    sizePolicy.setVerticalStretch(0);
-    sizePolicy.setHeightForWidth(imageTabs->sizePolicy().hasHeightForWidth());
-    imageTabs->setSizePolicy(sizePolicy);
-    //toolLayout->addWidget(imageTabs);
 
     layout->addWidget(toolArea);
 
@@ -268,33 +258,19 @@ void MainWindow::loadImages(const QStringList & files) {
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         progress.setValue(numImages + 2);
 
-        // Clean previous state
-//         while (imageTabs->count() > 0) {
-//             delete imageTabs->widget(0);
-//             imageTabs->removeTab(0);
-//         }
         if (rt != NULL)
             delete rt;
 
         // Render
-        preview->resetScale();
         rt = new RenderThread(images, 2.2f, this);
         connect(rt, SIGNAL(renderedImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)),
                 preview, SLOT(paintImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)));
-        connect(preview, SIGNAL(imageViewport(int, int, int, int, int)),
-                rt, SLOT(setImageViewport(int, int, int, int, int)));
+        connect(preview, SIGNAL(imageViewport(int, int, int, int)),
+                rt, SLOT(setImageViewport(int, int, int, int)));
         rt->start(QThread::LowPriority);
 
         // Create GUI
 //         for (unsigned int i = 0; i < numImages - 1; i++) {
-//             // Create ImageControl widgets for every exposure except the last one
-//             ImageControl * ic =
-//                 new ImageControl(imageTabs, i, images->getRelativeExposure(i), images->getThreshold(i));
-//             connect(ic, SIGNAL(relativeEVChanged(int, double)),
-//                     rt, SLOT(setExposureRelativeEV(int, double)));
-//             connect(ic, SIGNAL(thresholdChanged(int, int)),
-//                     rt, SLOT(setExposureThreshold(int, int)));
-//             imageTabs->addTab(ic, tr("Exposure %1").arg(i));
 //         }
     }
 }

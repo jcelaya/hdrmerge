@@ -144,9 +144,10 @@ string ImageStack::buildOutputFileName() const {
     }
     names.sort();
     if (names.size() > 1) {
-        int pos = 0;
-        while (names.front()[pos] == names.back()[pos]) pos++;
-        name = names.front() + '-' + names.back().substr(pos);
+        string & last = names.back();
+        int pos = last.length() - 1;
+        while (last[pos] >= '0' && last[pos] <= '9') pos--;
+        name = names.front() + '-' + names.back().substr(pos + 1);
     } else {
         name = names.front();
     }

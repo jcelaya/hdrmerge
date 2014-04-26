@@ -27,7 +27,7 @@ using namespace hdrmerge;
 
 
 RenderThread::RenderThread(ImageStack * es, float gamma, QObject * parent)
-    : QThread(parent), restart(false), abort(false), images(es), minx(0), miny(0), maxx(0), maxy(0), scale(0) {
+    : QThread(parent), restart(false), abort(false), images(es), minx(0), miny(0), maxx(0), maxy(0) {
     setGamma(gamma);
 }
 
@@ -49,37 +49,13 @@ void RenderThread::setGamma(float g) {
 }
 
 
-void RenderThread::setExposureThreshold(int i, int th) {
+void RenderThread::setImageViewport(int x, int y, int w, int h) {
     mutex.lock();
-    //images->setThreshold(i, ((th + 1) << 8) - 1);
-    restart = true;
-    mutex.unlock();
-    condition.wakeOne();
-}
-
-
-void RenderThread::setExposureRelativeEV(int i, double re) {
-    mutex.lock();
-    //images->setRelativeExposure(i, re);
-    restart = true;
-    mutex.unlock();
-    condition.wakeOne();
-}
-
-
-void RenderThread::setImageViewport(int x, int y, int w, int h, int newScale) {
-    mutex.lock();
-    if (newScale != scale) {
-        restart = true;
-        scale = newScale;
-    }
     minx = x;
     miny = y;
     maxx = x + w;
     maxy = y + h;
     mutex.unlock();
-    if (restart)
-        condition.wakeOne();
 }
 
 
@@ -112,11 +88,6 @@ void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int m
 
         QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - miny));
         for (unsigned int col = minx; col < maxx; col++) {
-//             double rr, gg, bb;
-//             images->rgb(col, row, rr, gg, bb);
-//             int r = (int)rr, g = (int)gg, b = (int)bb;
-//             // Apply gamma correction
-//             *scanLine++ = qRgb(gamma[r], gamma[g], gamma[b]);
             int v = gamma[(int) images->value(col, row)];
             int color = images->getImageAt(col, row);
             QRgb pixel;
@@ -142,7 +113,6 @@ void RenderThread::run() {
         if (abort) return;
 
         if (_maxy > 0) {
-        //if (!restart && _maxy > 0) {
             QImage a(_maxx - _minx, _maxy - _miny, QImage::Format_RGB32);
             doRender(_minx, _miny, _maxx, _maxy, a, true);
             emit renderedImage(_minx, _miny, images->getWidth(), images->getHeight(), a);
@@ -162,7 +132,6 @@ void RenderThread::run() {
         _miny = miny;
         _maxx = maxx;
         _maxy = maxy;
-        //images->setScale(scale);
         mutex.unlock();
     }
 }

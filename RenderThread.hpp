@@ -42,7 +42,6 @@ class RenderThread : public QThread {
     ImageStack * images;
     unsigned int minx, miny, maxx, maxy;
     int gamma[65536];
-    int scale;
 
     void doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image, bool ignoreRestart = false);
 
@@ -54,10 +53,8 @@ public:
     ~RenderThread();
 
 public slots:
-    void setExposureThreshold(int i, int th);
-    void setExposureRelativeEV(int i, double re);
     void setGamma(float g);
-    void setImageViewport(int x, int y, int w, int h, int newScale);
+    void setImageViewport(int x, int y, int w, int h);
     void addPixels(int i, int x, int y, int radius);
     void removePixels(int i, int x, int y, int radius);
 

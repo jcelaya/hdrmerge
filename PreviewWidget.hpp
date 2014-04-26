@@ -32,23 +32,18 @@ public:
     QSize sizeHint() const;
 
 signals:
-    void focus(int x, int y);
-    void imageViewport(int x, int y, int w, int h, int scale);
+    void imageViewport(int x, int y, int w, int h);
 
 public slots:
-    void resetScale() { currentScale = newScale = 0; }
     void paintImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
-    void zoom(int steps);
 
 protected:
-    void wheelEvent(QWheelEvent * event);
     void moveEvent(QMoveEvent * event);
     void paintEvent(QPaintEvent * event);
-        
+
 private:
     Q_OBJECT
-    
-    int currentScale, newScale;
+
     QPixmap * pixmap;
 };
 

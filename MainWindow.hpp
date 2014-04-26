@@ -30,7 +30,6 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QStatusBar>
-#include <QTabWidget>
 #include <QEvent>
 #include <QMutex>
 #include <QStringList>
@@ -91,7 +90,6 @@ private:
     QWidget * centralwidget;
     DraggableScrollArea * previewArea;
     PreviewWidget * preview;
-    QTabWidget * imageTabs;
     QStatusBar * statusbar;
 
     ImageStack * images;

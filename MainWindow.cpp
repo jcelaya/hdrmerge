@@ -57,7 +57,6 @@ public:
     }
 
     virtual void advance(int percent, const std::string & message) {
-        std::cout << message << std::endl;
         QMetaObject::invokeMethod(this, "setValue", Qt::QueuedConnection, Q_ARG(int, percent));
         QMetaObject::invokeMethod(this, "setLabelText", Qt::QueuedConnection, Q_ARG(QString, MainWindow::tr(message.c_str())));
     }
@@ -217,9 +216,27 @@ void MainWindow::showEvent(QShowEvent * event) {
 void MainWindow::loadImages() {
     QSettings settings;
     QVariant lastDirSetting = settings.value("lastOpenDirectory");
+    QString filter(tr("Raw images ("
+        "*.3fr "
+        "*.ari *.arw "
+        "*.bay "
+        "*.crw *.cr2 *.cap "
+        "*.dcs *.dcr *.dng *.drf "
+        "*.eip *.erf "
+        "*.fff "
+        "*.iiq "
+        "*.k25 *.kdc "
+        "*.mdc *.mef *.mos *.mrw "
+        "*.nef *.nrw "
+        "*.obm *.orf "
+        "*.pef *.ptx *.pxn "
+        "*.r3d *.raf *.raw *.rwl *.rw2 *.rwz "
+        "*.sr2 *.srf *.srw "
+        "*.x3f"
+        ")"));
     QStringList files = QFileDialog::getOpenFileNames(this, tr("Open exposures"),
         lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
-        tr("Digital NeGatives (*.dng)"), NULL, QFileDialog::DontUseNativeDialog);
+        filter, NULL, QFileDialog::DontUseNativeDialog);
     if (!files.empty()) {
         // Save last dir
         QString lastDir = QDir(files.front()).absolutePath();

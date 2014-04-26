@@ -5,7 +5,6 @@ US14 As a user, I want to be able to add and remove pixels from each image. PR2
     US14-3 To avoid problems at the edges, new pixels can only be added on top of the next image pixels, and deleted from not obscured zones. PR3
 US15 As a user, I want shortcuts to the most common operations: move, add and remove. PR2
 US17 As a user, I want the loaded pictures automatically rotated. PR1
-US18 As a user, I want to be able to load any kind of raw files. PR1
 US20 As a user, I want the grab tool to work as a in Gwenview, without actually moving the mouse pointer. PR2
 US21 As a developer, I want to update the GUI texts and translations. PR3
 US22 As a user, I want a batch mode to detect sets of exposures and produce an output negative for each one. PR3
@@ -21,5 +20,6 @@ US12 As a user, I want to see a representation of the result. PR1
     The representation will be done in greyscale.
 US16 As a user, I want to be able to save the raw result as DNG with 32-bit floating point sample format. PR1
 	Take other parameters from one of the images.
+US18 As a user, I want to be able to load any kind of raw files. PR1
 US19 As a developer, I want to add a progress indicator to long operations, like load and save. PR1
 

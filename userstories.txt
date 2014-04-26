@@ -11,7 +11,6 @@ US21 As a developer, I want to update the GUI texts and translations. PR3
 US22 As a user, I want a batch mode to detect sets of exposures and produce an output negative for each one. PR3
 
 Doing:
-US19 As a developer, I want to add a progress indicator to long operations, like load and save. PR1
 
 Done:
 US1: As a user, I want to load RAW files directly. PR1
@@ -22,4 +21,5 @@ US12 As a user, I want to see a representation of the result. PR1
     The representation will be done in greyscale.
 US16 As a user, I want to be able to save the raw result as DNG with 32-bit floating point sample format. PR1
 	Take other parameters from one of the images.
+US19 As a developer, I want to add a progress indicator to long operations, like load and save. PR1
 

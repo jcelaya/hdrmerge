@@ -88,7 +88,7 @@ private:
 
     void preScale();
     void subtractBlack();
-    void buildImage(uint16_t * rawImage, MetaData * md);
+    void buildImage(uint16_t * rawImage, MetaData * md, int orientation);
 };
 
 } // namespace hdrmerge

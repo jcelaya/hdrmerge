@@ -38,8 +38,13 @@ max(0), black(0), cblack{}, camMul{}, camXyz{}, isoSpeed(0.0), shutter(0.0), ape
 
 MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     auto & r = rawData.imgdata;
-    width = r.sizes.width;
-    height = r.sizes.height;
+    if (r.sizes.flip == 5 || r.sizes.flip == 6) {
+        width = r.sizes.height;
+        height = r.sizes.width;
+    } else {
+        width = r.sizes.width;
+        height = r.sizes.height;
+    }
     rawWidth = r.sizes.raw_width;
     topMargin = r.sizes.top_margin;
     leftMargin = r.sizes.left_margin;

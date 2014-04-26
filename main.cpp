@@ -21,6 +21,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <list>
 #include <string>
 #include "gui.hpp"
@@ -28,6 +29,14 @@
 #include "DngWriter.hpp"
 using namespace hdrmerge;
 using namespace std;
+
+
+class CoutProgressIndicator : public ProgressIndicator {
+public:
+    virtual void advance(int percent, const std::string & message) {
+        std::cout << '[' << std::setw(3) << percent << "%] " << message << std::endl;
+    }
+};
 
 
 int main(int argc, char * argv[]) {
@@ -47,20 +56,29 @@ int main(int argc, char * argv[]) {
         hdrmerge::GUI app(argc, argv);
         return app.startGUI(inFileNames);
     } else {
+        CoutProgressIndicator pi;
         ImageStack stack;
+        int step = 100 / (inFileNames.size() + 2);
+        int p = -step;
         for (auto name : inFileNames) {
+            pi.advance(p += step, std::string("Loading ") + name);
             std::unique_ptr<Image> image(new Image(name));
             if (!image->good() || !stack.addImage(image)) {
+                std::cout << "Error loading " << name << std::endl;
                 return 1;
             }
         }
+        pi.advance(p += step, "Aligning...");
         stack.align();
+        pi.advance(p += step, "Referencing...");
         stack.computeRelExposures();
+        pi.advance(p += step, "Done loading!");
         string fileName(outFileName);
         if (fileName.substr(fileName.find_last_of('.')) != ".dng") {
             fileName += ".dng";
         }
-        DngWriter writer(stack);
+        std::cout << "Writing result to " << fileName << std::endl;
+        DngWriter writer(stack, pi);
         writer.write(fileName);
         return 0;
     }

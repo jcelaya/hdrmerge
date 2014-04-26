@@ -41,10 +41,27 @@
 #include <QBitmap>
 #include <QKeyEvent>
 #include "AboutDialog.hpp"
-#include "SaveProgress.hpp"
+#include "DngWriter.hpp"
 #include "config.h"
 using namespace std;
 using namespace hdrmerge;
+
+
+class ProgressDialog : public QProgressDialog , public ProgressIndicator {
+public:
+    ProgressDialog(QWidget * parent = 0) : QProgressDialog(parent) {
+        setMaximum(100);
+        setMinimum(0);
+        setMinimumDuration(0);
+        setCancelButtonText(QString());
+    }
+
+    virtual void advance(int percent, const std::string & message) {
+        std::cout << message << std::endl;
+        QMetaObject::invokeMethod(this, "setValue", Qt::QueuedConnection, Q_ARG(int, percent));
+        QMetaObject::invokeMethod(this, "setLabelText", Qt::QueuedConnection, Q_ARG(QString, MainWindow::tr(message.c_str())));
+    }
+};
 
 
 MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
@@ -213,50 +230,42 @@ void MainWindow::loadImages() {
 }
 
 
-static Image * loadAsync(const char * fileName) {
-    return new Image(fileName);
-}
-
-
 void MainWindow::loadImages(const QStringList & files) {
     if (!files.empty()) {
         unsigned int numImages = files.size();
 
         // Load and sort images
         ImageStack * newImages = new ImageStack();
-        QProgressDialog progress(tr("Loading files..."), QString(), 0, numImages + 2, this);
-        progress.setMinimumDuration(0);
-        for (unsigned int i = 0; i < numImages; i++) {
-            progress.setValue(i);
-            QByteArray fileName = QDir::toNativeSeparators(files[i]).toLocal8Bit();//toUtf8();
-            QFuture<Image *> result = QtConcurrent::run(&loadAsync, fileName.constData());
-            while (result.isRunning())
-                QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-            // Check for error
-            unique_ptr<Image> image(result.result());
-            if (image.get() == nullptr || !image->good()) {
-                QMessageBox::warning(this, tr("Error opening file"), tr("Unable to open file %1.").arg(files[i]));
-                delete newImages;
-                return;
+        ProgressDialog progress(this);
+        QFuture<QString> error = QtConcurrent::run([&]() {
+            int step = 100 / (numImages + 2);
+            for (unsigned int i = 0; i < numImages; i++) {
+                progress.advance(i*step, "Loading files...");
+                QByteArray fileName = QDir::toNativeSeparators(files[i]).toLocal8Bit();//toUtf8();
+                // Check for error
+                unique_ptr<Image> image(new Image(fileName.constData()));
+                if (image.get() == nullptr || !image->good()) {
+                    return tr("Unable to open file %1.").arg(files[i]);
+                }
+                if (!newImages->addImage(image)) {
+                    return tr("File %1 has not the same format as the previous ones.").arg(files[i]);
+                }
             }
-            if (!newImages->addImage(image)) {
-                QMessageBox::warning(this, tr("Error in file format"), tr("Incorrect format of file %1. All images must have the same size, with 16-bit linear channels.").arg(files[i]));
-                delete newImages;
-                return;
-            }
+            progress.advance(numImages*step, "Aligning...");
+            newImages->align();
+            progress.advance((numImages + 1)*step, "Referencing...");
+            newImages->computeRelExposures();
+            progress.advance(100, "");
+            return QString();
+        });
+        while (error.isRunning())
+            QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+        if (!error.result().isEmpty()) {
+            QMessageBox::warning(this, tr("Error opening file"), error.result());
+            delete newImages;
+            return;
         }
-        progress.setValue(numImages);
-        progress.setLabelText(tr("Aligning..."));
         images = newImages;
-        QFuture<void> result = QtConcurrent::run(images, &ImageStack::align);
-        while (result.isRunning())
-            QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-        progress.setValue(numImages + 1);
-        progress.setLabelText(tr("Referencing..."));
-        result = QtConcurrent::run(images, &ImageStack::computeRelExposures);
-        while (result.isRunning())
-            QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-        progress.setValue(numImages + 2);
 
         if (rt != NULL)
             delete rt;
@@ -283,11 +292,12 @@ void MainWindow::saveResult() {
         QString file = QFileDialog::getSaveFileName(this, tr("Save DNG file"), name,
             tr("Digital Negatives (*.dng)"), NULL, QFileDialog::DontUseNativeDialog);
         if (!file.isEmpty()) {
-            QProgressDialog progress(this);
-            progress.setMinimumDuration(0);
             std::string fileName = QDir::toNativeSeparators(file).toUtf8().constData();
-            SaveProgress sp(images, fileName, &progress);
-            QFuture<void> result = QtConcurrent::run(&sp, &SaveProgress::save);
+            ProgressDialog pd(this);
+            QFuture<void> result = QtConcurrent::run([&]() {
+                DngWriter writer(*images, pd);
+                writer.write(fileName);
+            });
             while (result.isRunning())
                 QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         }

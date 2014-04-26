@@ -33,7 +33,7 @@ if(WIN32) # Set Windows rules.
 else(WIN32) # Set Linux & co rules.
     add_definitions(-DqWinOS=0 -DqMacOS=0 -DqLinux=1 -DqAndroid=1 -DUNIX_ENV=1 -DqDNGUseStdInt=1 -DqDNGThreadSafe=1)
 endif(WIN32)
-add_definitions(-DqDNGDebug=0 -DqDNGValidateTarget=1 -DqDNGUseLibJPEG=0 -DqDNGXMPDocOps=0)
+add_definitions(-DqDNGDebug=0 -DqDNGValidateTarget=0 -DqDNGUseLibJPEG=0 -DqDNGXMPDocOps=0)
 
 # Check processor endianness
 include(TestBigEndian)
@@ -67,9 +67,10 @@ include_directories("${PROJECT_BINARY_DIR}")
 # Sources and headers
 set(hdrmerge_sources
     gui.cpp MainWindow.cpp RenderThread.cpp PreviewWidget.cpp DraggableScrollArea.cpp
-    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp MergeMap.cpp DngWriter.cpp camxyz.cpp exiv2dngstreamio.cpp exiv2meta.cpp)
+    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp MergeMap.cpp DngWriter.cpp
+    camxyz.cpp exiv2dngstreamio.cpp exiv2meta.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp RenderThread.hpp PreviewWidget.hpp
-    DraggableScrollArea.hpp AboutDialog.hpp SaveProgress.hpp)
+    DraggableScrollArea.hpp AboutDialog.hpp)
 set(hdrmerge_translations hdrmerge_en.ts hdrmerge_es.ts)
 
 # Libs

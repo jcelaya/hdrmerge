@@ -291,22 +291,27 @@ void DngWriter::addJpegPreview() {
 
 
 void DngWriter::write(const std::string & filename) {
+    progress.advance(0, "Initialize negative");
     dng_xmp_sdk::InitializeSDK();
 
     buildNegative();
 
+    progress.advance(25, "Rendering image");
     AutoPtr<dng_image> imageData(new DngFloatImage(stack.getWidth(), stack.getHeight(), memalloc));
     stack.compose(((DngFloatImage *)imageData.Get())->getImageBuffer());
     negative.SetStage1Image(imageData);
     negative.SetRawFloatBitDepth(32);
 
+    progress.advance(50, "Rendering preview");
     buildPreviewList();
 
+    progress.advance(75, "Writing " + filename);
     dng_image_writer writer;
     dng_file_stream filestream(filename.c_str(), true);
     writer.WriteDNG(host, filestream, negative, &previewList);
 
     dng_xmp_sdk::TerminateSDK();
+    progress.advance(100, "Done writing!");
 }
 
 

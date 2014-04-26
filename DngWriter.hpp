@@ -31,13 +31,14 @@
 #include "dng_preview.h"
 #include "dng_date_time.h"
 #include "ImageStack.hpp"
+#include "ProgressIndicator.hpp"
 
 namespace hdrmerge {
 
 class DngWriter {
 public:
-    DngWriter(const ImageStack & s)
-    : memalloc(gDefaultDNGMemoryAllocator), host(&memalloc, NULL), negative(host),
+    DngWriter(const ImageStack & s, ProgressIndicator & pi)
+    : progress(pi), memalloc(gDefaultDNGMemoryAllocator), host(&memalloc, NULL), negative(host),
     stack(s), appVersion("HDRMerge " HDRMERGE_VERSION_STRING), previewWidth(s.getWidth()) {
         host.SetSaveDNGVersion(dngVersion_SaveDefault);
         host.SetSaveLinearDNG(false);
@@ -56,6 +57,7 @@ private:
         DummyNegative(dng_host & host) : dng_negative(host) {}
     };
 
+    ProgressIndicator & progress;
     dng_memory_allocator memalloc;
     dng_host host;
     DummyNegative negative;

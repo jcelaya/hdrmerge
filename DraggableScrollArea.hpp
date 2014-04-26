@@ -29,9 +29,9 @@
 class DraggableScrollArea : public QScrollArea {
 public:
     DraggableScrollArea(QWidget * parent) : QScrollArea(parent), moveViewport(true) {}
-    
+
     void toggleMoveViewport(bool toggle) { moveViewport = toggle; }
-    
+
 signals:
     void drag(int x, int y);
 
@@ -40,12 +40,13 @@ public slots:
 
 protected:
     void mousePressEvent(QMouseEvent * event);
+    void mouseReleaseEvent(QMouseEvent * event);
     void mouseMoveEvent(QMouseEvent * event);
-        
+
 private:
     Q_OBJECT
-    
-    QPoint lastDragPos;
+
+    QPoint mousePos;
     QPoint lastScrollPos;
     bool moveViewport;
 };

@@ -63,8 +63,8 @@ public:
 };
 
 
-MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags flags)
-    : QMainWindow(parent, flags), images(NULL), rt(NULL), shiftPressed(false), controlPressed(false) {
+MainWindow::MainWindow()
+    : QMainWindow(), images(NULL), rt(NULL), shiftPressed(false), controlPressed(false) {
     createGui();
     createActions();
     createMenus();

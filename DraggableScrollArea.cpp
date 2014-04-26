@@ -23,6 +23,7 @@
 #include "DraggableScrollArea.hpp"
 #include <QScrollBar>
 #include <QMouseEvent>
+#include <QCursor>
 
 
 void DraggableScrollArea::show(int x, int y) {
@@ -33,20 +34,26 @@ void DraggableScrollArea::show(int x, int y) {
 
 void DraggableScrollArea::mousePressEvent(QMouseEvent * event) {
     if (moveViewport && event->button() == Qt::LeftButton) {
-        lastDragPos = event->pos();
-        lastScrollPos.setX(horizontalScrollBar()->value());
-        lastScrollPos.setY(verticalScrollBar()->value());
+        mousePos = QCursor::pos();
+        widget()->setCursor(QCursor(Qt::BlankCursor));
     } else
         emit drag(widget()->mapFromParent(event->pos()).x(), widget()->mapFromParent(event->pos()).y());
 }
 
 
+void DraggableScrollArea::mouseReleaseEvent(QMouseEvent * event) {
+    if (moveViewport && event->button() == Qt::LeftButton) {
+        widget()->setCursor(QCursor(Qt::OpenHandCursor));
+    }
+}
+
+
 void DraggableScrollArea::mouseMoveEvent(QMouseEvent * event) {
     if (moveViewport && event->buttons() & Qt::LeftButton) {
-        int deltax = event->pos().x() - lastDragPos.x();
-        int deltay = event->pos().y() - lastDragPos.y();
-        horizontalScrollBar()->setValue(lastScrollPos.x() - deltax);
-        verticalScrollBar()->setValue(lastScrollPos.y() - deltay);
+        QPoint delta = QCursor::pos() - mousePos;
+        horizontalScrollBar()->setValue(horizontalScrollBar()->value() + delta.x());
+        verticalScrollBar()->setValue(verticalScrollBar()->value() + delta.y());
+        QCursor::setPos(mousePos);
     } else
         emit drag(widget()->mapFromParent(event->pos()).x(), widget()->mapFromParent(event->pos()).y());
 }

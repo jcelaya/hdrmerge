@@ -27,27 +27,13 @@
 #include <QImage>
 #include <QMutex>
 #include <QWaitCondition>
-#include "ImageStack.hpp"
 
 
 namespace hdrmerge {
 
+class ImageStack;
+
 class RenderThread : public QThread {
-    Q_OBJECT
-
-    QMutex mutex;
-    QWaitCondition condition;
-    bool restart;
-    bool abort;
-    ImageStack * images;
-    unsigned int minx, miny, maxx, maxy;
-    int gamma[65536];
-
-    void doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image, bool ignoreRestart = false);
-
-protected:
-    void run();
-
 public:
     RenderThread(ImageStack * es, float gamma = 1.0f, QObject *parent = 0);
     ~RenderThread();
@@ -60,6 +46,23 @@ public slots:
 
 signals:
     void renderedImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
+
+protected:
+    void run();
+
+private:
+    Q_OBJECT
+
+    QMutex mutex;
+    QWaitCondition condition;
+    bool restart;
+    bool abort;
+    ImageStack * images;
+    unsigned int minx, miny, maxx, maxy;
+    int gamma[65536];
+
+    void doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image, bool ignoreRestart = false);
+    QRgb rgb(size_t col, size_t row) const;
 };
 
 } // namespace hdrmerge

@@ -24,7 +24,9 @@
 #define _PREVIEWWIDGET_H_
 
 #include <QWidget>
+#include <QMoveEvent>
 
+namespace hdrmerge {
 
 class PreviewWidget : public QWidget {
 public:
@@ -47,5 +49,6 @@ private:
     QPixmap * pixmap;
 };
 
+} // namespace hdrmerge
 
 #endif // _PREVIEWWIDGET_H_

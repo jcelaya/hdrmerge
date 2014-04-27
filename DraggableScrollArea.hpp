@@ -24,7 +24,9 @@
 #define _DRAGGABLESCROLLAREA_H_
 
 #include <QScrollArea>
+#include <QMouseEvent>
 
+namespace hdrmerge {
 
 class DraggableScrollArea : public QScrollArea {
 public:
@@ -51,5 +53,6 @@ private:
     bool moveViewport;
 };
 
+} // namespace hdrmerge
 
 #endif // _DRAGGABLESCROLLAREA_H_

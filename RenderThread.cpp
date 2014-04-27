@@ -21,8 +21,9 @@
  */
 
 #include <cmath>
-#include "RenderThread.hpp"
 #include <QTime>
+#include "RenderThread.hpp"
+#include "ImageStack.hpp"
 using namespace hdrmerge;
 
 
@@ -79,29 +80,31 @@ void RenderThread::removePixels(int i, int x, int y, int radius) {
 }
 
 
+QRgb RenderThread::rgb(size_t col, size_t row) const {
+    int v = gamma[(int) images->value(col, row)];
+    int color = images->getImageAt(col, row);
+    QRgb pixel;
+    switch (color) {
+        case 0:
+            pixel = qRgb(v*7/10, v, v*7/10); break;
+        case 1:
+            pixel = qRgb(v*7/10, v*7/10, v); break;
+        case 2:
+            pixel = qRgb(v, v*7/10, v*7/10); break;
+        default:
+            pixel = qRgb(v, v, v); break;
+    }
+}
+
+
 void RenderThread::doRender(unsigned int minx, unsigned int miny, unsigned int maxx, unsigned int maxy, QImage & image, bool ignoreRestart) {
     QTime t;
     t.start();
     // Iterate through pixels
-    for (unsigned int row = miny; (!restart || ignoreRestart) && row < maxy; row++) {
-        if (abort) return;
-
+    for (size_t row = miny; !abort && (!restart || ignoreRestart) && row < maxy; row++) {
         QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - miny));
-        for (unsigned int col = minx; col < maxx; col++) {
-            int v = gamma[(int) images->value(col, row)];
-            int color = images->getImageAt(col, row);
-            QRgb pixel;
-            switch (color) {
-                case 0:
-                    pixel = qRgb(v*7/10, v, v*7/10); break;
-                case 1:
-                    pixel = qRgb(v*7/10, v*7/10, v); break;
-                case 2:
-                    pixel = qRgb(v, v*7/10, v*7/10); break;
-                default:
-                    pixel = qRgb(v, v, v); break;
-            }
-            *scanLine++ = pixel;
+        for (size_t col = minx; col < maxx; col++) {
+            *scanLine++ = rgb(col, row);
         }
     }
 }

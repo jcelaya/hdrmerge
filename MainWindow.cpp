@@ -40,9 +40,13 @@
 #include <QPen>
 #include <QBitmap>
 #include <QKeyEvent>
+#include "config.h"
 #include "AboutDialog.hpp"
 #include "DngWriter.hpp"
-#include "config.h"
+#include "ImageStack.hpp"
+#include "RenderThread.hpp"
+#include "PreviewWidget.hpp"
+#include "DraggableScrollArea.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -76,7 +80,7 @@ MainWindow::MainWindow()
 
 
 void MainWindow::createGui() {
-    centralwidget = new QWidget(this);
+    QWidget * centralwidget = new QWidget(this);
     setCentralWidget(centralwidget);
     QVBoxLayout * layout = new QVBoxLayout(centralwidget);
 
@@ -95,28 +99,25 @@ void MainWindow::createGui() {
     toolBar->setOrientation(Qt::Horizontal);
     toolBar->setFloatable(false);
     toolBar->setMovable(false);
-    connect(toolBar, SIGNAL(actionTriggered(QAction*)), this, SLOT(setTool(QAction*)));
     // Add tools
     // TODO: load default icons from KDE
-    dragToolAction = toolBar->addAction(QIcon::fromTheme("transform-move", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png")), tr("Drag and zoom"));
-    addGhostAction = toolBar->addAction(QIcon::fromTheme("draw-brush", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png")), tr("Add pixels to the current exposure"));
-    rmGhostAction = toolBar->addAction(QIcon::fromTheme("draw-eraser", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-eraser.png")), tr("Remove pixels from the current exposure"));
-    dragToolAction->setCheckable(true);
-    addGhostAction->setCheckable(true);
-    rmGhostAction->setCheckable(true);
-    toolActionGroup = new QActionGroup(this);
-    toolActionGroup->addAction(dragToolAction);
-    toolActionGroup->addAction(addGhostAction);
-    toolActionGroup->addAction(rmGhostAction);
+    QActionGroup * toolActionGroup = new QActionGroup(toolBar);
+    dragToolAction = toolActionGroup->addAction(QIcon::fromTheme("transform-move", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png")), tr("Drag and zoom"));
+    addGhostAction = toolActionGroup->addAction(QIcon::fromTheme("draw-brush", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png")), tr("Add pixels to the current exposure"));
+    rmGhostAction = toolActionGroup->addAction(QIcon::fromTheme("draw-eraser", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-eraser.png")), tr("Remove pixels from the current exposure"));
+    for (auto action : toolActionGroup->actions()) {
+        action->setCheckable(true);
+        toolBar->addAction(action);
+    }
+    connect(toolActionGroup, SIGNAL(triggered(QAction*)), this, SLOT(setTool(QAction*)));
     dragToolAction->setChecked(true);
+    toolBar->addSeparator();
     preview->setCursor(Qt::OpenHandCursor);
     toolLayout->addWidget(toolBar);
 
     layout->addWidget(toolArea);
 
     //retranslateUi(HdrMergeMainWindow);
-    //statusbar = new QStatusBar(this);
-    //setStatusBar(statusbar);
     setWindowTitle(tr("HDRMerge v%1.%2 - High dynamic range image fussion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
     setWindowIcon(QIcon(":/images/logo.png"));
 }
@@ -326,7 +327,7 @@ void MainWindow::setTool(QAction * action) {
     if (action == dragToolAction) {
         preview->setCursor(Qt::OpenHandCursor);
         previewArea->toggleMoveViewport(true);
-    } else if (action == addGhostAction) {
+    } else if (action == addGhostAction || action == rmGhostAction) {
         QPixmap cursor(32, 32);
         cursor.fill(Qt::white);
         {
@@ -334,19 +335,8 @@ void MainWindow::setTool(QAction * action) {
             painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
             painter.drawEllipse(16 - 5, 16 - 5, 5*2, 5*2);
             painter.drawLine(14, 16, 18, 16);
-            painter.drawLine(16, 14, 16, 18);
-        }
-        cursor.setMask(cursor.createMaskFromColor(Qt::white));
-        preview->setCursor(QCursor(cursor, 16, 16));
-        previewArea->toggleMoveViewport(false);
-    } else if (action == rmGhostAction) {
-        QPixmap cursor(32, 32);
-        cursor.fill(Qt::white);
-        {
-            QPainter painter(&cursor);
-            painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-            painter.drawEllipse(16 - 5, 16 - 5, 5*2, 5*2);
-            painter.drawLine(14, 16, 18, 16);
+            if (action == addGhostAction)
+                painter.drawLine(16, 14, 16, 18);
         }
         cursor.setMask(cursor.createMaskFromColor(Qt::white));
         preview->setCursor(QCursor(cursor, 16, 16));

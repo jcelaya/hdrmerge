@@ -23,6 +23,7 @@
 #include "PreviewWidget.hpp"
 #include <QImage>
 #include <QPainter>
+using namespace hdrmerge;
 
 
 PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent), pixmap(NULL) {

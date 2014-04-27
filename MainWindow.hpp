@@ -25,21 +25,20 @@
 
 #include <list>
 #include <QAction>
-#include <QActionGroup>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
-#include <QStatusBar>
 #include <QEvent>
 #include <QMutex>
 #include <QStringList>
-#include "ImageStack.hpp"
-#include "RenderThread.hpp"
-#include "PreviewWidget.hpp"
-#include "DraggableScrollArea.hpp"
 
 
 namespace hdrmerge {
+
+class ImageStack;
+class RenderThread;
+class PreviewWidget;
+class DraggableScrollArea;
 
 class MainWindow : public QMainWindow {
 public:
@@ -82,15 +81,12 @@ private:
     QAction * dragToolAction;
     QAction * addGhostAction;
     QAction * rmGhostAction;
-    QActionGroup * toolActionGroup;
 
     QMenu * fileMenu;
     QMenu * helpMenu;
 
-    QWidget * centralwidget;
     DraggableScrollArea * previewArea;
     PreviewWidget * preview;
-    QStatusBar * statusbar;
 
     ImageStack * images;
     RenderThread * rt;

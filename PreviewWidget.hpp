@@ -24,6 +24,7 @@
 #define _PREVIEWWIDGET_H_
 
 #include <memory>
+#include <list>
 #include <QWidget>
 #include <QPaintEvent>
 #include "ImageStack.hpp"
@@ -39,27 +40,33 @@ public slots:
     void setGamma(float g);
     void setImageStack(ImageStack * s);
     void paintImage(int x, int y, const QImage & image);
-    void paintPixels(int x, int y);
+    void paintPixels(int x, int y, bool add);
     void toggleAddPixelsTool(bool toggled);
     void toggleRmPixelsTool(bool toggled);
     void selectLayer(int i) { layer = i; }
     void setRadius(int r) { radius = r; }
+    void undo();
 
 protected:
     void paintEvent(QPaintEvent * event);
+    void mousePressEvent(QMouseEvent * event);
+    void mouseMoveEvent(QMouseEvent * event);
 
 private:
     Q_OBJECT
 
+    struct EditAction {
+        int layer;
+        std::list<QPoint> points;
+    };
+
     std::unique_ptr<QPixmap> pixmap;
     std::unique_ptr<ImageStack> stack;
     int gamma[65536];
-    enum {
-        ADD_PIXELS,
-        REMOVE_PIXELS
-    } paintAction;
+    bool addPixels, rmPixels;
     int layer;
     int radius;
+    std::list<EditAction> editActions;
 
     void render(int minx, int miny, int maxx, int maxy);
     QRgb rgb(int col, int row) const;

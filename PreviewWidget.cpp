@@ -28,18 +28,24 @@
 #include <QtConcurrentRun>
 #include <QApplication>
 #include <QBitmap>
+#include <QAction>
 using namespace hdrmerge;
 
 
 PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent),
-paintAction(ADD_PIXELS), layer(0), radius(5) {
+addPixels(false), rmPixels(false), layer(0), radius(5) {
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    QAction * undoAction = new QAction(this);
+    undoAction->setShortcut(QString("Ctrl+z"));
+    connect(undoAction, SIGNAL(triggered()), this, SLOT(undo()));
+    addAction(undoAction);
 }
 
 
 void PreviewWidget::setImageStack (ImageStack* s) {
     stack.reset(s);
     pixmap.reset();
+    editActions.clear();
     QtConcurrent::run(this, &PreviewWidget::render, 0, 0, stack->getWidth(), stack->getHeight());
 }
 
@@ -128,28 +134,74 @@ QPixmap PreviewWidget::createCursor(bool plus) {
 
 
 void PreviewWidget::toggleAddPixelsTool(bool toggled) {
+    addPixels = toggled;
     if (toggled) {
         setCursor(QCursor(createCursor(true), radius, radius));
-        paintAction = ADD_PIXELS;
     }
 }
 
 
 void PreviewWidget::toggleRmPixelsTool(bool toggled) {
+    rmPixels = toggled;
     if (toggled) {
         setCursor(QCursor(createCursor(false), radius, radius));
-        paintAction = REMOVE_PIXELS;
     }
 }
 
 
-void PreviewWidget::paintPixels(int x, int y) {
+void PreviewWidget::mousePressEvent(QMouseEvent * event) {
+    if (addPixels || rmPixels) {
+        event->accept();
+        editActions.emplace_back();
+        EditAction & e = editActions.back();
+        e.layer = addPixels ? layer + 1 : layer;
+        paintPixels(event->x(), event->y(), addPixels);
+    } else
+        event->ignore();
+}
+void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
+    if (addPixels || rmPixels) {
+        event->accept();
+        paintPixels(event->x(), event->y(), addPixels);
+    } else
+        event->ignore();
+}
+
+
+void PreviewWidget::paintPixels(int x, int y, bool add) {
     if (!stack.get()) return;
-    if (paintAction == ADD_PIXELS) {
-        stack->addPixels(layer, x, y, radius);
-        render(x - radius, y - radius, x + radius + 1, y + radius + 1);
-    } else {
-        stack->removePixels(layer, x, y, radius);
-        render(x - radius, y - radius, x + radius + 1, y + radius + 1);
+    EditAction & e = editActions.back();
+    int r2 = radius * radius;
+    int oldLayer = add ? layer + 1 : layer;
+    int newLayer = add ? layer : layer + 1;
+    size_t width = stack->getWidth(), height = stack->getHeight();
+    for (int row = -radius; row <= radius; ++row) {
+        for (int col = -radius; col <= radius; ++col) {
+            if (row*row + col*col <= r2) {
+                size_t pos = (y + row)*width + (x + col);
+                if (pos < width*height && stack->getImageAt(x + col, y + row) == oldLayer) {
+                    e.points.push_back(QPoint(x + col, y + row));
+                    stack->setImageAt(x + col, y + row, newLayer);
+                }
+            }
+        }
+    }
+    render(x - radius, y - radius, x + radius + 1, y + radius + 1);
+}
+
+
+void PreviewWidget::undo() {
+    if (!editActions.empty()) {
+        EditAction & e = editActions.back();
+        int minx = stack->getWidth() + 1, miny = stack->getHeight() + 1, maxx = -1, maxy = -1;
+        for (auto p : e.points) {
+            stack->setImageAt(p.x(), p.y(), e.layer);
+            if (p.x() < minx) minx = p.x();
+            if (p.x() > maxx) maxx = p.x();
+            if (p.y() < miny) miny = p.y();
+            if (p.y() > maxy) maxy = p.y();
+        }
+        render(minx, miny, maxx + 1, maxy + 1);
+        editActions.pop_back();
     }
 }

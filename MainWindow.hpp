@@ -37,7 +37,6 @@
 namespace hdrmerge {
 
 class ImageStack;
-class RenderThread;
 class PreviewWidget;
 class DraggableScrollArea;
 
@@ -91,8 +90,6 @@ private:
     QActionGroup * layerSelectorGroup;
 
     ImageStack * images;
-    RenderThread * rt;
-
     QStringList preLoadFiles;
     bool shiftPressed, controlPressed;
 };

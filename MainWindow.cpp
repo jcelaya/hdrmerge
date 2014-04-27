@@ -67,7 +67,7 @@ public:
 
 
 MainWindow::MainWindow()
-    : QMainWindow(), images(NULL), rt(NULL), shiftPressed(false), controlPressed(false) {
+    : QMainWindow(), images(NULL), shiftPressed(false), controlPressed(false) {
     createGui();
     createActions();
     createMenus();
@@ -94,7 +94,6 @@ void MainWindow::createGui() {
     preview = new PreviewWidget(previewArea);
     preview->setGamma(2.2f);
     previewArea->setWidget(preview);
-    connect(previewArea, SIGNAL(drag(int, int)), preview, SLOT(paintPixels(int, int)));
 
     QWidget * toolArea = new QWidget(centralwidget);
     QHBoxLayout * toolLayout = new QHBoxLayout(toolArea);
@@ -109,8 +108,10 @@ void MainWindow::createGui() {
     dragToolAction = new QAction(moveIcon, tr("Drag and zoom"), toolActionGroup);
     connect(dragToolAction, SIGNAL(toggled(bool)), previewArea, SLOT(toggleMoveViewport(bool)));
     addGhostAction = new QAction(brushIcon, tr("Add pixels to the current exposure"), toolActionGroup);
+    addGhostAction->setDisabled(true);
     connect(addGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleAddPixelsTool(bool)));
     rmGhostAction = new QAction(eraserIcon, tr("Remove pixels from the current exposure"), toolActionGroup);
+    rmGhostAction->setDisabled(true);
     connect(rmGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleRmPixelsTool(bool)));
     for (auto action : toolActionGroup->actions()) {
         action->setCheckable(true);
@@ -313,6 +314,8 @@ void MainWindow::loadImages(const QStringList & files) {
             delete action;
         }
         if (numImages > 1) {
+            addGhostAction->setEnabled(true);
+            rmGhostAction->setEnabled(true);
             layerSelector->addSeparator();
             for (unsigned int i = 1; i < numImages; i++) {
                 QAction * action = new QAction(std::to_string(i).c_str(), layerSelectorGroup);
@@ -325,6 +328,9 @@ void MainWindow::loadImages(const QStringList & files) {
             }
             layerSelectorGroup->actions().first()->setChecked(true);
             preview->selectLayer(0);
+        } else {
+            addGhostAction->setEnabled(false);
+            rmGhostAction->setEnabled(false);
         }
     }
 }
@@ -368,8 +374,8 @@ void MainWindow::keyPressEvent(QKeyEvent * event) {
     else if (event->key() == Qt::Key_Control)
         controlPressed = true;
     else QMainWindow::keyPressEvent(event);
-    if (shiftPressed) addGhostAction->trigger();
-    else if (controlPressed) rmGhostAction->trigger();
+    if (shiftPressed && addGhostAction->isEnabled()) addGhostAction->trigger();
+    else if (controlPressed && rmGhostAction->isEnabled()) rmGhostAction->trigger();
     else dragToolAction->trigger();
 }
 
@@ -380,7 +386,7 @@ void MainWindow::keyReleaseEvent(QKeyEvent * event) {
     else if (event->key() == Qt::Key_Control)
         controlPressed = false;
     else QMainWindow::keyReleaseEvent(event);
-    if (shiftPressed) addGhostAction->trigger();
-    else if (controlPressed) rmGhostAction->trigger();
+    if (shiftPressed && addGhostAction->isEnabled()) addGhostAction->trigger();
+    else if (controlPressed && rmGhostAction->isEnabled()) rmGhostAction->trigger();
     else dragToolAction->trigger();
 }

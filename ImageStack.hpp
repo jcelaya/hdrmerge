@@ -61,10 +61,10 @@ public:
     int getImageAt(size_t x, size_t y) const {
         return imageIndex[y*width + x];
     }
+    void setImageAt(size_t x, size_t y, int i) {
+        imageIndex[y*width + x] = i;
+    }
     void compose(float * dst) const;
-
-    void addPixels(int i, size_t x, size_t y, int radius);
-    void removePixels(int i, size_t x, size_t y, int radius);
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed

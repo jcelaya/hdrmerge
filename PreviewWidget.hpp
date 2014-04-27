@@ -23,8 +23,10 @@
 #ifndef _PREVIEWWIDGET_H_
 #define _PREVIEWWIDGET_H_
 
+#include <memory>
 #include <QWidget>
-#include <QMoveEvent>
+#include <QPaintEvent>
+#include "ImageStack.hpp"
 
 namespace hdrmerge {
 
@@ -33,20 +35,35 @@ public:
     PreviewWidget(QWidget * parent);
     QSize sizeHint() const;
 
-signals:
-    void imageViewport(int x, int y, int w, int h);
-
 public slots:
-    void paintImage(unsigned int x, unsigned int y, unsigned int width, unsigned int height, const QImage & image);
+    void setGamma(float g);
+    void setImageStack(ImageStack * s);
+    void paintImage(int x, int y, const QImage & image);
+    void paintPixels(int x, int y);
+    void toggleAddPixelsTool(bool toggled);
+    void toggleRmPixelsTool(bool toggled);
+    void selectLayer(int i) { layer = i; }
+    void setRadius(int r) { radius = r; }
 
 protected:
-    void moveEvent(QMoveEvent * event);
     void paintEvent(QPaintEvent * event);
 
 private:
     Q_OBJECT
 
-    QPixmap * pixmap;
+    std::unique_ptr<QPixmap> pixmap;
+    std::unique_ptr<ImageStack> stack;
+    int gamma[65536];
+    enum {
+        ADD_PIXELS,
+        REMOVE_PIXELS
+    } paintAction;
+    int layer;
+    int radius;
+
+    void render(int minx, int miny, int maxx, int maxy);
+    QRgb rgb(int col, int row) const;
+    QPixmap createCursor(bool plus);
 };
 
 } // namespace hdrmerge

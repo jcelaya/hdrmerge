@@ -34,17 +34,16 @@
 #include <QMenuBar>
 #include <QProgressDialog>
 #include <QSettings>
-#include <QToolBar>
 #include <QCursor>
 #include <QPainter>
 #include <QPen>
 #include <QBitmap>
 #include <QKeyEvent>
+#include <QSpinBox>
 #include "config.h"
 #include "AboutDialog.hpp"
 #include "DngWriter.hpp"
 #include "ImageStack.hpp"
-#include "RenderThread.hpp"
 #include "PreviewWidget.hpp"
 #include "DraggableScrollArea.hpp"
 using namespace std;
@@ -80,6 +79,10 @@ MainWindow::MainWindow()
 
 
 void MainWindow::createGui() {
+    QIcon moveIcon = QIcon::fromTheme("transform-move", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png"));
+    QIcon brushIcon = QIcon::fromTheme("draw-brush", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png"));
+    QIcon eraserIcon = QIcon::fromTheme("draw-eraser", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-eraser.png"));
+
     QWidget * centralwidget = new QWidget(this);
     setCentralWidget(centralwidget);
     QVBoxLayout * layout = new QVBoxLayout(centralwidget);
@@ -89,8 +92,9 @@ void MainWindow::createGui() {
     layout->addWidget(previewArea);
 
     preview = new PreviewWidget(previewArea);
+    preview->setGamma(2.2f);
     previewArea->setWidget(preview);
-    connect(previewArea, SIGNAL(drag(int, int)), this, SLOT(painted(int, int)));
+    connect(previewArea, SIGNAL(drag(int, int)), preview, SLOT(paintPixels(int, int)));
 
     QWidget * toolArea = new QWidget(centralwidget);
     QHBoxLayout * toolLayout = new QHBoxLayout(toolArea);
@@ -102,18 +106,34 @@ void MainWindow::createGui() {
     // Add tools
     // TODO: load default icons from KDE
     QActionGroup * toolActionGroup = new QActionGroup(toolBar);
-    dragToolAction = toolActionGroup->addAction(QIcon::fromTheme("transform-move", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png")), tr("Drag and zoom"));
-    addGhostAction = toolActionGroup->addAction(QIcon::fromTheme("draw-brush", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png")), tr("Add pixels to the current exposure"));
-    rmGhostAction = toolActionGroup->addAction(QIcon::fromTheme("draw-eraser", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-eraser.png")), tr("Remove pixels from the current exposure"));
+    dragToolAction = new QAction(moveIcon, tr("Drag and zoom"), toolActionGroup);
+    connect(dragToolAction, SIGNAL(toggled(bool)), previewArea, SLOT(toggleMoveViewport(bool)));
+    addGhostAction = new QAction(brushIcon, tr("Add pixels to the current exposure"), toolActionGroup);
+    connect(addGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleAddPixelsTool(bool)));
+    rmGhostAction = new QAction(eraserIcon, tr("Remove pixels from the current exposure"), toolActionGroup);
+    connect(rmGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleRmPixelsTool(bool)));
     for (auto action : toolActionGroup->actions()) {
         action->setCheckable(true);
         toolBar->addAction(action);
     }
-    connect(toolActionGroup, SIGNAL(triggered(QAction*)), this, SLOT(setTool(QAction*)));
     dragToolAction->setChecked(true);
     toolBar->addSeparator();
-    preview->setCursor(Qt::OpenHandCursor);
+    QSpinBox * radiusBox = new QSpinBox(toolBar);
+    radiusBox->setRange(0, 1000);
+    connect(radiusBox, SIGNAL(valueChanged(int)), preview, SLOT(setRadius(int)));
+    radiusBox->setValue(5);
+    toolBar->addWidget(new QLabel(" " + tr("Radius:"), toolBar));
+    toolBar->addWidget(radiusBox);
     toolLayout->addWidget(toolBar);
+
+    layerSelector = new QToolBar(toolArea);
+    layerSelector->setOrientation(Qt::Horizontal);
+    layerSelector->setFloatable(false);
+    layerSelector->setMovable(false);
+    layerSelectorGroup = new QActionGroup(layerSelector);
+    connect(layerSelectorGroup, SIGNAL(triggered(QAction *)), this, SLOT(layerSelected(QAction *)));
+    toolLayout->addWidget(layerSelector);
+    toolLayout->addStretch();
 
     layout->addWidget(toolArea);
 
@@ -284,21 +304,28 @@ void MainWindow::loadImages(const QStringList & files) {
             return;
         }
         images = newImages;
-
-        if (rt != NULL)
-            delete rt;
-
-        // Render
-        rt = new RenderThread(images, 2.2f, this);
-        connect(rt, SIGNAL(renderedImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)),
-                preview, SLOT(paintImage(unsigned int, unsigned int, unsigned int, unsigned int, QImage)));
-        connect(preview, SIGNAL(imageViewport(int, int, int, int)),
-                rt, SLOT(setImageViewport(int, int, int, int)));
-        rt->start(QThread::LowPriority);
+        preview->setImageStack(images);
 
         // Create GUI
-//         for (unsigned int i = 0; i < numImages - 1; i++) {
-//         }
+        layerSelector->clear();
+        for (auto action : layerSelectorGroup->actions()) {
+            layerSelectorGroup->removeAction(action);
+            delete action;
+        }
+        if (numImages > 1) {
+            layerSelector->addSeparator();
+            for (unsigned int i = 1; i < numImages; i++) {
+                QAction * action = new QAction(std::to_string(i).c_str(), layerSelectorGroup);
+                action->setCheckable(true);
+                if (i < 10)
+                    action->setShortcut(Qt::Key_0 + i);
+                else if (i == 10)
+                    action->setShortcut(Qt::Key_0);
+                layerSelector->addAction(action);
+            }
+            layerSelectorGroup->actions().first()->setChecked(true);
+            preview->selectLayer(0);
+        }
     }
 }
 
@@ -323,36 +350,15 @@ void MainWindow::saveResult() {
 }
 
 
-void MainWindow::setTool(QAction * action) {
-    if (action == dragToolAction) {
-        preview->setCursor(Qt::OpenHandCursor);
-        previewArea->toggleMoveViewport(true);
-    } else if (action == addGhostAction || action == rmGhostAction) {
-        QPixmap cursor(32, 32);
-        cursor.fill(Qt::white);
-        {
-            QPainter painter(&cursor);
-            painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-            painter.drawEllipse(16 - 5, 16 - 5, 5*2, 5*2);
-            painter.drawLine(14, 16, 18, 16);
-            if (action == addGhostAction)
-                painter.drawLine(16, 14, 16, 18);
+void MainWindow::layerSelected(QAction * action) {
+    int i = 0;
+    for (auto a : layerSelectorGroup->actions()) {
+        if (action == a) {
+            preview->selectLayer(i);
+            return;
         }
-        cursor.setMask(cursor.createMaskFromColor(Qt::white));
-        preview->setCursor(QCursor(cursor, 16, 16));
-        previewArea->toggleMoveViewport(false);
+        ++i;
     }
-}
-
-
-void MainWindow::painted(int x, int y) {
-    // TODO: configure radius
-//     if (rt != NULL) {
-//         if (addGhostAction->isChecked())
-//             rt->addPixels(imageTabs->currentIndex(), x, y, 5);
-//         else
-//             rt->removePixels(imageTabs->currentIndex(), x, y, 5);
-//     }
 }
 
 

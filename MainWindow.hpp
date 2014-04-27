@@ -31,6 +31,7 @@
 #include <QEvent>
 #include <QMutex>
 #include <QStringList>
+#include <QToolBar>
 
 
 namespace hdrmerge {
@@ -62,8 +63,7 @@ private slots:
     void loadImages();
     void loadImages(const QStringList & files);
     void saveResult();
-    void setTool(QAction * action);
-    void painted(int x, int y);
+    void layerSelected(QAction * action);
 
 private:
     void createGui();
@@ -87,6 +87,8 @@ private:
 
     DraggableScrollArea * previewArea;
     PreviewWidget * preview;
+    QToolBar * layerSelector;
+    QActionGroup * layerSelectorGroup;
 
     ImageStack * images;
     RenderThread * rt;

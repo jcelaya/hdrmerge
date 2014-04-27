@@ -34,16 +34,16 @@ namespace hdrmerge {
 
 class ImageStack {
 public:
-    ImageStack() : width(0), height(0), currentScale(0) {}
+    ImageStack() : width(0), height(0) {}
 
     size_t size() const { return images.size(); }
 
     size_t getWidth() const {
-        return width >> currentScale;
+        return width;
     }
 
     size_t getHeight() const {
-        return height >> currentScale;
+        return height;
     }
 
     Image & getImage(unsigned int i) {
@@ -63,12 +63,14 @@ public:
     }
     void compose(float * dst) const;
 
+    void addPixels(int i, size_t x, size_t y, int radius);
+    void removePixels(int i, size_t x, size_t y, int radius);
+
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
     std::unique_ptr<uint8_t[]> imageIndex;
     size_t width;     ///< Size of a row
     size_t height;    ///< Size of a column
-    unsigned int currentScale;     ///< Current scale factor
 
     void findIntersection();
 };

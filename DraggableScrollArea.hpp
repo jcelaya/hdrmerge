@@ -32,13 +32,12 @@ class DraggableScrollArea : public QScrollArea {
 public:
     DraggableScrollArea(QWidget * parent) : QScrollArea(parent), moveViewport(true) {}
 
-    void toggleMoveViewport(bool toggle) { moveViewport = toggle; }
-
 signals:
     void drag(int x, int y);
 
 public slots:
     void show(int x, int y);
+    void toggleMoveViewport(bool toggle);
 
 protected:
     void mousePressEvent(QMouseEvent * event);

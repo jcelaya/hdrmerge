@@ -153,3 +153,33 @@ string ImageStack::buildOutputFileName() const {
     }
     return name;
 }
+
+
+void ImageStack::addPixels(int i, size_t x, size_t y, int radius) {
+    int r2 = radius * radius;
+    for (int row = -radius; row <= radius; ++row) {
+        for (int col = -radius; col <= radius; ++col) {
+            if (row*row + col*col <= r2) {
+                size_t pos = (y + row)*width + (x + col);
+                if (pos < width*height && imageIndex[pos] == i + 1) {
+                    imageIndex[pos] = i;
+                }
+            }
+        }
+    }
+}
+
+
+void ImageStack::removePixels( int i, size_t x, size_t y, int radius ) {
+    int r2 = radius * radius;
+    for (int row = -radius; row <= radius; ++row) {
+        for (int col = -radius; col <= radius; ++col) {
+            if (row*row + col*col <= r2) {
+                size_t pos = (y + row)*width + (x + col);
+                if (pos < width*height && imageIndex[pos] == i) {
+                    imageIndex[pos] = i + 1;
+                }
+            }
+        }
+    }
+}

@@ -21,7 +21,6 @@
  */
 
 #include <list>
-#include <iostream>
 #include <boost/concept_check.hpp>
 #include "MainWindow.hpp"
 #include <QApplication>

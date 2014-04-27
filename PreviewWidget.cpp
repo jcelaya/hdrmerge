@@ -20,7 +20,6 @@
  *
  */
 
-#include <iostream>
 #include "PreviewWidget.hpp"
 #include <QImage>
 #include <QPainter>
@@ -84,6 +83,7 @@ QRgb PreviewWidget::rgb(int col, int row) const {
         default:
             pixel = qRgb(v, v, v); break;
     }
+    return pixel;
 }
 
 

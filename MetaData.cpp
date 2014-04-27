@@ -88,14 +88,14 @@ void MetaData::adjustBlack() {
 
 void MetaData::dumpInfo() const {
     // Show idata
-    cerr << "Image " << fileName << ", " << width << 'x' << height << ", by " << maker << ", model " << model << endl;
-    cerr << colors << " colors with mask " << hex << filters << dec << ", " << cdesc << ", " << max << " max value" << endl;
+    cout << "Image " << fileName << ", " << width << 'x' << height << ", by " << maker << ", model " << model << endl;
+    cout << colors << " colors with mask " << hex << filters << dec << ", " << cdesc << ", " << max << " max value" << endl;
     // Show other
-    cerr << "ISO:" << isoSpeed << " shutter:1/" << (1.0/shutter) << " aperture:f" << aperture << " exposure:" << logExp() << " steps" << endl;
+    cout << "ISO:" << isoSpeed << " shutter:1/" << (1.0/shutter) << " aperture:f" << aperture << " exposure:" << logExp() << " steps" << endl;
     // Show matrices
-    cerr << "Camera multipliers:";
+    cout << "Camera multipliers:";
     for (int c = 0; c < 4; ++c) {
-        cerr << " " << camMul[c];
+        cout << " " << camMul[c];
     }
-    cerr << endl;
+    cout << endl;
 }

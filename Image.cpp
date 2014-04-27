@@ -21,8 +21,6 @@
  */
 
 #include <cstdlib>
-#include <iostream>
-#include <iomanip>
 #include <algorithm>
 #include <libraw/libraw.h>
 #include "Image.hpp"

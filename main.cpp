@@ -43,16 +43,21 @@ int main(int argc, char * argv[]) {
     // Parse the list of images in command line
     std::list<char *> inFileNames;
     char * outFileName = NULL;
+    bool automatic = false;
     for (int i = 1; i < argc; ++i) {
         if (std::string("-o") == argv[i]) {
-            if (++i < argc)
+            if (++i < argc) {
                 outFileName = argv[i];
+                automatic = true;
+            }
+        } else if (std::string("-a") == argv[i]) {
+            automatic = true;
         } else if (argv[i][0] != '-') {
             inFileNames.push_back(argv[i]);
         }
     }
 
-    if (outFileName == NULL || inFileNames.empty()) {
+    if (!automatic || inFileNames.empty()) {
         hdrmerge::GUI app(argc, argv);
         return app.startGUI(inFileNames);
     } else {
@@ -73,8 +78,14 @@ int main(int argc, char * argv[]) {
         pi.advance(p += step, "Referencing...");
         stack.computeRelExposures();
         pi.advance(p += step, "Done loading!");
-        string fileName(outFileName);
-        if (fileName.substr(fileName.find_last_of('.')) != ".dng") {
+        string fileName;
+        if (outFileName != NULL) {
+            fileName = outFileName;
+        } else {
+            fileName = stack.buildOutputFileName();
+        }
+        size_t extPos = fileName.find_last_of('.');
+        if (extPos > fileName.length() || fileName.substr(extPos) != ".dng") {
             fileName += ".dng";
         }
         std::cout << "Writing result to " << fileName << std::endl;

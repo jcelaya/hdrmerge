@@ -100,7 +100,10 @@ void PreviewWidget::paintEvent(QPaintEvent * event) {
 
 QRgb PreviewWidget::rgb(int col, int row) const {
     rotate(col, row);
-    int v = gamma[(int) stack->value(col, row)];
+    int v = stack->value(col, row);
+    if (v < 0) v = 0;
+    else if (v > 65535) v = 65535;
+    v = gamma[v];
     int color = stack->getImageAt(col, row);
     QRgb pixel;
     switch (color) {

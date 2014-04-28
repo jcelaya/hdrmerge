@@ -31,11 +31,11 @@ using namespace hdrmerge;
 
 
 Image::Image(uint16_t * rawImage, const MetaData & md) {
-    buildImage(rawImage, new MetaData(md), 0);
+    buildImage(rawImage, new MetaData(md));
 }
 
 
-void Image::buildImage( uint16_t* rawImage, MetaData* md, int orientation ) {
+void Image::buildImage(uint16_t* rawImage, MetaData* md) {
     metaData.reset(md);
     dx = dy = 0;
     width = metaData->width;
@@ -45,33 +45,9 @@ void Image::buildImage( uint16_t* rawImage, MetaData* md, int orientation ) {
     relExp = 65535.0 / max;
     logExp = metaData->logExp();
     rawPixels.reset(new uint16_t[size]);
-    if (orientation == 3) {
-        // 180 degrees
-        for (int row = height - 1, rrow = md->topMargin; row >= 0; --row, ++rrow) {
-            for (int col = width - 1, rcol = md->leftMargin; col >= 0; --col, ++rcol) {
-                rawPixels[row*width + col] = rawImage[rrow*md->rawWidth + rcol];
-            }
-        }
-    } else if (orientation == 5) {
-        // 90 degrees cw
-        for (size_t row = 0, rrow = md->topMargin; row < width; ++row, ++rrow) {
-            for (int col = height - 1, rcol = md->leftMargin; col >= 0; --col, ++rcol) {
-                rawPixels[col*width + row] = rawImage[rrow*md->rawWidth + rcol];
-            }
-        }
-    } else if (orientation == 6) {
-        // 90 degrees ccw
-        for (int row = width - 1, rrow = md->topMargin; row >= 0; --row, ++rrow) {
-            for (size_t col = 0, rcol = md->leftMargin; col < height; ++col, ++rcol) {
-                rawPixels[col*width + row] = rawImage[rrow*md->rawWidth + rcol];
-            }
-        }
-    } else {
-        // No rotation
-        for (size_t row = 0, rrow = md->topMargin; row < height; ++row, ++rrow) {
-            for (size_t col = 0, rcol = md->leftMargin; col < width; ++col, ++rcol) {
-                rawPixels[row*width + col] = rawImage[rrow*md->rawWidth + rcol];
-            }
+    for (size_t row = 0, rrow = md->topMargin; row < height; ++row, ++rrow) {
+        for (size_t col = 0, rcol = md->leftMargin; col < width; ++col, ++rcol) {
+            rawPixels[row*width + col] = rawImage[rrow*md->rawWidth + rcol];
         }
     }
     subtractBlack();
@@ -98,7 +74,7 @@ Image::Image(const char * f) : rawPixels(nullptr) {
         if(decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD
                 && d.idata.colors == 3 && d.idata.filters > 1000
                 && rawProcessor.unpack() == LIBRAW_SUCCESS) {
-            buildImage(d.rawdata.raw_image, new MetaData(f, rawProcessor), d.sizes.flip);
+            buildImage(d.rawdata.raw_image, new MetaData(f, rawProcessor));
         }
     }
 }

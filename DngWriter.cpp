@@ -172,7 +172,12 @@ void DngWriter::buildNegative() {
     negative.SetBaselineExposure(0.0);
     negative.SetBaselineNoise(1.0);
     negative.SetBaselineSharpness(1.0);
-    negative.SetBaseOrientation(dng_orientation::Normal());
+    switch (md.flip) {
+        case 3: negative.SetBaseOrientation(dng_orientation::Rotate180()); break;
+        case 5: negative.SetBaseOrientation(dng_orientation::Rotate90CCW()); break;
+        case 6: negative.SetBaseOrientation(dng_orientation::Rotate90CW()); break;
+        default: negative.SetBaseOrientation(dng_orientation::Normal()); break;
+    }
     negative.SetAntiAliasStrength(dng_urational(100, 100));
     negative.SetLinearResponseLimit(1.0);
     negative.SetShadowScale(dng_urational(1, 1));

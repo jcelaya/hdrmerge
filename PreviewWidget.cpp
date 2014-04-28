@@ -31,7 +31,7 @@
 using namespace hdrmerge;
 
 
-PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent),
+PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent), width(0), height(0), flip(0),
 addPixels(false), rmPixels(false), layer(0), radius(5) {
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     QAction * undoAction = new QAction(this);
@@ -41,11 +41,40 @@ addPixels(false), rmPixels(false), layer(0), radius(5) {
 }
 
 
-void PreviewWidget::setImageStack (ImageStack* s) {
+void PreviewWidget::setImageStack(ImageStack * s) {
     stack.reset(s);
+    flip = stack->getImage(0).getMetaData().flip;
+    if (flip == 5 || flip == 6) {
+        width = stack->getHeight();
+        height = stack->getWidth();
+    } else {
+        width = stack->getWidth();
+        height = stack->getHeight();
+    }
     pixmap.reset();
     editActions.clear();
-    QtConcurrent::run(this, &PreviewWidget::render, 0, 0, stack->getWidth(), stack->getHeight());
+    QtConcurrent::run(this, &PreviewWidget::render, 0, 0, width, height);
+}
+
+
+void PreviewWidget::rotate(int & x, int & y) const {
+    int tmp;
+    switch (flip) {
+        case 3:
+            x = width - x;
+            y = height - y;
+            break;
+        case 5:
+            tmp = x;
+            x = height - y;
+            y = tmp;
+            break;
+        case 6:
+            tmp = x;
+            x = y;
+            y = width - tmp;
+            break;
+    }
 }
 
 
@@ -70,6 +99,7 @@ void PreviewWidget::paintEvent(QPaintEvent * event) {
 
 
 QRgb PreviewWidget::rgb(int col, int row) const {
+    rotate(col, row);
     int v = gamma[(int) stack->value(col, row)];
     int color = stack->getImageAt(col, row);
     QRgb pixel;
@@ -89,7 +119,7 @@ QRgb PreviewWidget::rgb(int col, int row) const {
 
 void PreviewWidget::render(int minx, int miny, int maxx, int maxy) {
     if (!stack.get()) return;
-    QRect area = QRect(0, 0, stack->getWidth(), stack->getHeight()).intersected(QRect(minx, miny, maxx - minx, maxy - miny));
+    QRect area = QRect(0, 0, width, height).intersected(QRect(minx, miny, maxx - minx, maxy - miny));
     if (area.isEmpty()) return;
     area.getCoords(&minx, &miny, &maxx, &maxy);
     QImage image(area.width() - 1, area.height() - 1, QImage::Format_RGB32);
@@ -174,14 +204,15 @@ void PreviewWidget::paintPixels(int x, int y, bool add) {
     int r2 = radius * radius;
     int oldLayer = add ? layer + 1 : layer;
     int newLayer = add ? layer : layer + 1;
-    size_t width = stack->getWidth(), height = stack->getHeight();
     for (int row = -radius; row <= radius; ++row) {
         for (int col = -radius; col <= radius; ++col) {
             if (row*row + col*col <= r2) {
                 size_t pos = (y + row)*width + (x + col);
-                if (pos < width*height && stack->getImageAt(x + col, y + row) == oldLayer) {
+                int rcol = x + col, rrow = y + row;
+                rotate(rcol, rrow);
+                if (pos < width*height && stack->getImageAt(rcol, rrow) == oldLayer) {
                     e.points.push_back(QPoint(x + col, y + row));
-                    stack->setImageAt(x + col, y + row, newLayer);
+                    stack->setImageAt(rcol, rrow, newLayer);
                 }
             }
         }
@@ -193,9 +224,11 @@ void PreviewWidget::paintPixels(int x, int y, bool add) {
 void PreviewWidget::undo() {
     if (!editActions.empty()) {
         EditAction & e = editActions.back();
-        int minx = stack->getWidth() + 1, miny = stack->getHeight() + 1, maxx = -1, maxy = -1;
+        int minx = width + 1, miny = height + 1, maxx = -1, maxy = -1;
         for (auto p : e.points) {
-            stack->setImageAt(p.x(), p.y(), e.layer);
+            int rcol = p.x(), rrow = p.y();
+            rotate(rcol, rrow);
+            stack->setImageAt(rcol, rrow, e.layer);
             if (p.x() < minx) minx = p.x();
             if (p.x() > maxx) maxx = p.x();
             if (p.y() < miny) miny = p.y();

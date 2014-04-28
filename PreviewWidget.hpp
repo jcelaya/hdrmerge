@@ -62,6 +62,8 @@ private:
 
     std::unique_ptr<QPixmap> pixmap;
     std::unique_ptr<ImageStack> stack;
+    size_t width, height;
+    int flip;
     int gamma[65536];
     bool addPixels, rmPixels;
     int layer;
@@ -71,6 +73,7 @@ private:
     void render(int minx, int miny, int maxx, int maxy);
     QRgb rgb(int col, int row) const;
     QPixmap createCursor(bool plus);
+    void rotate(int & x, int & y) const;
 };
 
 } // namespace hdrmerge

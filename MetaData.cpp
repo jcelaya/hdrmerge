@@ -38,13 +38,8 @@ max(0), black(0), cblack{}, camMul{}, camXyz{}, isoSpeed(0.0), shutter(0.0), ape
 
 MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     auto & r = rawData.imgdata;
-    if (r.sizes.flip == 5 || r.sizes.flip == 6) {
-        width = r.sizes.height;
-        height = r.sizes.width;
-    } else {
-        width = r.sizes.width;
-        height = r.sizes.height;
-    }
+    width = r.sizes.width;
+    height = r.sizes.height;
     rawWidth = r.sizes.raw_width;
     topMargin = r.sizes.top_margin;
     leftMargin = r.sizes.left_margin;
@@ -62,6 +57,7 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     maker = r.idata.make;
     model = r.idata.model;
     colors = r.idata.colors;
+    flip = r.sizes.flip;
     // LibRaw does not create this matrix for DNG files!!!
     if (!camXyz[0][0]) {
         adobe_cam_xyz(maker, model, (float *)camXyz);

@@ -65,6 +65,7 @@ public:
     float aperture;
     std::string maker, model;
     int colors;
+    int flip;
 };
 
 } // namespace hdrmerge

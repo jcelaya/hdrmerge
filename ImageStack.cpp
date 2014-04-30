@@ -111,6 +111,7 @@ void ImageStack::compose(float * dst) const {
     map.blur(radius);
 
     // Apply map
+    const MetaData & md = images.front()->getMetaData();
     int imageMax = images.size() - 1;
     float max = 0.0;
     for (size_t row = 0; row < height; ++row) {
@@ -118,9 +119,16 @@ void ImageStack::compose(float * dst) const {
             size_t pos = row*width + col;
             int j = map[pos] > imageMax ? imageMax : ceil(map[pos]);
             double v = images[j]->exposureAt(col, row);
+            // Adjust false highlights
+            if (j < imageMax && images[j]->isSaturatedStrict(col, row)) {
+                v /= md.whiteMultAt(row, col);
+            }
             if (j > 0) {
                 double p = j - map[pos];
                 double vv = images[j - 1]->exposureAt(col, row);
+                if (images[j - 1]->isSaturatedStrict(col, row)) {
+                    vv /= md.whiteMultAt(row, col);
+                }
                 v = v*(1.0 - p) + vv*p;
             }
             dst[pos] = v;
@@ -129,6 +137,7 @@ void ImageStack::compose(float * dst) const {
             }
         }
     }
+
     for (size_t pos = 0; pos < width * height; ++pos) {
         dst[pos] /= max;
     }

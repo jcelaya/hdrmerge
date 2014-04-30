@@ -50,6 +50,7 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     copy_n(r.color.cblack, 4, cblack);
     adjustBlack();
     copy_n(r.color.cam_mul, 4, camMul);
+    adjustWhite();
     copy_n((float *)r.color.cam_xyz, 3*4, (float *)camXyz);
     isoSpeed = r.other.iso_speed;
     shutter = r.other.shutter;
@@ -82,6 +83,15 @@ void MetaData::adjustBlack() {
 }
 
 
+void MetaData::adjustWhite() {
+    float green = camMul[1];
+    for (int c = 0; c < 3; ++c) {
+        camMul[c] /= green;
+    }
+    camMul[3] = camMul[1];
+}
+
+
 void MetaData::dumpInfo() const {
     // Show idata
     cout << "Image " << fileName << ", " << width << 'x' << height << ", by " << maker << ", model " << model << endl;
@@ -89,8 +99,8 @@ void MetaData::dumpInfo() const {
     // Show other
     cout << "ISO:" << isoSpeed << " shutter:1/" << (1.0/shutter) << " aperture:f" << aperture << " exposure:" << logExp() << " steps" << endl;
     // Show matrices
-    cout << "Camera multipliers:";
-    for (int c = 0; c < 4; ++c) {
+    cout << "White balance:";
+    for (int c = 0; c < 3; ++c) {
         cout << " " << camMul[c];
     }
     cout << endl;

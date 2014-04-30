@@ -42,13 +42,17 @@ public:
     }
     double logExp() const;
     void dumpInfo() const;
-    uint16_t blackAt(int row, int col) {
+    uint16_t blackAt(int row, int col) const {
         return cblack[FC(row, col)];
     }
     bool hasBlack() const {
         return black || cblack[0] || cblack[1] || cblack[2] || cblack[3];
     }
+    float whiteMultAt(int row, int col) const {
+        return camMul[FC(row, col)];
+    }
     void adjustBlack();
+    void adjustWhite();
 
     std::string fileName;
     size_t width, height;

@@ -310,7 +310,7 @@ void DngWriter::write(const std::string & filename) {
     progress.advance(50, "Rendering preview");
     buildPreviewList();
 
-    progress.advance(75, "Writing " + filename);
+    progress.advance(75, "Writing output");
     dng_image_writer writer;
     dng_file_stream filestream(filename.c_str(), true);
     writer.WriteDNG(host, filestream, negative, &previewList);

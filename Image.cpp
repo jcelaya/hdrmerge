@@ -102,23 +102,22 @@ bool Image::isSameFormat(const Image & ref) const {
 
 
 void Image::relativeExposure(const Image & r, size_t w, size_t h) {
-    Histogram hist;
-    uint16_t metaImmExp = std::round(65536.0 / std::pow(2.0, getMetaData().logExp() - r.getMetaData().logExp()));
-    int margin = std::floor(metaImmExp * 0.025);
+    // Minimize square error between images:
+    // min. C(n) = sum(n*f(x) - g(x))^2  ->  n = sum(f(x)*g(x)) / sum(f(x)^2)
+    double numerator = 0, denom = 0;
     for (size_t y = 0; y < h; ++y) {
         for (size_t x = 0; x < w; ++x) {
-            size_t pos = (y - dy) * width - dx + x, rpos = (y - r.dy) * width - r.dx + x;
-            uint32_t v = rawPixels[pos], nv = r.rawPixels[rpos];
-            if (v) {
-                uint16_t ratio = (nv << 16) / v;
-                int diff = ratio - metaImmExp;
-                if (diff <= margin && diff >= -margin) {
-                    hist.addValue(ratio);
-                }
+            size_t pos = (y - dy) * width - dx + x;
+            double v = rawPixels[pos];
+            if (v > 0 && v < max) {
+                size_t rpos = (y - r.dy) * width - r.dx + x;
+                double nv = r.rawPixels[rpos];
+                numerator += v * nv;
+                denom += v * v;
             }
         }
     }
-    double immExp = hist.getPercentile(0.5) / 65536.0;
+    double immExp = numerator / denom;
     relExp = immExp * r.relExp;
 }
 

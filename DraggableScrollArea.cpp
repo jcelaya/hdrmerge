@@ -58,8 +58,8 @@ void DraggableScrollArea::mouseReleaseEvent(QMouseEvent * event) {
 void DraggableScrollArea::mouseMoveEvent(QMouseEvent * event) {
     if (moveViewport && event->buttons() & Qt::LeftButton) {
         QPoint delta = QCursor::pos() - mousePos;
-        horizontalScrollBar()->setValue(horizontalScrollBar()->value() + delta.x());
-        verticalScrollBar()->setValue(verticalScrollBar()->value() + delta.y());
+        horizontalScrollBar()->setValue(horizontalScrollBar()->value() - delta.x());
+        verticalScrollBar()->setValue(verticalScrollBar()->value() - delta.y());
         QCursor::setPos(mousePos);
     }
 }

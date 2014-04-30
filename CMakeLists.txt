@@ -27,7 +27,7 @@ find_package(LibRaw REQUIRED)
 # Exiv2
 find_package(Exiv2 REQUIRED)
 
-# Build dngsdk and xdrsdk
+# Build dngsdk and xmpsdk
 if(WIN32) # Set Windows rules.
     add_definitions(-DqWinOS=1 -DqMacOS=0 -DWIN_ENV=1)
 else(WIN32) # Set Linux & co rules.

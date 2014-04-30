@@ -89,7 +89,7 @@ void ImageStack::computeRelExposures() {
         Image & img = *images[i];
         for (size_t row = 0, pos = 0; row < height; ++row) {
             for (size_t col = 0; col < width; ++col, ++pos) {
-                if (img.isSaturated(col, row)) {
+                if (imageIndex[pos] == i && img.isSaturated(col, row)) {
                     ++imageIndex[pos];
                 }
             }

@@ -106,7 +106,7 @@ double ImageStack::value(size_t x, size_t y) const {
 
 void ImageStack::compose(float * dst) const {
     // TODO: configure radius
-    const int radius = width > height ? height / 500 : width / 500;
+    const int radius = 3;
     MergeMap map(*this);
     map.blur(radius);
 

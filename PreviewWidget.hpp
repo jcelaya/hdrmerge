@@ -39,24 +39,27 @@ public:
 public slots:
     void setGamma(float g);
     void setImageStack(ImageStack * s);
-    void paintImage(int x, int y, const QImage & image);
-    void paintPixels(int x, int y, bool add);
     void toggleAddPixelsTool(bool toggled);
     void toggleRmPixelsTool(bool toggled);
     void selectLayer(int i) { layer = i; }
     void setRadius(int r) { radius = r; }
     void undo();
+    void redo();
 
 protected:
     void paintEvent(QPaintEvent * event);
     void mousePressEvent(QMouseEvent * event);
     void mouseMoveEvent(QMouseEvent * event);
 
+private slots:
+    void paintImage(int x, int y, const QImage & image);
+    void paintPixels(int x, int y);
+
 private:
     Q_OBJECT
 
     struct EditAction {
-        int layer;
+        int oldLayer, newLayer;
         std::list<QPoint> points;
     };
 
@@ -69,11 +72,13 @@ private:
     int layer;
     int radius;
     std::list<EditAction> editActions;
+    std::list<EditAction>::iterator nextAction;
 
     void render(int minx, int miny, int maxx, int maxy);
     QRgb rgb(int col, int row) const;
     QPixmap createCursor(bool plus);
     void rotate(int & x, int & y) const;
+    void modifyLayer(const std::list<QPoint> & points, int oldayer);
 };
 
 } // namespace hdrmerge

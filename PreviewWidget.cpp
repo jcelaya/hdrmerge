@@ -32,12 +32,8 @@ using namespace hdrmerge;
 
 
 PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent), width(0), height(0), flip(0),
-addPixels(false), rmPixels(false), layer(0), radius(5) {
+addPixels(false), rmPixels(false), layer(0), radius(5), nextAction(editActions.end()) {
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
-    QAction * undoAction = new QAction(this);
-    undoAction->setShortcut(QString("Ctrl+z"));
-    connect(undoAction, SIGNAL(triggered()), this, SLOT(undo()));
-    addAction(undoAction);
 }
 
 
@@ -53,6 +49,7 @@ void PreviewWidget::setImageStack(ImageStack * s) {
     }
     pixmap.reset();
     editActions.clear();
+    nextAction = editActions.end();
     QtConcurrent::run(this, &PreviewWidget::render, 0, 0, width, height);
 }
 
@@ -185,37 +182,37 @@ void PreviewWidget::toggleRmPixelsTool(bool toggled) {
 void PreviewWidget::mousePressEvent(QMouseEvent * event) {
     if (addPixels || rmPixels) {
         event->accept();
+        editActions.erase(nextAction, editActions.end());
         editActions.emplace_back();
-        EditAction & e = editActions.back();
-        e.layer = addPixels ? layer + 1 : layer;
-        paintPixels(event->x(), event->y(), addPixels);
+        nextAction = editActions.end();
+        editActions.back().oldLayer = addPixels ? layer + 1 : layer;
+        editActions.back().newLayer = addPixels ? layer : layer + 1;
+        paintPixels(event->x(), event->y());
     } else
         event->ignore();
 }
 void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
     if (addPixels || rmPixels) {
         event->accept();
-        paintPixels(event->x(), event->y(), addPixels);
+        paintPixels(event->x(), event->y());
     } else
         event->ignore();
 }
 
 
-void PreviewWidget::paintPixels(int x, int y, bool add) {
+void PreviewWidget::paintPixels(int x, int y) {
     if (!stack.get()) return;
     EditAction & e = editActions.back();
     int r2 = radius * radius;
-    int oldLayer = add ? layer + 1 : layer;
-    int newLayer = add ? layer : layer + 1;
     for (int row = -radius; row <= radius; ++row) {
         for (int col = -radius; col <= radius; ++col) {
             if (row*row + col*col <= r2) {
                 size_t pos = (y + row)*width + (x + col);
                 int rcol = x + col, rrow = y + row;
                 rotate(rcol, rrow);
-                if (pos < width*height && stack->getImageAt(rcol, rrow) == oldLayer) {
+                if (pos < width*height && stack->getImageAt(rcol, rrow) == e.oldLayer) {
                     e.points.push_back(QPoint(x + col, y + row));
-                    stack->setImageAt(rcol, rrow, newLayer);
+                    stack->setImageAt(rcol, rrow, e.newLayer);
                 }
             }
         }
@@ -224,20 +221,32 @@ void PreviewWidget::paintPixels(int x, int y, bool add) {
 }
 
 
+void PreviewWidget::modifyLayer(const std::list<QPoint> & points, int layer) {
+    int minx = width + 1, miny = height + 1, maxx = -1, maxy = -1;
+    for (auto p : points) {
+        int rcol = p.x(), rrow = p.y();
+        rotate(rcol, rrow);
+        stack->setImageAt(rcol, rrow, layer);
+        if (p.x() < minx) minx = p.x();
+        if (p.x() > maxx) maxx = p.x();
+        if (p.y() < miny) miny = p.y();
+        if (p.y() > maxy) maxy = p.y();
+    }
+    render(minx, miny, maxx + 1, maxy + 1);
+}
+
+
 void PreviewWidget::undo() {
-    if (!editActions.empty()) {
-        EditAction & e = editActions.back();
-        int minx = width + 1, miny = height + 1, maxx = -1, maxy = -1;
-        for (auto p : e.points) {
-            int rcol = p.x(), rrow = p.y();
-            rotate(rcol, rrow);
-            stack->setImageAt(rcol, rrow, e.layer);
-            if (p.x() < minx) minx = p.x();
-            if (p.x() > maxx) maxx = p.x();
-            if (p.y() < miny) miny = p.y();
-            if (p.y() > maxy) maxy = p.y();
-        }
-        render(minx, miny, maxx + 1, maxy + 1);
-        editActions.pop_back();
+    if (nextAction != editActions.begin()) {
+        --nextAction;
+        modifyLayer(nextAction->points, nextAction->oldLayer);
+    }
+}
+
+
+void PreviewWidget::redo() {
+    if (nextAction != editActions.end()) {
+        modifyLayer(nextAction->points, nextAction->newLayer);
+        ++nextAction;
     }
 }

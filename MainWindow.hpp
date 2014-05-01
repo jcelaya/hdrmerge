@@ -75,6 +75,8 @@ private:
 
     QAction * loadImagesAction;
     QAction * quitAction;
+    QAction * undoAction;
+    QAction * redoAction;
     QAction * aboutAction;
     QAction * mergeAction;
     QAction * dragToolAction;
@@ -82,6 +84,7 @@ private:
     QAction * rmGhostAction;
 
     QMenu * fileMenu;
+    QMenu * editMenu;
     QMenu * helpMenu;
 
     DraggableScrollArea * previewArea;

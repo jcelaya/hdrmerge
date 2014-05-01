@@ -1,7 +1,6 @@
 #: As a <role>, I want <goal/desire> [so that <benefit>]. PR priority (1 highest)
 US21 As a developer, I want to update the GUI texts and translations. PR3
 US22 As a user, I want a batch mode to detect sets of exposures and produce an output negative for each one. PR3
-US23 As a user, I want a redo functionality in the deghosting tools. PR2
 US24 As a user, I want to save/load the image index to/from file, so that I can continue editing it in a later session. PR2
 
 Doing:
@@ -25,4 +24,5 @@ US17 As a user, I want the loaded pictures automatically rotated. PR1
 US18 As a user, I want to be able to load any kind of raw files. PR1
 US19 As a developer, I want to add a progress indicator to long operations, like load and save. PR1
 US20 As a user, I want the grab tool to work as a in Gwenview, without actually moving the mouse pointer. PR2
+US23 As a user, I want a redo functionality in the deghosting tools. PR2
 

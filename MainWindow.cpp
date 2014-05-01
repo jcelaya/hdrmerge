@@ -152,6 +152,14 @@ void MainWindow::createActions() {
     quitAction->setShortcut(tr("Ctrl+Q"));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
+    undoAction = new QAction(tr("Undo"), this);
+    undoAction->setShortcut(QString("Ctrl+z"));
+    connect(undoAction, SIGNAL(triggered()), preview, SLOT(undo()));
+
+    redoAction = new QAction(tr("Redo"), this);
+    redoAction->setShortcut(QString("Ctrl+Shift+z"));
+    connect(redoAction, SIGNAL(triggered()), preview, SLOT(redo()));
+
     aboutAction = new QAction(tr("&About..."), this);
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(about()));
 
@@ -168,10 +176,15 @@ void MainWindow::createMenus() {
     fileMenu->addSeparator();
     fileMenu->addAction(quitAction);
 
+    editMenu = new QMenu(tr("&Edit"));
+    editMenu->addAction(undoAction);
+    editMenu->addAction(redoAction);
+
     helpMenu = new QMenu(tr("&Help"));
     helpMenu->addAction(aboutAction);
 
     menuBar()->addMenu(fileMenu);
+    menuBar()->addMenu(editMenu);
     menuBar()->addMenu(helpMenu);
 }
 

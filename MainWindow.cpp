@@ -58,9 +58,13 @@ public:
         setCancelButtonText(QString());
     }
 
-    virtual void advance(int percent, const std::string & message) {
+    virtual void advance(int percent, const char * message, const char * arg) {
+        QString translatedMessage = QCoreApplication::translate("LoadSave", message);
+        if (arg) {
+            translatedMessage = translatedMessage.arg(arg);
+        }
         QMetaObject::invokeMethod(this, "setValue", Qt::QueuedConnection, Q_ARG(int, (currentPercent = percent)));
-        QMetaObject::invokeMethod(this, "setLabelText", Qt::QueuedConnection, Q_ARG(QString, MainWindow::tr(message.c_str())));
+        QMetaObject::invokeMethod(this, "setLabelText", Qt::QueuedConnection, Q_ARG(QString, translatedMessage));
     }
 
     virtual int getPercent() const {
@@ -68,6 +72,7 @@ public:
     }
 
 private:
+
     int currentPercent;
 };
 
@@ -111,12 +116,12 @@ void MainWindow::createGui() {
     // Add tools
     // TODO: load default icons from KDE
     QActionGroup * toolActionGroup = new QActionGroup(toolBar);
-    dragToolAction = new QAction(moveIcon, tr("Drag and zoom"), toolActionGroup);
+    dragToolAction = new QAction(moveIcon, tr("Pan"), toolActionGroup);
     connect(dragToolAction, SIGNAL(toggled(bool)), previewArea, SLOT(toggleMoveViewport(bool)));
-    addGhostAction = new QAction(brushIcon, tr("Add pixels to the current exposure"), toolActionGroup);
+    addGhostAction = new QAction(brushIcon, tr("Add pixels to the current image"), toolActionGroup);
     addGhostAction->setDisabled(true);
     connect(addGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleAddPixelsTool(bool)));
-    rmGhostAction = new QAction(eraserIcon, tr("Remove pixels from the current exposure"), toolActionGroup);
+    rmGhostAction = new QAction(eraserIcon, tr("Remove pixels from the current image"), toolActionGroup);
     rmGhostAction->setDisabled(true);
     connect(rmGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleRmPixelsTool(bool)));
     for (auto action : toolActionGroup->actions()) {
@@ -145,13 +150,13 @@ void MainWindow::createGui() {
     layout->addWidget(toolArea);
 
     //retranslateUi(HdrMergeMainWindow);
-    setWindowTitle(tr("HDRMerge v%1.%2 - High dynamic range image fussion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
+    setWindowTitle(tr("HDRMerge v%1.%2 - Raw image fusion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
     setWindowIcon(QIcon(":/images/logo.png"));
 }
 
 
 void MainWindow::createActions() {
-    loadImagesAction = new QAction(tr("&Open exposures..."), this);
+    loadImagesAction = new QAction(tr("&Open raw images..."), this);
     loadImagesAction->setShortcut(tr("Ctrl+O"));
     connect(loadImagesAction, SIGNAL(triggered()), this, SLOT(loadImages()));
 
@@ -275,7 +280,7 @@ void MainWindow::loadImages() {
         "*.sr2 *.srf *.srw "
         "*.x3f"
         ")"));
-    QStringList files = QFileDialog::getOpenFileNames(this, tr("Open exposures"),
+    QStringList files = QFileDialog::getOpenFileNames(this, tr("Open raw images"),
         lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
         filter, NULL, QFileDialog::DontUseNativeDialog);
     if (!files.empty()) {
@@ -297,6 +302,7 @@ void MainWindow::loadImages(const QStringList & files) {
         }
         ImageStack * newImages = new ImageStack();
         ProgressDialog progress(this);
+        progress.setWindowTitle(tr("Open raw images"));
         QFuture<int> error = QtConcurrent::run([&] () { return newImages->load(inFileNames, progress); });
         while (error.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -354,6 +360,7 @@ void MainWindow::saveResult() {
                 fileName += ".dng";
             }
             ProgressDialog pd(this);
+            pd.setWindowTitle(tr("Save DNG file"));
             QFuture<void> result = QtConcurrent::run([&]() {
                 DngWriter writer(*images, pd);
                 writer.write(fileName);

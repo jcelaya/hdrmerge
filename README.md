@@ -53,7 +53,7 @@ In the last revision of the DNG SDK, version 1.4, Adobe introduced the possibili
 
 The drawback is that very few programs read this format. Officially, only recent versions of Adobe products read it. I have confirmed Adobe Lightroom v5.4 myself. So, I also provide a patch for the fantastic [Rawtherapee][1] raw development program that allows it to import this format natively. Rawtherapee includes a tone mapping operator that produces great results (realistic ones, at least; if you like alien landscapes, this may be not for you).
 
-If you want to tone-map an image resulting from HDRMerge with a program like Luminance or Photomatix, a solution would be to develop it first as a 16-bit TIFF image, with Rawtherapee or Lightroom. Then, open it with your tone-mapping program as a single image. 16-bit integers, along with a gamma transformation, are usually enough to encode most HDR images with detailed shadows free of noise (after all, the dynamic range is all about [noise][2]). You can also pull the shadows up yourself during raw development.
+If you want to tone-map an image resulting from HDRMerge with a program like Luminance or Photomatix, a solution would be to develop it first as a 16-bit TIFF image, with Rawtherapee or Lightroom. Then, open it with your tone-mapping program as a single image. 16-bit integers, along with a gamma correction, are usually enough to encode most HDR images with detailed shadows free of noise (after all, the dynamic range is all about [noise][2]). You can also pull the shadows up yourself during raw development.
 
 [1]: http://rawtherapee.com/
 [2]: http://theory.uchicago.edu/~ejm/pix/20d/tests/noise/index.html

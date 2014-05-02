@@ -36,35 +36,21 @@ using namespace std;
 
 namespace hdrmerge {
 
-Launcher::Launcher() : outFileName(NULL), automatic(false) {
-
-}
+Launcher::Launcher() : outFileName(NULL), automatic(false) {}
 
 
 int Launcher::startGUI() {
-    QApplication app(argcGUI, argvGUI);
-
-    // Settings
-    QCoreApplication::setOrganizationName("JaviSoft");
-    QCoreApplication::setOrganizationDomain("javisoft.com");
-    QCoreApplication::setApplicationName("HdrMerge");
-
-    // Translation
-    QTranslator qtTranslator;
-    qtTranslator.load("qt_" + QLocale::system().name(),
-            QLibraryInfo::location(QLibraryInfo::TranslationsPath));
-    app.installTranslator(&qtTranslator);
-
-    QTranslator appTranslator;
-    appTranslator.load("hdrmerge_" + QLocale::system().name());
-    app.installTranslator(&appTranslator);
-
     // Create main window
     MainWindow mw;
     mw.preload(inFileNames);
     mw.show();
 
-    return app.exec();
+    return QApplication::exec();
+}
+
+
+static std::ostream & operator<<(std::ostream & os, const QString & s) {
+    return os << string(s.toUtf8().constData());
 }
 
 
@@ -72,8 +58,13 @@ class CoutProgressIndicator : public ProgressIndicator {
 public:
     CoutProgressIndicator() : currentPercent(0) {}
 
-    virtual void advance(int percent, const string & message) {
-        cout << '[' << setw(3) << (currentPercent = percent) << "%] " << message << endl;
+    virtual void advance(int percent, const char * message, const char * arg) {
+        cout << '[' << setw(3) << (currentPercent = percent) << "%] ";
+        if (arg) {
+            cout << QCoreApplication::translate("LoadSave", message).arg(arg) << endl;
+        } else {
+            cout << QCoreApplication::translate("LoadSave", message) << endl;
+        }
     }
     virtual int getPercent() const {
         return currentPercent;
@@ -91,7 +82,7 @@ int Launcher::automaticMerge() {
         int i = pi.getPercent() * (inFileNames.size() + 1) / 100;
         for (auto & name : inFileNames) {
             if (!i--) {
-                cout << "Error loading " << name << endl;
+                cout << QCoreApplication::translate("LoadSave", "Error loading %1").arg(name.c_str()) << endl;
                 return 1;
             }
         }
@@ -106,7 +97,7 @@ int Launcher::automaticMerge() {
     } else {
         fileName = stack.buildOutputFileName() + ".dng";
     }
-    cout << "Writing result to " << fileName << endl;
+    cout << QCoreApplication::translate("LoadSave", "Writing result to %1").arg(fileName.c_str()) << endl;
     DngWriter writer(stack, pi);
     writer.write(fileName);
     return 0;
@@ -132,7 +123,26 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
 
 
 int Launcher::run() {
-    if (!automatic || inFileNames.empty()) {
+    bool useGUI = !automatic || inFileNames.empty();
+
+    QApplication app(argcGUI, argvGUI, useGUI);
+
+    // Settings
+    QCoreApplication::setOrganizationName("JaviSoft");
+    QCoreApplication::setOrganizationDomain("javisoft.com");
+    QCoreApplication::setApplicationName("HdrMerge");
+
+    // Translation
+    QTranslator qtTranslator;
+    qtTranslator.load("qt_" + QLocale::system().name(),
+                      QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+    app.installTranslator(&qtTranslator);
+
+    QTranslator appTranslator;
+    appTranslator.load("hdrmerge_" + QLocale::system().name(), ":/translators");
+    app.installTranslator(&appTranslator);
+
+    if (useGUI) {
         return startGUI();
     } else {
         return automaticMerge();

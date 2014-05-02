@@ -23,13 +23,11 @@
 #ifndef _PROGRESSINDICATOR_HPP
 #define _PROGRESSINDICATOR_HPP
 
-#include <string>
-
 namespace hdrmerge {
 
 class ProgressIndicator {
 public:
-    virtual void advance(int percent, const std::string & message) = 0;
+    virtual void advance(int percent, const char * message, const char * arg = nullptr) = 0;
     virtual int getPercent() const = 0;
 };
 

@@ -2,21 +2,84 @@
 <!DOCTYPE TS>
 <TS version="2.0">
 <context>
-    <name>ImageControl</name>
+    <name>LoadSave</name>
     <message>
-        <source>Relative EV</source>
-        <translation type="finished">EV relativo</translation>
+        <source>Error loading %1</source>
+        <translation type="finished">Error cargando %1</translation>
     </message>
     <message>
-        <source>Threshold</source>
-        <translation type="finished">Umbral</translation>
+        <source>Writing result to %1</source>
+        <translation type="finished">Escribiendo resultado en %1</translation>
+    </message>
+    <message>
+        <source>Loading %1</source>
+        <translation type="finished">Cargando %1</translation>
+    </message>
+    <message>
+        <source>Aligning</source>
+        <translation type="finished">Alineando</translation>
+    </message>
+    <message>
+        <source>Done loading!</source>
+        <translation type="finished">¡Carga completada!</translation>
+    </message>
+    <message>
+        <source>Initialize negative</source>
+        <translation type="finished">Inicializar negativo</translation>
+    </message>
+    <message>
+        <source>Rendering image</source>
+        <translation type="finished">Generando imagen</translation>
+    </message>
+    <message>
+        <source>Rendering preview</source>
+        <translation type="finished">Generando vista previa</translation>
+    </message>
+    <message>
+        <source>Writing output</source>
+        <translation type="finished">Escribiendo fichero de salida</translation>
+    </message>
+    <message>
+        <source>Done writing!</source>
+        <translation type="finished">¡Escritura finalizada!</translation>
     </message>
 </context>
 <context>
-    <name>MainWindow</name>
+    <name>AboutDialog</name>
     <message>
-        <source>&amp;Open exposures...</source>
-        <translation type="finished">&amp;Abrir exposiciones...</translation>
+        <source>A software for the fusion of multiple raw images into a single high dynamic range image.</source>
+        <translation type="finished">Un software para la fusión de múltiples imágenes raw en una sola imagen de alto rango dinámico.</translation>
+    </message>
+    <message>
+        <source>About HDRMerge...</source>
+        <translation type="finished">Acerca de HDRMerge...</translation>
+    </message>
+</context>
+<context>
+    <name>hdrmerge::MainWindow</name>
+    <message>
+        <source>Pan</source>
+        <translation type="finished">Desplazar</translation>
+    </message>
+    <message>
+        <source>Add pixels to the current image</source>
+        <translation type="finished">Añadir pixels a la imagen actual</translation>
+    </message>
+    <message>
+        <source>Remove pixels from the current image</source>
+        <translation type="finished">Eliminar pixels de la imagen actual</translation>
+    </message>
+    <message>
+        <source>Radius:</source>
+        <translation type="finished">Radio:</translation>
+    </message>
+    <message>
+        <source>HDRMerge v%1.%2 - Raw image fusion</source>
+        <translation type="finished">HDRMerge v%1.%2 - Fusión de imágenes raw</translation>
+    </message>
+    <message>
+        <source>&amp;Open raw images...</source>
+        <translation type="finished">&amp;Abrir imágenes raw...</translation>
     </message>
     <message>
         <source>Ctrl+O</source>
@@ -29,6 +92,14 @@
     <message>
         <source>Ctrl+Q</source>
         <translation type="finished">Ctrl+Q</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation type="finished">Deshacer</translation>
+    </message>
+    <message>
+        <source>Redo</source>
+        <translation type="finished">Rehacer</translation>
     </message>
     <message>
         <source>&amp;About...</source>
@@ -47,92 +118,40 @@
         <translation type="finished">&amp;Archivo</translation>
     </message>
     <message>
+        <source>&amp;Edit</source>
+        <translation type="finished">Edición</translation>
+    </message>
+    <message>
         <source>&amp;Help</source>
         <translation type="finished">Ay&amp;uda</translation>
     </message>
     <message>
-        <source>About HDRMerge</source>
-        <translation type="finished">Acerca de HDRMerge</translation>
+        <source>Raw images (*.3fr *.ari *.arw *.bay *.crw *.cr2 *.cap *.dcs *.dcr *.dng *.drf *.eip *.erf *.fff *.iiq *.k25 *.kdc *.mdc *.mef *.mos *.mrw *.nef *.nrw *.obm *.orf *.pef *.ptx *.pxn *.r3d *.raf *.raw *.rwl *.rw2 *.rwz *.sr2 *.srf *.srw *.x3f)</source>
+        <translation type="finished">Images raw (*.3fr *.ari *.arw *.bay *.crw *.cr2 *.cap *.dcs *.dcr *.dng *.drf *.eip *.erf *.fff *.iiq *.k25 *.kdc *.mdc *.mef *.mos *.mrw *.nef *.nrw *.obm *.orf *.pef *.ptx *.pxn *.r3d *.raf *.raw *.rwl *.rw2 *.rwz *.sr2 *.srf *.srw *.x3f)</translation>
     </message>
     <message>
-        <source>&lt;p&gt;&lt;b&gt;HDR Merge tool&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;&lt;b&gt;Herramienta de fusión HDR&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Open exposures</source>
-        <translation type="finished">Abrir exposiciones</translation>
-    </message>
-    <message>
-        <source>Linear TIFF images (*.tif *.tiff)</source>
-        <translation type="finished">Imágenes TIFF lineales (*.tiff *.tiff)</translation>
-    </message>
-    <message>
-        <source>Loading files...</source>
-        <translation type="finished">Cargando ficheros...</translation>
-    </message>
-    <message>
-        <source>Sorting...</source>
-        <translation type="finished">Ordenando...</translation>
-    </message>
-    <message>
-        <source>Prescaling...</source>
-        <translation type="finished">Preescalado...</translation>
-    </message>
-    <message>
-        <source>Exposure %1</source>
-        <translation type="finished">Exposición %1</translation>
-    </message>
-    <message>
-        <source>Save PFS file</source>
-        <translation type="finished">Guardar fichero PFS</translation>
-    </message>
-    <message>
-        <source>PFS stream files (*.pfs)</source>
-        <translation type="finished">Ficheros de flujo PFS (*.pfs)</translation>
-    </message>
-    <message>
-        <source>Saving %1</source>
-        <translation type="finished">Guardando %1</translation>
-    </message>
-    <message>
-        <source>Drag and zoom</source>
-        <translation type="finished">Mover y ampliar</translation>
-    </message>
-    <message>
-        <source>Add pixels to the current exposure</source>
-        <translation type="finished">Añadir pixels a la exposición actual</translation>
-    </message>
-    <message>
-        <source>Remove pixels from the current exposure</source>
-        <translation type="finished">Eliminar pixels de la exposición actual</translation>
-    </message>
-    <message>
-        <source>HDRMerge v%1.%2 - High dynamic range image fussion</source>
-        <translation type="finished">HDRMerge v%1.%2 - Fusión de imágenes para alto rango dinámico</translation>
-    </message>
-    <message>
-        <source>Error opening file</source>
-        <translation type="finished">Error al abrir el fichero</translation>
+        <source>Open raw images</source>
+        <translation type="finished">Abrir imágenes raw</translation>
     </message>
     <message>
         <source>Unable to open file %1.</source>
         <translation type="finished">No se pudo abrir el fichero %1.</translation>
     </message>
     <message>
-        <source>Error reading file</source>
-        <translation type="finished">Error al leer el fichero</translation>
+        <source>File %1 has not the same format as the previous ones.</source>
+        <translation type="finished">El fichero %1 no tiene el mismo formato que los anteriores.</translation>
     </message>
     <message>
-        <source>Unable to read parameters of file %1.</source>
-        <translation type="finished">No fue posible leer los parámetros del fichero %1.</translation>
+        <source>Error opening file</source>
+        <translation type="finished">Error al abrir el fichero</translation>
     </message>
     <message>
-        <source>Error in file format</source>
-        <translation type="unfinished">Error de formato en el fichero</translation>
+        <source>Save DNG file</source>
+        <translation type="finished">Guardar fichero DNG</translation>
     </message>
     <message>
-        <source>Incorrect format of file %1. All images must have the same size, with 16-bit linear channels.</source>
-        <translation type="unfinished">Formato incorrecto en el fichero %1. Todas las imágenes deben tener el mismo tamaño, con canales de color lineal y 16 bits.</translation>
+        <source>Digital Negatives (*.dng)</source>
+        <translation type="finished">Negativos Digitales (*.dng)</translation>
     </message>
 </context>
 </TS>

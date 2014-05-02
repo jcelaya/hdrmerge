@@ -71,7 +71,7 @@ set(hdrmerge_sources
     camxyz.cpp exiv2dngstreamio.cpp exiv2meta.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp PreviewWidget.hpp
     DraggableScrollArea.hpp AboutDialog.hpp)
-set(hdrmerge_translations hdrmerge_en.ts hdrmerge_es.ts)
+set(hdrmerge_translations hdrmerge_es.ts)
 
 # Libs
 set(hdrmerge_libs ${QT_LIBRARIES} ${EXIV2_LIBRARY} ${LibRaw_LIBRARIES} dngsdk ${XMP_LIBRARIES} pthread dl)
@@ -81,8 +81,9 @@ QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})
 QT4_ADD_TRANSLATION(hdrmerge_qm ${hdrmerge_translations})
 # Generate the XML version of hdrmerge_qm
 foreach(file ${hdrmerge_qm})
+    get_filename_component(basename ${file} NAME)
     set(HDRMERGE_QM_XML "${HDRMERGE_QM_XML}
-        <file>${file}</file>")
+        <file>${basename}</file>")
 endforeach(file)
 configure_file (
     "${PROJECT_SOURCE_DIR}/translations.qrc.in"

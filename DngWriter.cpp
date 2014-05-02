@@ -21,7 +21,6 @@
  */
 
 #include <QImage>
-#include <QTemporaryFile>
 #include <QBuffer>
 #include "config.h"
 #include "DngWriter.hpp"

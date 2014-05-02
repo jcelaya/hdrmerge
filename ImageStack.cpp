@@ -47,7 +47,7 @@ int ImageStack::load(const std::list<std::string> & fileNames, ProgressIndicator
     int step = 100 / (fileNames.size() + 1);
     int p = -step;
     for (auto & name : fileNames) {
-        progress.advance(p += step, std::string("Loading ") + name);
+        progress.advance(p += step, "Loading %1", name.c_str());
         std::unique_ptr<Image> image(new Image(name.c_str()));
         if (image.get() == nullptr || !image->good()) {
             return 1;
@@ -122,7 +122,6 @@ double ImageStack::value(size_t x, size_t y) const {
 
 
 void ImageStack::compose(float * dst) const {
-    // TODO: configure radius
     const int radius = 3;
     MergeMap map(*this);
     map.blur(radius);

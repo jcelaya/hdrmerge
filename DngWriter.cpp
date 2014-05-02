@@ -110,7 +110,7 @@ void DngWriter::buildExifMetadata() {
         }
     }
 
-    dng_file_stream stream(stack.getImage(0).getMetaData().fileName.c_str());
+    dng_file_stream stream(stack.getImage(stack.size() - 1).getMetaData().fileName.c_str());
     Exiv2Meta exiv2Meta;
     exiv2Meta.Parse(host, stream);
     exiv2Meta.PostParse(host);

@@ -33,29 +33,32 @@ using namespace std;
 
 class CoutProgressIndicator : public ProgressIndicator {
 public:
+    CoutProgressIndicator() : currentPercent(0) {}
+
     virtual void advance(int percent, const std::string & message) {
-        std::cout << '[' << std::setw(3) << percent << "%] " << message << std::endl;
+        std::cout << '[' << std::setw(3) << (currentPercent = percent) << "%] " << message << std::endl;
     }
+    virtual int getPercent() const {
+        return currentPercent;
+    }
+
+private:
+    int currentPercent;
 };
 
 
-int automatic(const std::list<char *> & inFileNames, const char * outFileName) {
+int automaticMerge(const std::list<string> & inFileNames, const char * outFileName) {
     CoutProgressIndicator pi;
     ImageStack stack;
-    int step = 100 / (inFileNames.size() + 1);
-    int p = -step;
-    for (auto name : inFileNames) {
-        pi.advance(p += step, std::string("Loading ") + name);
-        std::unique_ptr<Image> image(new Image(name));
-        if (!image->good() || !stack.addImage(image)) {
-            std::cout << "Error loading " << name << std::endl;
-            return 1;
+    if (stack.load(inFileNames, pi)) {
+        int i = pi.getPercent() * (inFileNames.size() + 1) / 100;
+        for (auto & name : inFileNames) {
+            if (!i--) {
+                std::cout << "Error loading " << name << std::endl;
+                return 1;
+            }
         }
     }
-    pi.advance(p += step, "Aligning");
-    stack.align();
-    stack.computeRelExposures();
-    pi.advance(p += step, "Done loading!");
     string fileName;
     if (outFileName != NULL) {
         fileName = outFileName;
@@ -64,7 +67,7 @@ int automatic(const std::list<char *> & inFileNames, const char * outFileName) {
             fileName += ".dng";
         }
     } else {
-        fileName = stack.buildOutputFileName();
+        fileName = stack.buildOutputFileName() + ".dng";
     }
     std::cout << "Writing result to " << fileName << std::endl;
     DngWriter writer(stack, pi);
@@ -75,7 +78,7 @@ int automatic(const std::list<char *> & inFileNames, const char * outFileName) {
 
 int main(int argc, char * argv[]) {
     // Parse the list of images in command line
-    std::list<char *> inFileNames;
+    std::list<string> inFileNames;
     char * outFileName = NULL;
     bool automatic = false;
     for (int i = 1; i < argc; ++i) {
@@ -95,6 +98,6 @@ int main(int argc, char * argv[]) {
         hdrmerge::GUI app(argc, argv);
         return app.startGUI(inFileNames);
     } else {
-        return automatic(inFileNames, outFileName);
+        return automaticMerge(inFileNames, outFileName);
     }
 }

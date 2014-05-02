@@ -20,12 +20,7 @@
  *
  */
 
-#include <iostream>
 #include <list>
-#include <tiff.h>
-#include <tiffio.h>
-#include <libraw/libraw.h>
-#include <pfs-1.2/pfs.h>
 #include <algorithm>
 #include "ImageStack.hpp"
 #include "MergeMap.hpp"
@@ -46,6 +41,28 @@ bool ImageStack::addImage(std::unique_ptr<Image> & i) {
     }
     return false;
 }
+
+
+int ImageStack::load(const std::list<std::string> & fileNames, ProgressIndicator & progress) {
+    int step = 100 / (fileNames.size() + 1);
+    int p = -step;
+    for (auto & name : fileNames) {
+        progress.advance(p += step, std::string("Loading ") + name);
+        std::unique_ptr<Image> image(new Image(name.c_str()));
+        if (image.get() == nullptr || !image->good()) {
+            return 1;
+        }
+        if (!addImage(image)) {
+            return 2;
+        }
+    }
+    progress.advance(p += step, "Aligning");
+    align();
+    computeRelExposures();
+    progress.advance(p += step, "Done loading!");
+    return 0;
+}
+
 
 void ImageStack::align() {
     if (images.size() > 1) {

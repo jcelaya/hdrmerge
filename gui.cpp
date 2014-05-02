@@ -29,7 +29,7 @@
 
 namespace hdrmerge {
 
-int GUI::startGUI(const std::list<char *> & fileNames) {
+int GUI::startGUI(const std::list<std::string> & fileNames) {
     // Settings
     QCoreApplication::setOrganizationName("JaviSoft");
     QCoreApplication::setOrganizationDomain("javisoft.com");

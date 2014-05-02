@@ -24,6 +24,7 @@
 #define _HDRMERGEMAINWINDOW_H
 
 #include <list>
+#include <string>
 #include <QAction>
 #include <QLabel>
 #include <QMainWindow>
@@ -51,7 +52,7 @@ public:
     /// Triggered when the window is closed, exit the application
     void closeEvent(QCloseEvent * event);
     /// Preloads a list of images
-    void preload(const std::list<char *> & fileNames);
+    void preload(const std::list<std::string> & fileNames);
 
 protected:
     void keyPressEvent(QKeyEvent * event);

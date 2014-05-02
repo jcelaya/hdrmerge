@@ -24,10 +24,12 @@
 #define _IMAGESTACK_H_
 
 #include <vector>
+#include <list>
 #include <string>
 #include <memory>
 #include "config.h"
 #include "Image.hpp"
+#include "ProgressIndicator.hpp"
 
 
 namespace hdrmerge {
@@ -35,6 +37,8 @@ namespace hdrmerge {
 class ImageStack {
 public:
     ImageStack() : width(0), height(0) {}
+
+    int load(const std::list<std::string> & fileNames, ProgressIndicator & progress);
 
     size_t size() const { return images.size(); }
 

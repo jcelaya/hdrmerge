@@ -51,7 +51,7 @@ using namespace hdrmerge;
 
 class ProgressDialog : public QProgressDialog , public ProgressIndicator {
 public:
-    ProgressDialog(QWidget * parent = 0) : QProgressDialog(parent) {
+    ProgressDialog(QWidget * parent = 0) : QProgressDialog(parent), currentPercent(0) {
         setMaximum(100);
         setMinimum(0);
         setMinimumDuration(0);
@@ -59,9 +59,16 @@ public:
     }
 
     virtual void advance(int percent, const std::string & message) {
-        QMetaObject::invokeMethod(this, "setValue", Qt::QueuedConnection, Q_ARG(int, percent));
+        QMetaObject::invokeMethod(this, "setValue", Qt::QueuedConnection, Q_ARG(int, (currentPercent = percent)));
         QMetaObject::invokeMethod(this, "setLabelText", Qt::QueuedConnection, Q_ARG(QString, MainWindow::tr(message.c_str())));
     }
+
+    virtual int getPercent() const {
+        return currentPercent;
+    }
+
+private:
+    int currentPercent;
 };
 
 
@@ -233,9 +240,9 @@ void MainWindow::about() {
 }
 
 
-void MainWindow::preload(const list<char *> & fileNames) {
-    for (list<char *>::const_iterator it = fileNames.begin(); it != fileNames.end(); ++it)
-        preLoadFiles << QString::fromLocal8Bit(*it);
+void MainWindow::preload(const list<string> & fileNames) {
+    for (auto & name : fileNames)
+        preLoadFiles << QString::fromLocal8Bit(name.c_str());
 }
 
 
@@ -284,34 +291,21 @@ void MainWindow::loadImages() {
 void MainWindow::loadImages(const QStringList & files) {
     if (!files.empty()) {
         unsigned int numImages = files.size();
-
-        // Load and sort images
+        list<string> inFileNames;
+        for (int i = 0; i < numImages; ++i) {
+            inFileNames.push_back(QDir::toNativeSeparators(files[i]).toLocal8Bit().constData());
+        }
         ImageStack * newImages = new ImageStack();
         ProgressDialog progress(this);
-        QFuture<QString> error = QtConcurrent::run([&]() {
-            int step = 100 / (numImages + 1);
-            for (unsigned int i = 0; i < numImages; i++) {
-                progress.advance(i*step, "Loading files...");
-                QByteArray fileName = QDir::toNativeSeparators(files[i]).toLocal8Bit();//toUtf8();
-                // Check for error
-                unique_ptr<Image> image(new Image(fileName.constData()));
-                if (image.get() == nullptr || !image->good()) {
-                    return tr("Unable to open file %1.").arg(files[i]);
-                }
-                if (!newImages->addImage(image)) {
-                    return tr("File %1 has not the same format as the previous ones.").arg(files[i]);
-                }
-            }
-            progress.advance(numImages*step, "Aligning...");
-            newImages->align();
-            newImages->computeRelExposures();
-            progress.advance(100, "");
-            return QString();
-        });
+        QFuture<int> error = QtConcurrent::run([&] () { return newImages->load(inFileNames, progress); });
         while (error.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-        if (!error.result().isEmpty()) {
-            QMessageBox::warning(this, tr("Error opening file"), error.result());
+        if (error.result()) {
+            int i = progress.getPercent() * (numImages + 1) / 100;
+            QString message = error.result() == 1 ?
+                tr("Unable to open file %1.").arg(files[i]) :
+                tr("File %1 has not the same format as the previous ones.").arg(files[i]);
+            QMessageBox::warning(this, tr("Error opening file"), message);
             delete newImages;
             return;
         }

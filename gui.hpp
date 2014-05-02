@@ -29,6 +29,6 @@ class GUI : public QApplication {
 public:
     GUI(int argc, char * argv[]) : QApplication(argc, argv) {}
 
-    int startGUI(const std::list<char *> & fileNames);
+    int startGUI(const std::list<std::string> & fileNames);
 };
 } // namespace hdrmerge

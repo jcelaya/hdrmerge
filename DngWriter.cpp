@@ -317,7 +317,7 @@ void DngWriter::write(const std::string & filename) {
     negative.SetStage1Image(imageData);
     negative.SetRawFloatBitDepth(32);
 
-    buildIndexImage(filename);
+    //buildIndexImage(filename);
 
     progress.advance(50, "Rendering preview");
     buildPreviewList();

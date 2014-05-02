@@ -20,37 +20,33 @@
  *
  */
 
+#ifndef _LAUNCHER_HPP_
+#define _LAUNCHER_HPP_
+
+#include <list>
 #include <string>
-#include <QTranslator>
-#include <QLibraryInfo>
-#include <QLocale>
-#include "gui.hpp"
-#include "MainWindow.hpp"
 
 namespace hdrmerge {
 
-int GUI::startGUI(const std::list<std::string> & fileNames) {
-    // Settings
-    QCoreApplication::setOrganizationName("JaviSoft");
-    QCoreApplication::setOrganizationDomain("javisoft.com");
-    QCoreApplication::setApplicationName("HdrMerge");
+class Launcher {
+public:
+    Launcher();
 
-    // Translation
-    QTranslator qtTranslator;
-    qtTranslator.load("qt_" + QLocale::system().name(),
-            QLibraryInfo::location(QLibraryInfo::TranslationsPath));
-    installTranslator(&qtTranslator);
+    void parseCommandLine(int argc, char * argv[]);
 
-    QTranslator appTranslator;
-    appTranslator.load("hdrmerge_" + QLocale::system().name());
-    installTranslator(&appTranslator);
+    int run();
 
-    // Create main window
-    MainWindow mw;
-    mw.preload(fileNames);
-    mw.show();
+private:
+    int startGUI();
+    int automaticMerge();
 
-    return exec();
-}
+    int argcGUI;
+    char ** argvGUI;
+    std::list<std::string> inFileNames;
+    char * outFileName;
+    bool automatic;
+};
 
 } // namespace hdrmerge
+
+#endif // _LAUNCHER_HPP_

@@ -22,6 +22,7 @@
 
 #include <QImage>
 #include <QTemporaryFile>
+#include <QBuffer>
 #include "config.h"
 #include "DngWriter.hpp"
 #include "dng_image.h"
@@ -37,6 +38,7 @@
 #include "dng_image_writer.h"
 #include "dng_camera_profile.h"
 #include "dng_render.h"
+#include "dng_simple_image.h"
 #include "exiv2meta.h"
 using namespace std;
 
@@ -82,6 +84,16 @@ private:
     AutoPtr<dng_memory_block> memory;
     dng_memory_allocator & allocator;
 };
+
+
+// This is the default behavior, but just in case it changes...
+dng_image * DngWriter::BasicHost::Make_dng_image(const dng_rect &bounds, uint32 planes, uint32 pixelType) {
+    dng_image * result = new dng_simple_image(bounds, planes, pixelType, Allocator());
+    if (!result) {
+        ThrowMemoryFull();
+    }
+    return result;
+}
 
 
 void DngWriter::buildExifMetadata() {
@@ -238,60 +250,58 @@ void DngWriter::buildPreviewList() {
 
 
 void DngWriter::addJpegPreview() {
-    // From kipi-plugins DngWriter:
-    // Construct a preview image as TIFF format.
-    AutoPtr<dng_image> tiffImage;
-    dng_render tiff_render(host, negative);
-    tiff_render.SetFinalSpace(dng_space_sRGB::Get());
-    tiff_render.SetFinalPixelType(ttByte);
-    tiff_render.SetMaximumSize(previewWidth);
-    tiffImage.Reset(tiff_render.Render());
+    AutoPtr<dng_simple_image> renderedPreview;
+    dng_render jpeg_render(host, negative);
+    jpeg_render.SetFinalSpace(dng_space_sRGB::Get());
+    jpeg_render.SetFinalPixelType(ttByte);
+    jpeg_render.SetMaximumSize(previewWidth);
+    renderedPreview.Reset((dng_simple_image *)jpeg_render.Render());
+    dng_pixel_buffer pbuffer;
+    renderedPreview->GetPixelBuffer(pbuffer);
 
-    dng_image_writer tiff_writer;
-    AutoPtr<dng_memory_stream> dms(new dng_memory_stream(gDefaultDNGMemoryAllocator));
-    tiff_writer.WriteTIFF(host, *dms, *tiffImage.Get(), piRGB,
-                          ccUncompressed, &negative, &tiff_render.FinalSpace());
-
-    // Write TIFF preview image data to a temp JPEG file
-    std::vector<char> tiff_mem_buffer(dms->Length());
-    dms->SetReadPosition(0);
-    dms->Get(&tiff_mem_buffer.front(), tiff_mem_buffer.size());
-    dms.Reset();
-
-    QImage pre_image;
-    QTemporaryFile previewFile;
-
-    if (!pre_image.loadFromData((uchar*)&tiff_mem_buffer.front(), tiff_mem_buffer.size(), "TIFF")) {
-//         kDebug() << "DNGWriter: Cannot load TIFF preview data in memory. Aborted..." ;
-        return;
-    }
-    if (!previewFile.open()) {
-//         kDebug() << "DNGWriter: Cannot open temporary file to write JPEG preview. Aborted..." ;
-        return;
-    }
-    if (!pre_image.save(previewFile.fileName(), "JPEG", 90)) {
-//         kDebug() << "DNGWriter: Cannot save file to write JPEG preview. Aborted..." ;
-        return;
-    }
+    size_t width = pbuffer.fArea.W(), height = pbuffer.fArea.H();
+    QImage pre_image(width, height, QImage::Format_RGB888);
+    std::copy_n((uchar *)pbuffer.fData, width*height*3, pre_image.bits());
+    QByteArray ba;
+    QBuffer buffer(&ba);
+    buffer.open(QIODevice::WriteOnly);
+    pre_image.save(&buffer, "JPEG", 90);
 
     // Load JPEG preview file data in DNG preview container.
     AutoPtr<dng_jpeg_preview> jpeg_preview;
     jpeg_preview.Reset(new dng_jpeg_preview);
     jpeg_preview->fPhotometricInterpretation = piYCbCr;
     jpeg_preview->fYCbCrSubSampling          = dng_point(2, 2);
-    jpeg_preview->fPreviewSize.v             = pre_image.height();
-    jpeg_preview->fPreviewSize.h             = pre_image.width();
-    jpeg_preview->fCompressedData.Reset(host.Allocate(previewFile.size()));
+    jpeg_preview->fPreviewSize.v             = height;
+    jpeg_preview->fPreviewSize.h             = width;
+    jpeg_preview->fCompressedData.Reset(host.Allocate(ba.size()));
     jpeg_preview->fInfo.fApplicationName.Set_ASCII("HDRMerge");
     jpeg_preview->fInfo.fApplicationVersion.Set_ASCII(appVersion.c_str());
     jpeg_preview->fInfo.fDateTime = dateTimeNow.Encode_ISO_8601();
     jpeg_preview->fInfo.fColorSpace = previewColorSpace_sRGB;
-    QDataStream previewStream(&previewFile);
-    previewStream.readRawData(jpeg_preview->fCompressedData->Buffer_char(), previewFile.size());
-    previewFile.remove();
+    std::copy_n(ba.data(), ba.size(), jpeg_preview->fCompressedData->Buffer_char());
 
-    AutoPtr<dng_preview> pp(dynamic_cast<dng_preview*>(jpeg_preview.Release()));
+    AutoPtr<dng_preview> pp((dng_preview *)jpeg_preview.Release());
     previewList.Append(pp);
+}
+
+
+void DngWriter::buildIndexImage(const std::string & filename) {
+    size_t width = stack.getWidth(), height = stack.getHeight();
+    QImage indexImage(width, height, QImage::Format_Indexed8);
+    int numColors = stack.size() - 1;
+    for (int c = 0; c < numColors; ++c) {
+        int gray = (256 * c) / numColors;
+        indexImage.setColor(c, qRgb(gray, gray, gray));
+    }
+    indexImage.setColor(numColors, qRgb(255, 255, 255));
+    for (size_t row = 0; row < height; ++row) {
+        for (size_t col = 0; col < width; ++col) {
+            indexImage.setPixel(col, row, stack.getImageAt(col, row));
+        }
+    }
+    QString name(filename.c_str());
+    indexImage.save(name + "_index.png");
 }
 
 
@@ -306,6 +316,8 @@ void DngWriter::write(const std::string & filename) {
     stack.compose(((DngFloatImage *)imageData.Get())->getImageBuffer());
     negative.SetStage1Image(imageData);
     negative.SetRawFloatBitDepth(32);
+
+    buildIndexImage(filename);
 
     progress.advance(50, "Rendering preview");
     buildPreviewList();

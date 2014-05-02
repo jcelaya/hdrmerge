@@ -39,6 +39,40 @@ public:
 };
 
 
+int automatic(const std::list<char *> & inFileNames, const char * outFileName) {
+    CoutProgressIndicator pi;
+    ImageStack stack;
+    int step = 100 / (inFileNames.size() + 1);
+    int p = -step;
+    for (auto name : inFileNames) {
+        pi.advance(p += step, std::string("Loading ") + name);
+        std::unique_ptr<Image> image(new Image(name));
+        if (!image->good() || !stack.addImage(image)) {
+            std::cout << "Error loading " << name << std::endl;
+            return 1;
+        }
+    }
+    pi.advance(p += step, "Aligning");
+    stack.align();
+    stack.computeRelExposures();
+    pi.advance(p += step, "Done loading!");
+    string fileName;
+    if (outFileName != NULL) {
+        fileName = outFileName;
+        size_t extPos = fileName.find_last_of('.');
+        if (extPos > fileName.length() || fileName.substr(extPos) != ".dng") {
+            fileName += ".dng";
+        }
+    } else {
+        fileName = stack.buildOutputFileName();
+    }
+    std::cout << "Writing result to " << fileName << std::endl;
+    DngWriter writer(stack, pi);
+    writer.write(fileName);
+    return 0;
+}
+
+
 int main(int argc, char * argv[]) {
     // Parse the list of images in command line
     std::list<char *> inFileNames;
@@ -61,37 +95,6 @@ int main(int argc, char * argv[]) {
         hdrmerge::GUI app(argc, argv);
         return app.startGUI(inFileNames);
     } else {
-        CoutProgressIndicator pi;
-        ImageStack stack;
-        int step = 100 / (inFileNames.size() + 2);
-        int p = -step;
-        for (auto name : inFileNames) {
-            pi.advance(p += step, std::string("Loading ") + name);
-            std::unique_ptr<Image> image(new Image(name));
-            if (!image->good() || !stack.addImage(image)) {
-                std::cout << "Error loading " << name << std::endl;
-                return 1;
-            }
-        }
-        pi.advance(p += step, "Aligning...");
-        stack.align();
-        pi.advance(p += step, "Referencing...");
-        stack.computeRelExposures();
-        pi.advance(p += step, "Done loading!");
-        string fileName;
-        if (outFileName != NULL) {
-            fileName = outFileName;
-        } else {
-            fileName = stack.buildOutputFileName();
-        }
-        size_t extPos = fileName.find_last_of('.');
-        if (extPos > fileName.length() || fileName.substr(extPos) != ".dng") {
-            fileName += ".dng";
-        }
-        std::cout << "Writing result to " << fileName << std::endl;
-        DngWriter writer(stack, pi);
-        writer.write(fileName);
-        return 0;
+        return automatic(inFileNames, outFileName);
     }
 }
-

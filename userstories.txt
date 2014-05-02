@@ -1,9 +1,9 @@
 #: As a <role>, I want <goal/desire> [so that <benefit>]. PR priority (1 highest)
 US21 As a developer, I want to update the GUI texts and translations. PR3
 US22 As a user, I want a batch mode to detect sets of exposures and produce an output negative for each one. PR3
-US24 As a user, I want to save/load the image index to/from file, so that I can continue editing it in a later session. PR2
 
 Doing:
+US24 As a user, I want to save/load the image index to/from file, so that I can continue editing it in a later session. PR2
 
 Done:
 US1: As a user, I want to load RAW files directly. PR1

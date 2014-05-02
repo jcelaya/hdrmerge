@@ -289,7 +289,7 @@ void MainWindow::loadImages(const QStringList & files) {
         ImageStack * newImages = new ImageStack();
         ProgressDialog progress(this);
         QFuture<QString> error = QtConcurrent::run([&]() {
-            int step = 100 / (numImages + 2);
+            int step = 100 / (numImages + 1);
             for (unsigned int i = 0; i < numImages; i++) {
                 progress.advance(i*step, "Loading files...");
                 QByteArray fileName = QDir::toNativeSeparators(files[i]).toLocal8Bit();//toUtf8();
@@ -304,7 +304,6 @@ void MainWindow::loadImages(const QStringList & files) {
             }
             progress.advance(numImages*step, "Aligning...");
             newImages->align();
-            progress.advance((numImages + 1)*step, "Referencing...");
             newImages->computeRelExposures();
             progress.advance(100, "");
             return QString();
@@ -356,6 +355,10 @@ void MainWindow::saveResult() {
             tr("Digital Negatives (*.dng)"), NULL, QFileDialog::DontUseNativeDialog);
         if (!file.isEmpty()) {
             std::string fileName = QDir::toNativeSeparators(file).toUtf8().constData();
+            size_t extPos = fileName.find_last_of('.');
+            if (extPos > fileName.length() || fileName.substr(extPos) != ".dng") {
+                fileName += ".dng";
+            }
             ProgressDialog pd(this);
             QFuture<void> result = QtConcurrent::run([&]() {
                 DngWriter writer(*images, pd);

@@ -38,7 +38,7 @@ namespace hdrmerge {
 class DngWriter {
 public:
     DngWriter(const ImageStack & s, ProgressIndicator & pi)
-    : progress(pi), memalloc(gDefaultDNGMemoryAllocator), host(&memalloc, NULL), negative(host),
+    : progress(pi), memalloc(gDefaultDNGMemoryAllocator), host(&memalloc), negative(host),
     stack(s), appVersion("HDRMerge " HDRMERGE_VERSION_STRING), previewWidth(s.getWidth()) {
         host.SetSaveDNGVersion(dngVersion_SaveDefault);
         host.SetSaveLinearDNG(false);
@@ -52,6 +52,12 @@ public:
     void write(const std::string & filename);
 
 private:
+    class BasicHost : public dng_host {
+    public:
+        BasicHost(dng_memory_allocator *allocator) : dng_host(allocator, NULL) {}
+        dng_image * Make_dng_image(const dng_rect &bounds, uint32 planes, uint32 pixelType);
+    };
+
     class DummyNegative : public dng_negative {
     public:
         DummyNegative(dng_host & host) : dng_negative(host) {}
@@ -59,7 +65,7 @@ private:
 
     ProgressIndicator & progress;
     dng_memory_allocator memalloc;
-    dng_host host;
+    BasicHost host;
     DummyNegative negative;
     dng_preview_list previewList;
     dng_date_time_info dateTimeNow;
@@ -71,6 +77,7 @@ private:
     void buildPreviewList();
     void buildExifMetadata();
     void addJpegPreview();
+    void buildIndexImage(const std::string & filename);
 };
 
 } // namespace hdrmerge

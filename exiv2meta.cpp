@@ -173,7 +173,7 @@ Exiv2Meta::Exiv2Meta() :
     m_MakerNote(),
     m_MakerNoteOffset(0)
 {
-
+    Exiv2::LogMsg::setLevel(Exiv2::LogMsg::mute);
 }
 
 Exiv2Meta::~Exiv2Meta()

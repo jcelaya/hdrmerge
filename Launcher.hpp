@@ -39,12 +39,14 @@ public:
 private:
     int startGUI();
     int automaticMerge();
+    void showHelp();
 
     int argcGUI;
     char ** argvGUI;
     std::list<std::string> inFileNames;
     char * outFileName;
     bool automatic;
+    bool help;
 };
 
 } // namespace hdrmerge

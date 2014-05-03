@@ -36,7 +36,7 @@ using namespace std;
 
 namespace hdrmerge {
 
-Launcher::Launcher() : outFileName(NULL), automatic(false) {}
+Launcher::Launcher() : outFileName(NULL), automatic(false), help(false) {}
 
 
 int Launcher::startGUI() {
@@ -115,6 +115,8 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
             }
         } else if (string("-a") == argv[i]) {
             automatic = true;
+        } else if (string("--help") == argv[i]) {
+            help = true;
         } else if (argv[i][0] != '-') {
             inFileNames.push_back(argv[i]);
         }
@@ -122,8 +124,22 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
 }
 
 
+void Launcher::showHelp() {
+    auto tr = [&] (const char * text) { return QCoreApplication::translate("Help", text); };
+    cout << tr("Usage: HDRMerge [--help] [-o OUT_FILE] [-a] [-b BPS] [RAW_FILES ...]") << endl;
+    cout << tr("Merges RAW_FILES into OUT_FILE, to obtain an HDR raw image.") << endl;
+    cout << endl;
+    cout << tr("Options:") << endl;
+    cout << "    " << tr("--help        Shows this message.") << endl;
+    cout << "    " << tr("-o OUT_FILE   Sets OUT_FILE as the output file name.") << endl;
+    cout << "    " << tr("-a            Calculates the output file name automatically. Ignores -o.") << endl;
+    cout << "    " << tr("-b BPS        Bits per sample, can be 16, 24 or 32.") << endl;
+    cout << "    " << tr("RAW_FILES     The input raw files.") << endl;
+}
+
+
 int Launcher::run() {
-    bool useGUI = !automatic || inFileNames.empty();
+    bool useGUI = !help && (!automatic || inFileNames.empty());
 
     QApplication app(argcGUI, argvGUI, useGUI);
 
@@ -142,7 +158,10 @@ int Launcher::run() {
     appTranslator.load("hdrmerge_" + QLocale::system().name(), ":/translators");
     app.installTranslator(&appTranslator);
 
-    if (useGUI) {
+    if (help) {
+        showHelp();
+        return 0;
+    } else if (useGUI) {
         return startGUI();
     } else {
         return automaticMerge();

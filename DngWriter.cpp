@@ -304,7 +304,7 @@ void DngWriter::buildIndexImage(const std::string & filename) {
 }
 
 
-void DngWriter::write(const std::string & filename) {
+void DngWriter::write(const string & filename, int bps) {
     progress.advance(0, "Initialize negative");
     dng_xmp_sdk::InitializeSDK();
 
@@ -314,7 +314,7 @@ void DngWriter::write(const std::string & filename) {
     AutoPtr<dng_image> imageData(new DngFloatImage(stack.getWidth(), stack.getHeight(), memalloc));
     stack.compose(((DngFloatImage *)imageData.Get())->getImageBuffer());
     negative.SetStage1Image(imageData);
-    negative.SetRawFloatBitDepth(32);
+    negative.SetRawFloatBitDepth(bps);
 
     //buildIndexImage(filename);
 

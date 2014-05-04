@@ -28,6 +28,8 @@
 #include <QHBoxLayout>
 #include <QPixmap>
 
+namespace hdrmerge {
+
 class AboutDialog : public QDialog {
 public:
     explicit AboutDialog(QWidget * parent = 0, Qt::WindowFlags f = 0) : QDialog(parent, f) {
@@ -58,5 +60,6 @@ private:
     QLabel * text;
 };
 
+} // namespace hdrmerge
 
 #endif // _ABOUTDIALOG_H_

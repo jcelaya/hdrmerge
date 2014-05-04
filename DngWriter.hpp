@@ -49,7 +49,7 @@ public:
     void setPreviewWidth(size_t w) {
         previewWidth = w;
     }
-    void write(const std::string & filename);
+    void write(const std::string & filename, int bps);
 
 private:
     class BasicHost : public dng_host {

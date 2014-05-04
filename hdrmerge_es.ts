@@ -2,6 +2,41 @@
 <!DOCTYPE TS>
 <TS version="2.0">
 <context>
+    <name>Help</name>
+    <message>
+        <source>Usage</source>
+        <translation type="finished">Uso</translation>
+    </message>
+    <message>
+        <source>Merges RAW_FILES into OUT_FILE, to obtain an HDR raw image.</source>
+        <translation type="finished">Mezcla RAW_FILES en OUT_FILE, para obtener una imagen HDR raw.</translation>
+    </message>
+    <message>
+        <source>Options:</source>
+        <translation type="finished">Opciones:</translation>
+    </message>
+    <message>
+        <source>Shows this message.</source>
+        <translation type="finished">Muestra este mensaje.</translation>
+    </message>
+    <message>
+        <source>Sets OUT_FILE as the output file name.</source>
+        <translation type="finished">Establece OUT_FILE como el nombre del fichero de salida.</translation>
+    </message>
+    <message>
+        <source>Calculates the output file name automatically. Ignores -o.</source>
+        <translation type="finished">Calcula el nombre del fichero de salida automáticamente. Ignora -o.</translation>
+    </message>
+    <message>
+        <source>Bits per sample, can be 16, 24 or 32.</source>
+        <translation type="finished">Bits por pixel, puede ser 16, 24 o 32.</translation>
+    </message>
+    <message>
+        <source>The input raw files.</source>
+        <translation type="finished">Los ficheros raw de entrada.</translation>
+    </message>
+</context>
+<context>
     <name>LoadSave</name>
     <message>
         <source>Error loading %1</source>
@@ -45,7 +80,7 @@
     </message>
 </context>
 <context>
-    <name>AboutDialog</name>
+    <name>hdrmerge::AboutDialog</name>
     <message>
         <source>A software for the fusion of multiple raw images into a single high dynamic range image.</source>
         <translation type="finished">Un software para la fusión de múltiples imágenes raw en una sola imagen de alto rango dinámico.</translation>
@@ -53,6 +88,21 @@
     <message>
         <source>About HDRMerge...</source>
         <translation type="finished">Acerca de HDRMerge...</translation>
+    </message>
+</context>
+<context>
+    <name>hdrmerge::DngPropertiesDialog</name>
+    <message>
+        <source>Bits per sample:</source>
+        <translation type="finished">Bits por muestra:</translation>
+    </message>
+    <message>
+        <source>Accept</source>
+        <translation type="finished">Aceptar</translation>
+    </message>
+    <message>
+        <source>DNG Properties</source>
+        <translation type="finished">Propiedades DNG</translation>
     </message>
 </context>
 <context>

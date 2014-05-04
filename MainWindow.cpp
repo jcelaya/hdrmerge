@@ -45,6 +45,7 @@
 #include "ImageStack.hpp"
 #include "PreviewWidget.hpp"
 #include "DraggableScrollArea.hpp"
+#include "DngPropertiesDialog.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -177,6 +178,7 @@ void MainWindow::createActions() {
 
     mergeAction = new QAction(tr("&Save HDR..."), this);
     mergeAction->setShortcut(tr("Ctrl+S"));
+    mergeAction->setEnabled(false);
     connect(mergeAction, SIGNAL(triggered()), this, SLOT(saveResult()));
 }
 
@@ -319,6 +321,7 @@ void MainWindow::loadImages(const QStringList & files) {
         preview->setImageStack(images);
 
         // Create GUI
+        mergeAction->setEnabled(true);
         layerSelector->clear();
         for (auto action : layerSelectorGroup->actions()) {
             layerSelectorGroup->removeAction(action);
@@ -359,11 +362,13 @@ void MainWindow::saveResult() {
             if (extPos > fileName.length() || fileName.substr(extPos) != ".dng") {
                 fileName += ".dng";
             }
+            DngPropertiesDialog dpd(this);
+            dpd.exec();
             ProgressDialog pd(this);
             pd.setWindowTitle(tr("Save DNG file"));
             QFuture<void> result = QtConcurrent::run([&]() {
                 DngWriter writer(*images, pd);
-                writer.write(fileName);
+                writer.write(fileName, dpd.getBps());
             });
             while (result.isRunning())
                 QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);

@@ -36,7 +36,7 @@ using namespace std;
 
 namespace hdrmerge {
 
-Launcher::Launcher() : outFileName(NULL), automatic(false), help(false) {}
+Launcher::Launcher() : outFileName(NULL), automatic(false), help(false), bps(16) {}
 
 
 int Launcher::startGUI() {
@@ -99,7 +99,7 @@ int Launcher::automaticMerge() {
     }
     cout << QCoreApplication::translate("LoadSave", "Writing result to %1").arg(fileName.c_str()) << endl;
     DngWriter writer(stack, pi);
-    writer.write(fileName);
+    writer.write(fileName, bps);
     return 0;
 }
 
@@ -117,6 +117,11 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
             automatic = true;
         } else if (string("--help") == argv[i]) {
             help = true;
+        } else if (string("-b") == argv[i]) {
+            if (++i < argc) {
+                int value = stoi(argv[i]);
+                if (value == 32 || value == 24 || value == 16) bps = value;
+            }
         } else if (argv[i][0] != '-') {
             inFileNames.push_back(argv[i]);
         }
@@ -126,15 +131,15 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
 
 void Launcher::showHelp() {
     auto tr = [&] (const char * text) { return QCoreApplication::translate("Help", text); };
-    cout << tr("Usage: HDRMerge [--help] [-o OUT_FILE] [-a] [-b BPS] [RAW_FILES ...]") << endl;
+    cout << tr("Usage") << ": HDRMerge [--help] [-o OUT_FILE] [-a] [-b BPS] [RAW_FILES ...]" << endl;
     cout << tr("Merges RAW_FILES into OUT_FILE, to obtain an HDR raw image.") << endl;
     cout << endl;
     cout << tr("Options:") << endl;
-    cout << "    " << tr("--help        Shows this message.") << endl;
-    cout << "    " << tr("-o OUT_FILE   Sets OUT_FILE as the output file name.") << endl;
-    cout << "    " << tr("-a            Calculates the output file name automatically. Ignores -o.") << endl;
-    cout << "    " << tr("-b BPS        Bits per sample, can be 16, 24 or 32.") << endl;
-    cout << "    " << tr("RAW_FILES     The input raw files.") << endl;
+    cout << "    " << "--help        " << tr("Shows this message.") << endl;
+    cout << "    " << "-o OUT_FILE   " << tr("Sets OUT_FILE as the output file name.") << endl;
+    cout << "    " << "-a            " << tr("Calculates the output file name automatically. Ignores -o.") << endl;
+    cout << "    " << "-b BPS        " << tr("Bits per sample, can be 16, 24 or 32.") << endl;
+    cout << "    " << "RAW_FILES     " << tr("The input raw files.") << endl;
 }
 
 

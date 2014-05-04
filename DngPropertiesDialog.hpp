@@ -20,36 +20,34 @@
  *
  */
 
-#ifndef _LAUNCHER_HPP_
-#define _LAUNCHER_HPP_
+#ifndef _DNGPROPERTIESDIALOG_H_
+#define _DNGPROPERTIESDIALOG_H_
 
-#include <list>
-#include <string>
+#include <QDialog>
+#include <QLabel>
 
 namespace hdrmerge {
 
-class Launcher {
+class DngPropertiesDialog : public QDialog {
 public:
-    Launcher();
+    DngPropertiesDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
 
-    void parseCommandLine(int argc, char * argv[]);
+    /// Triggered when the dialog is closed
+    void closeEvent(QCloseEvent * event) { accept(); }
 
-    int run();
+    int getBps() const {
+        return bps;
+    }
+
+private slots:
+    void setBps(int index);
 
 private:
-    int startGUI();
-    int automaticMerge();
-    void showHelp();
+    Q_OBJECT
 
-    int argcGUI;
-    char ** argvGUI;
-    std::list<std::string> inFileNames;
-    char * outFileName;
-    bool automatic;
-    bool help;
     int bps;
 };
 
 } // namespace hdrmerge
 
-#endif // _LAUNCHER_HPP_
+#endif // _DNGPROPERTIESDIALOG_H_

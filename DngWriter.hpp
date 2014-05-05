@@ -37,17 +37,16 @@ namespace hdrmerge {
 
 class DngWriter {
 public:
-    DngWriter(const ImageStack & s, ProgressIndicator & pi)
-    : progress(pi), memalloc(gDefaultDNGMemoryAllocator), host(&memalloc), negative(host),
-    stack(s), appVersion("HDRMerge " HDRMERGE_VERSION_STRING), previewWidth(s.getWidth()) {
-        host.SetSaveDNGVersion(dngVersion_SaveDefault);
-        host.SetSaveLinearDNG(false);
-        host.SetKeepOriginalFile(false);
-        CurrentDateTimeAndZone(dateTimeNow);
-    }
+    DngWriter(const ImageStack & s, ProgressIndicator & pi);
 
     void setPreviewWidth(size_t w) {
         previewWidth = w;
+    }
+    void setBitsPerSample(int b) {
+        bps = b;
+    }
+    void setIndexFileName(const std::string & name) {
+        indexFile = name;
     }
     void write(const std::string & filename, int bps);
 
@@ -71,7 +70,10 @@ private:
     dng_date_time_info dateTimeNow;
     const ImageStack & stack;
     const std::string appVersion;
+
     size_t previewWidth;
+    int bps;
+    std::string indexFile;
 
     void buildNegative();
     void buildPreviewList();

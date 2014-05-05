@@ -95,6 +95,16 @@ dng_image * DngWriter::BasicHost::Make_dng_image(const dng_rect &bounds, uint32 
 }
 
 
+DngWriter::DngWriter(const ImageStack & s, ProgressIndicator & pi)
+: progress(pi), memalloc(gDefaultDNGMemoryAllocator), host(&memalloc), negative(host),
+stack(s), appVersion("HDRMerge " HDRMERGE_VERSION_STRING), previewWidth(s.getWidth()), bps(16) {
+    host.SetSaveDNGVersion(dngVersion_SaveDefault);
+    host.SetSaveLinearDNG(false);
+    host.SetKeepOriginalFile(false);
+    CurrentDateTimeAndZone(dateTimeNow);
+}
+
+
 void DngWriter::buildExifMetadata() {
     // Exif CFA Pattern
     const dng_mosaic_info * mosaicinfo = negative.GetMosaicInfo();

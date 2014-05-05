@@ -28,7 +28,8 @@
 
 namespace hdrmerge {
 
-DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f) : QDialog(parent, f), bps(16) {
+DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
+        : QDialog(parent, f), bps(16), previewSize(0) {
     QVBoxLayout * layout = new QVBoxLayout(this);
 
     QComboBox * bpsSelector = new QComboBox(this);
@@ -38,9 +39,17 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f) : 
     bpsSelector->setEditable(false);
     connect(bpsSelector, SIGNAL(currentIndexChanged( int)), this, SLOT(setBps(int)));
 
+    QComboBox * previewSelector = new QComboBox(this);
+    previewSelector->addItem(tr("Full"));
+    previewSelector->addItem(tr("Half"));
+    previewSelector->addItem(tr("None"));
+    previewSelector->setEditable(false);
+    connect(previewSelector, SIGNAL(currentIndexChanged( int)), this, SLOT(setBps(int)));
+
     QWidget * formWidget = new QWidget(this);
     QFormLayout * formLayout = new QFormLayout(formWidget);
     formLayout->addRow(tr("Bits per sample:"), bpsSelector);
+    formLayout->addRow(tr("Preview size:"), previewSelector);
     formWidget->setLayout(formLayout);
     layout->addWidget(formWidget, 1);
 
@@ -62,5 +71,14 @@ void DngPropertiesDialog::setBps(int index) {
     }
 }
 
+
+void DngPropertiesDialog::setPreviewSize(int index) {
+    previewSize = index;
+}
+
+
+void DngPropertiesDialog::setIndexFileName() {
+
+}
 
 } // namespace hdrmerge

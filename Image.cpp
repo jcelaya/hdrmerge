@@ -20,7 +20,6 @@
  *
  */
 
-#include <cstdlib>
 #include <algorithm>
 #include <libraw/libraw.h>
 #include "Image.hpp"
@@ -35,21 +34,27 @@ Image::Image(uint16_t * rawImage, const MetaData & md) {
 }
 
 
-void Image::buildImage(uint16_t* rawImage, MetaData* md) {
+void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     metaData.reset(md);
     dx = dy = 0;
     width = metaData->width;
     height = metaData->height;
     size_t size = width*height;
-    max = metaData->max;
-    relExp = 65535.0 / max;
-    logExp = metaData->logExp();
+    max = 0;
     rawPixels.reset(new uint16_t[size]);
     for (size_t row = 0, rrow = md->topMargin; row < height; ++row, ++rrow) {
         for (size_t col = 0, rcol = md->leftMargin; col < width; ++col, ++rcol) {
-            rawPixels[row*width + col] = rawImage[rrow*md->rawWidth + rcol];
+            uint16_t v = rawImage[rrow*md->rawWidth + rcol];
+            rawPixels[row*width + col] = v;
+            if (v > max)
+                max = v;
         }
     }
+    if (max > metaData->max) {
+        max = metaData->max;
+    }
+    relExp = 65535.0 / max;
+    logExp = metaData->logExp();
     subtractBlack();
     preScale();
     metaData->dumpInfo();

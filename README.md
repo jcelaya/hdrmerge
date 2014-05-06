@@ -76,9 +76,9 @@ You will need the development files of these libraries, CMake version 2.8.8 or g
 You can obtain the Adobe XMP SDK from <http://www.adobe.com/devnet/xmp.html>. To build it:
 
 1. Unzip the sdk in the third_party directory.
-+  Rename the XMP SDK directory as xmpsdk.
-+  Cd into xmpsdk/third_party and follow the instructions to download libexpat and zlib.
-+  Cd into xmpsdk/build and run 'make StaticAll'. Known problems:
++  Rename the XMP SDK directory as xmp_sdk.
++  Cd into xmp_sdk/third_party and follow the instructions to download libexpat and zlib.
++  Cd into xmp_sdk/build and run 'make StaticAll'. Known problems:
     - Depending on your version of gcc, it may give lots of warnings, just ignore them.
     - It may fail at *shared/SharedConfig_Common.cmake*, comment out the lines failing.
     - Also, *XMPFiles/source/NativeMetadataSupport/ValueObject.h* should include *string.h*.

@@ -3,6 +3,7 @@ US22 As a user, I want a batch mode to detect sets of exposures and produce an o
 US25 As a user, I want to be able to run HDRMerge on Windows. PR2
 US26 As a user, I want to be able to run HDRMerge on Mac OS. PR2
 US27 As a user, I want to be able to cancel the load and writing of images. PR3
+US28 As a developer, I want to drop DNG and XMP SDK dependency and build a custom DNG writer. It will make US25 and US26 much easier. PR1
 
 Doing:
 US24 As a user, I want to save/load the image index to/from file, so that I can continue editing it in a later session. PR2

@@ -76,7 +76,7 @@ public:
     void relativeExposure(const Image & nextImage, size_t w, size_t h);
 
     static bool comparePointers(const std::unique_ptr<Image> & l, const std::unique_ptr<Image> & r) {
-        return l->logExp > r->logExp;
+        return l->brightness > r->brightness;
     }
 
 private:
@@ -86,7 +86,7 @@ private:
     std::vector<std::unique_ptr<uint16_t[]>> grayscalePics;
     int dx, dy;
     uint16_t max;
-    double logExp;
+    double brightness;
     double relExp;          ///< Relative exposure, from data
     int delta[9];
 

@@ -41,19 +41,25 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     height = metaData->height;
     size_t size = width*height;
     brightness = 0.0;
-    max = 0;
+    uint16_t maxPerColor[4] = {0, 0, 0, 0};
     rawPixels.reset(new uint16_t[size]);
     for (size_t row = 0, rrow = md->topMargin; row < height; ++row, ++rrow) {
         for (size_t col = 0, rcol = md->leftMargin; col < width; ++col, ++rcol) {
             uint16_t v = rawImage[rrow*md->rawWidth + rcol];
             rawPixels[row*width + col] = v;
             brightness += v;
-            if (v > max)
-                max = v;
+            for (int c = 0; c < 4; ++c) {
+                if (v > maxPerColor[md->FC(row, col)]) {
+                    maxPerColor[md->FC(row, col)] = v;
+                }
+            }
         }
     }
-    if (max > metaData->max) {
-        max = metaData->max;
+    max = metaData->max;
+    for (int c = 0; c < 4; ++c) {
+        if (maxPerColor[c] < max) {
+            max = maxPerColor[c];
+        }
     }
     relExp = 65535.0 / max;
     brightness /= size;
@@ -111,12 +117,12 @@ bool Image::isSameFormat(const Image & ref) const {
 void Image::relativeExposure(const Image & r, size_t w, size_t h) {
     // Minimize square error between images:
     // min. C(n) = sum(n*f(x) - g(x))^2  ->  n = sum(f(x)*g(x)) / sum(f(x)^2)
-    double numerator = 0, denom = 0;
+    double numerator = 0, denom = 0, threshold = max * 0.8;
     for (size_t y = 0; y < h; ++y) {
         for (size_t x = 0; x < w; ++x) {
             size_t pos = (y - dy) * width - dx + x;
             double v = rawPixels[pos];
-            if (v > 0 && v < max) {
+            if (v > 0 && v < threshold) {
                 size_t rpos = (y - r.dy) * width - r.dx + x;
                 double nv = r.rawPixels[rpos];
                 numerator += v * nv;
@@ -199,7 +205,7 @@ bool Image::isSaturated(size_t x, size_t y) const {
     size_t base = y*width + x;
     size_t size = width*height;
     for (size_t d : delta) {
-        if (base + d < size && rawPixels[base + d] >= max) return true;
+        if (base + d < size && rawPixels[base + d] >= max*0.9) return true;
     }
     return false;
 }

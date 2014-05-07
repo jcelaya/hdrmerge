@@ -38,21 +38,14 @@ public:
     int getBps() const {
         return bps;
     }
-    int getPreviewSize() const {
-        return previewSize;
-    }
 
 private slots:
     void setBps(int index);
-    void setPreviewSize(int index);
-    void setIndexFileName();
 
 private:
     Q_OBJECT
 
     int bps;
-    int previewSize;
-    QString indexFile;
 };
 
 } // namespace hdrmerge

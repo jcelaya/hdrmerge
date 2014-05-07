@@ -24,11 +24,13 @@
 #include <QVBoxLayout>
 #include <QComboBox>
 #include <QPushButton>
+#include <QFileDialog>
 #include "DngPropertiesDialog.hpp"
 
 namespace hdrmerge {
 
-DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f) : QDialog(parent, f), bps(16) {
+DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
+        : QDialog(parent, f), bps(16), previewSize(0) {
     QVBoxLayout * layout = new QVBoxLayout(this);
 
     QComboBox * bpsSelector = new QComboBox(this);
@@ -38,16 +40,40 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f) : 
     bpsSelector->setEditable(false);
     connect(bpsSelector, SIGNAL(currentIndexChanged( int)), this, SLOT(setBps(int)));
 
+    QComboBox * previewSelector = new QComboBox(this);
+    previewSelector->addItem(tr("Full"));
+    previewSelector->addItem(tr("Half"));
+    previewSelector->addItem(tr("None"));
+    previewSelector->setEditable(false);
+    connect(previewSelector, SIGNAL(currentIndexChanged( int)), this, SLOT(setPreviewSize(int)));
+
+    QWidget * indexFileSelector = new QWidget(this);
+    QHBoxLayout * indexFileSelectorLayout = new QHBoxLayout(indexFileSelector);
+    indexFileEditor = new QLineEdit(indexFileSelector);
+    indexFileEditor->setMinimumWidth(200);
+    QPushButton * showFileDialog = new QPushButton("...", indexFileSelector);
+    connect(showFileDialog, SIGNAL(clicked(bool)), this, SLOT(setIndexFileName()));
+    indexFileSelectorLayout->addWidget(indexFileEditor);
+    indexFileSelectorLayout->addWidget(showFileDialog);
+
     QWidget * formWidget = new QWidget(this);
     QFormLayout * formLayout = new QFormLayout(formWidget);
     formLayout->addRow(tr("Bits per sample:"), bpsSelector);
+    formLayout->addRow(tr("Preview size:"), previewSelector);
+    formLayout->addRow(tr("Index image:"), indexFileSelector);
     formWidget->setLayout(formLayout);
     layout->addWidget(formWidget, 1);
 
+    QWidget * buttons = new QWidget(this);
+    QHBoxLayout * buttonsLayout = new QHBoxLayout(buttons);
     QPushButton * acceptButton = new QPushButton(tr("Accept"), this);
     acceptButton->setDefault(true);
     connect(acceptButton, SIGNAL(clicked(bool)), this, SLOT(accept()));
-    layout->addWidget(acceptButton, 0, Qt::AlignHCenter);
+    QPushButton * cancelButton = new QPushButton(tr("Cancel"), this);
+    connect(cancelButton, SIGNAL(clicked(bool)), this, SLOT(reject()));
+    buttonsLayout->addWidget(acceptButton);
+    buttonsLayout->addWidget(cancelButton);
+    layout->addWidget(buttons, 0, Qt::AlignHCenter);
 
     setLayout(layout);
     setWindowTitle(tr("DNG Properties"));
@@ -62,5 +88,16 @@ void DngPropertiesDialog::setBps(int index) {
     }
 }
 
+
+void DngPropertiesDialog::setPreviewSize(int index) {
+    previewSize = index;
+}
+
+
+void DngPropertiesDialog::setIndexFileName() {
+    QString file = QFileDialog::getSaveFileName(this, tr("Save DNG file"), "",
+        tr("PNG Images (*.png)"), NULL, QFileDialog::DontUseNativeDialog);
+    indexFileEditor->setText(file);
+}
 
 } // namespace hdrmerge

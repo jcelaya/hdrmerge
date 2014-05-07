@@ -24,6 +24,7 @@
 #define _DNGWRITER_HPP_
 
 #include <string>
+#include <QString>
 #include "config.h"
 #include "dng_memory.h"
 #include "dng_host.h"
@@ -45,10 +46,10 @@ public:
     void setBitsPerSample(int b) {
         bps = b;
     }
-    void setIndexFileName(const std::string & name) {
+    void setIndexFileName(const QString & name) {
         indexFile = name;
     }
-    void write(const std::string & filename, int bps);
+    void write(const std::string & filename);
 
 private:
     class BasicHost : public dng_host {
@@ -73,13 +74,13 @@ private:
 
     size_t previewWidth;
     int bps;
-    std::string indexFile;
+    QString indexFile;
 
     void buildNegative();
     void buildPreviewList();
     void buildExifMetadata();
     void addJpegPreview();
-    void buildIndexImage(const std::string & filename);
+    void buildIndexImage(const QString & filename);
 };
 
 } // namespace hdrmerge

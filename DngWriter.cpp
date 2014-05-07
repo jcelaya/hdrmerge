@@ -295,7 +295,7 @@ void DngWriter::addJpegPreview() {
 }
 
 
-void DngWriter::buildIndexImage(const std::string & filename) {
+void DngWriter::buildIndexImage(const QString & filename) {
     size_t width = stack.getWidth(), height = stack.getHeight();
     QImage indexImage(width, height, QImage::Format_Indexed8);
     int numColors = stack.size() - 1;
@@ -309,12 +309,11 @@ void DngWriter::buildIndexImage(const std::string & filename) {
             indexImage.setPixel(col, row, stack.getImageAt(col, row));
         }
     }
-    QString name(filename.c_str());
-    indexImage.save(name + "_index.png");
+    indexImage.save(filename + "_index.png");
 }
 
 
-void DngWriter::write(const string & filename, int bps) {
+void DngWriter::write(const string & filename) {
     progress.advance(0, "Initialize negative");
     dng_xmp_sdk::InitializeSDK();
 
@@ -326,7 +325,8 @@ void DngWriter::write(const string & filename, int bps) {
     negative.SetStage1Image(imageData);
     negative.SetRawFloatBitDepth(bps);
 
-    //buildIndexImage(filename);
+    if (!indexFile.isEmpty())
+        buildIndexImage(indexFile);
 
     progress.advance(50, "Rendering preview");
     buildPreviewList();

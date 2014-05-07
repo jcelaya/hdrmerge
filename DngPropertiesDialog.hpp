@@ -24,7 +24,7 @@
 #define _DNGPROPERTIESDIALOG_H_
 
 #include <QDialog>
-#include <QLabel>
+#include <QLineEdit>
 
 namespace hdrmerge {
 
@@ -38,14 +38,24 @@ public:
     int getBps() const {
         return bps;
     }
+    int getPreviewSize() const {
+        return previewSize;
+    }
+    QString getIndexFileName() const {
+        return indexFileEditor->text();
+    }
 
 private slots:
     void setBps(int index);
+    void setPreviewSize(int index);
+    void setIndexFileName();
 
 private:
     Q_OBJECT
 
     int bps;
+    int previewSize;
+    QLineEdit * indexFileEditor;
 };
 
 } // namespace hdrmerge

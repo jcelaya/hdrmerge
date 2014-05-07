@@ -99,7 +99,9 @@ int Launcher::automaticMerge() {
     }
     cout << QCoreApplication::translate("LoadSave", "Writing result to %1").arg(fileName.c_str()) << endl;
     DngWriter writer(stack, pi);
-    writer.write(fileName, bps);
+    writer.setBitsPerSample(bps);
+    writer.setPreviewWidth(stack.getWidth());
+    writer.write(fileName);
     return 0;
 }
 

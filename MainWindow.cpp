@@ -362,15 +362,25 @@ void MainWindow::saveResult() {
                 fileName += ".dng";
             }
             DngPropertiesDialog dpd(this);
-            dpd.exec();
-            ProgressDialog pd(this);
-            pd.setWindowTitle(tr("Save DNG file"));
-            QFuture<void> result = QtConcurrent::run([&]() {
-                DngWriter writer(*images, pd);
-                writer.write(fileName, dpd.getBps());
-            });
-            while (result.isRunning())
-                QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+            if (dpd.exec()) {
+                ProgressDialog pd(this);
+                pd.setWindowTitle(tr("Save DNG file"));
+                QFuture<void> result = QtConcurrent::run([&]() {
+                    DngWriter writer(*images, pd);
+                    writer.setBitsPerSample(dpd.getBps());
+                    size_t previewWidth;
+                    switch (dpd.getPreviewSize()) {
+                        case 0: previewWidth = images->getWidth(); break;
+                        case 1: previewWidth = images->getWidth() / 2; break;
+                        default: previewWidth = 0;
+                    }
+                    writer.setPreviewWidth(previewWidth);
+                    writer.setIndexFileName(dpd.getIndexFileName());
+                    writer.write(fileName);
+                });
+                while (result.isRunning())
+                    QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
+            }
         }
     }
 }

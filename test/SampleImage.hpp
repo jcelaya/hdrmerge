@@ -22,24 +22,23 @@
 
 #include <cstdlib>
 #include "../MetaData.hpp"
-#include <OpenImageIO/imageio.h>
+#include <QImage>
 
 struct SampleImage {
     uint16_t * pixelData;
     hdrmerge::MetaData md;
     SampleImage(const std::string & f) : pixelData(nullptr) {
-        OpenImageIO::ImageInput *in = OpenImageIO::ImageInput::create(f);
-        if (! in)
+        QImage image;
+        if (!image.load(f.c_str()))
             return;
-        OpenImageIO::ImageSpec spec;
-        in->open(f, spec);
-        md.width = md.rawWidth = spec.width;
-        md.height = spec.height;
+        md.width = md.rawWidth = image.width();
+        md.height = image.height();
         md.max = 65535;
         pixelData = new uint16_t[md.width * md.height];
-        in->read_image(OpenImageIO::TypeDesc::UINT16, pixelData);
-        in->close();
-        delete in;
+        const uchar * data = image.constBits();
+        for (int i = 0; i < md.width * md.height; ++i) {
+            pixelData[i] = data[i];
+        }
     }
     ~SampleImage() {
         if (pixelData != nullptr) {
@@ -48,14 +47,12 @@ struct SampleImage {
     }
 
     void save(const std::string & f) {
-        OpenImageIO::ImageOutput *out = OpenImageIO::ImageOutput::create (f);
-        if (! out)
-            return;
-        OpenImageIO::ImageSpec spec (md.width, md.height, 1, OpenImageIO::TypeDesc::UINT8);
-        out->open (f, spec);
-        out->write_image (OpenImageIO::TypeDesc::UINT16, pixelData);
-        out->close ();
-        delete out;
-
+        QImage image(md.width, md.height, QImage::Format_RGB32);
+        QRgb * data = reinterpret_cast<QRgb *>(image.bits());
+        for (int i = 0; i < md.width * md.height; ++i) {
+            int v = pixelData[i];
+            data[i] = qRgb(v, v, v);
+        }
+        image.save(f.c_str());
     }
 };

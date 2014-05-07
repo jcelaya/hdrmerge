@@ -75,25 +75,27 @@ You will need the development files of these libraries, CMake version 2.8.8 or g
 
 You can obtain the Adobe XMP SDK from <http://www.adobe.com/devnet/xmp.html>. To build it:
 
-1. Unzip the sdk in the third_party directory.
-+  Rename the XMP SDK directory as xmpsdk.
-+  Cd into xmpsdk/third_party and follow the instructions to download libexpat and zlib.
-+  Cd into xmpsdk/build and run 'make StaticAll'. Known problems:
+1. Unzip the sdk in the `third_party` directory.
++  Rename the XMP SDK directory as `xmp_sdk`.
++  Cd into `xmp_sdk/third_party` and follow the instructions to download libexpat and zlib.
++  Cd into `xmp_sdk/build` and run 'make StaticAll'. Known problems:
     - Depending on your version of gcc, it may give lots of warnings, just ignore them.
-    - It may fail at *shared/SharedConfig_Common.cmake*, comment out the lines failing.
-    - Also, *XMPFiles/source/NativeMetadataSupport/ValueObject.h* should include *string.h*.
-+  Move or symlink _public/libraries/*/release/staticXMP{Core,Files}.ar_ to
-    _public/libraries/libXMP{Core,Files}.a_
+    - It may fail at `shared/SharedConfig_Common.cmake`, comment out the lines failing.
+    - Also, `XMPFiles/source/NativeMetadataSupport/ValueObject.h` should include `string.h`.
++  Move or symlink `public/libraries/*/release/staticXMPCore.ar` to
+    `public/libraries/libXMPCore.a` (note that you must change its name: starts with **lib**, ends with **.a**). The same with `public/libraries/*/release/staticXMPFiles.ar`, named as `libXMPFiles.a`.
 
 ## Building HDRMerge
 
 Once the XMP SDK is compiled, the steps to compile and install HDRMerge are:
 
     $ mkdir build; cd build
-    $ cmake -DCMAKE_INSTALL_PREFIX=you_choose
+    $ cmake ..
     $ (sudo) make install
 
-It will only install the binary program. You will probably need root access to install HDRMerge to its default location, in */usr/local/bin*.
+You will probably need root access to install HDRMerge to its default location, in `/usr/local/bin`. If you want to change the path where it will be installed, you can set the CMAKE_INSTALL_PREFIX variable when you run 'cmake'. For instance, to install it in `$HOME/bin`:
+
+    $ cmake -DCMAKE_INSTALL_PREFIX=$HOME/bin ..
 
 
 

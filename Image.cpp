@@ -43,13 +43,16 @@ void Image::buildImage(uint16_t* rawImage, MetaData* md) {
     size_t size = width*height;
     max = metaData->max;
     relExp = 65535.0 / max;
-    logExp = metaData->logExp();
+    brightness = 0.0;
     rawPixels.reset(new uint16_t[size]);
     for (size_t row = 0, rrow = md->topMargin; row < height; ++row, ++rrow) {
         for (size_t col = 0, rcol = md->leftMargin; col < width; ++col, ++rcol) {
-            rawPixels[row*width + col] = rawImage[rrow*md->rawWidth + rcol];
+            uint16_t v = rawImage[rrow*md->rawWidth + rcol];
+            rawPixels[row*width + col] = v;
+            brightness += v;
         }
     }
+    brightness /= size;
     subtractBlack();
     preScale();
     metaData->dumpInfo();

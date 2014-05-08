@@ -23,29 +23,47 @@
 #ifndef _MERGEMAP_HPP_
 #define _MERGEMAP_HPP_
 
-#include "ImageStack.hpp"
+#include <memory>
+#include <cstdint>
 
 namespace hdrmerge {
 
+class ImageStack;
+
 class MergeMap {
 public:
-    MergeMap(size_t w, size_t h) : map(new float[w*h]), width(w), height(h) {}
-    MergeMap(const ImageStack & stack);
-    float operator[](size_t i) const {
-        return map[i];
+    MergeMap() {}
+    MergeMap(size_t w, size_t h) : width(w), height(h), index(new uint8_t[w*h]) {}
+
+    void generateFrom(const ImageStack & images);
+    uint8_t operator[](size_t i) const {
+        return index[i];
     }
-    float & operator[](size_t i) {
-        return map[i];
+    uint8_t & operator[](size_t i) {
+        return index[i];
     }
-    void blur(size_t radius);
+    std::unique_ptr<float[]> blur() const;
+    std::unique_ptr<float[]> blur(size_t radius) const;
 
 private:
-    void boxBlur_4(size_t radius);
-    void boxBlurH_4(size_t radius);
-    void boxBlurT_4(size_t radius);
+    class BoxBlur {
+    public:
+        BoxBlur(const MergeMap & src, size_t radius);
+        std::unique_ptr<float[]> && getResult() {
+            return std::move(map);
+        }
 
-    std::unique_ptr<float[]> map, blurTmp;
+    private:
+        const MergeMap & m;
+        void boxBlur_4(size_t radius);
+        void boxBlurH_4(size_t radius);
+        void boxBlurT_4(size_t radius);
+        std::unique_ptr<float[]> map, tmp;
+    };
+    friend class BoxBlur;
+
     size_t width, height;
+    std::unique_ptr<uint8_t[]> index;
 };
 
 } // namespace hdrmerge

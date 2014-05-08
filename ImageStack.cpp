@@ -23,7 +23,6 @@
 #include <list>
 #include <algorithm>
 #include "ImageStack.hpp"
-#include "MergeMap.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -59,6 +58,7 @@ int ImageStack::load(const std::list<std::string> & fileNames, ProgressIndicator
     progress.advance(p += step, "Aligning");
     align();
     computeRelExposures();
+    imageIndex.generateFrom(*this);
     progress.advance(p += step, "Done loading!");
     return 0;
 }
@@ -99,19 +99,6 @@ void ImageStack::computeRelExposures() {
     for (auto cur = images.rbegin(), next = cur++; cur != images.rend(); next = cur++) {
         (*cur)->relativeExposure(**next, width, height);
     }
-
-    imageIndex.reset(new uint8_t[width*height]);
-    fill_n(imageIndex.get(), width*height, 0);
-    for (int i = 0; i < images.size() - 1; ++i) {
-        Image & img = *images[i];
-        for (size_t row = 0, pos = 0; row < height; ++row) {
-            for (size_t col = 0; col < width; ++col, ++pos) {
-                if (imageIndex[pos] == i && img.isSaturated(col, row)) {
-                    ++imageIndex[pos];
-                }
-            }
-        }
-    }
 }
 
 
@@ -122,11 +109,7 @@ double ImageStack::value(size_t x, size_t y) const {
 
 
 void ImageStack::compose(float * dst) const {
-    const int radius = 3;
-    MergeMap map(*this);
-    map.blur(radius);
-
-    // Apply map
+    unique_ptr<float[]> map = imageIndex.blur();
     const MetaData & md = images.front()->getMetaData();
     int imageMax = images.size() - 1;
     float max = 0.0;

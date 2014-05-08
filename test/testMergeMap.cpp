@@ -39,10 +39,11 @@ BOOST_AUTO_TEST_CASE(testMergeMap1) {
         for (size_t i = 0; i < size; ++i) {
             map[i] = src[i];
         }
-        double blurTime = measureTime([&] () {map.blur(radius);});
+        unique_ptr<float[]> blurred;
+        double blurTime = measureTime([&] () {blurred = map.blur(radius);});
         cout << "Image blurred with radius " << radius << " in " << blurTime << " seconds" << endl;
         for (size_t i = 0; i < size; ++i) {
-            image.pixelData[i] = std::round(map[i]);
+            image.pixelData[i] = std::round(blurred[i]);
         }
         ostringstream fileName;
         fileName << "test/testMapblur_" << radius << ".png";

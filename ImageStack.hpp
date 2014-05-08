@@ -30,6 +30,7 @@
 #include "config.h"
 #include "Image.hpp"
 #include "ProgressIndicator.hpp"
+#include "MergeMap.hpp"
 
 
 namespace hdrmerge {
@@ -39,6 +40,11 @@ public:
     ImageStack() : width(0), height(0) {}
 
     int load(const std::list<std::string> & fileNames, ProgressIndicator & progress);
+    void align();
+    void computeRelExposures();
+    void generateImageIndex() {
+        imageIndex.generateFrom(*this);
+    }
 
     size_t size() const { return images.size(); }
 
@@ -58,8 +64,6 @@ public:
     }
 
     bool addImage(std::unique_ptr<Image> & i);
-    void align();
-    void computeRelExposures();
     std::string buildOutputFileName() const;
     double value(size_t x, size_t y) const;
     int getImageAt(size_t x, size_t y) const {
@@ -72,7 +76,7 @@ public:
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
-    std::unique_ptr<uint8_t[]> imageIndex;
+    MergeMap imageIndex;
     size_t width;     ///< Size of a row
     size_t height;    ///< Size of a column
 

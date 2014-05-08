@@ -22,7 +22,8 @@
 
 #include <QFormLayout>
 #include <QVBoxLayout>
-#include <QComboBox>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include <QPushButton>
 #include <QFileDialog>
 #include "DngPropertiesDialog.hpp"
@@ -33,21 +34,34 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
         : QDialog(parent, f), bps(16), previewSize(0) {
     QVBoxLayout * layout = new QVBoxLayout(this);
 
-    QComboBox * bpsSelector = new QComboBox(this);
-    bpsSelector->addItem("16");
-    bpsSelector->addItem("24");
-    bpsSelector->addItem("32");
-    bpsSelector->setEditable(false);
-    connect(bpsSelector, SIGNAL(currentIndexChanged( int)), this, SLOT(setBps(int)));
+    QWidget * bpsSelector = new QWidget(this);
+    bpsSelector->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout * bpsSelectorLayout = new QHBoxLayout(bpsSelector);
+    QButtonGroup * bpsGroup = new QButtonGroup(this);
+    const char * buttonLabels[] = { "16", "24", "32" };
+    for (int i = 0; i < 3; ++i) {
+        QRadioButton * button = new QRadioButton(buttonLabels[i], this);
+        button->setChecked(i == 0);
+        bpsGroup->addButton(button, i);
+        bpsSelectorLayout->addWidget(button);
+    }
+    connect(bpsGroup, SIGNAL(buttonClicked( int)), this, SLOT(setBps(int)));
 
-    QComboBox * previewSelector = new QComboBox(this);
-    previewSelector->addItem(tr("Full"));
-    previewSelector->addItem(tr("Half"));
-    previewSelector->addItem(tr("None"));
-    previewSelector->setEditable(false);
-    connect(previewSelector, SIGNAL(currentIndexChanged( int)), this, SLOT(setPreviewSize(int)));
+    QWidget * previewSelector = new QWidget(this);
+    previewSelector->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout * previewSelectorLayout = new QHBoxLayout(previewSelector);
+    QButtonGroup * previewGroup = new QButtonGroup(this);
+    const char * previewLabels[] = { "Full", "Half", "None" };
+    for (int i = 0; i < 3; ++i) {
+        QRadioButton * button = new QRadioButton(tr(previewLabels[i]), this);
+        button->setChecked(i == 0);
+        previewGroup->addButton(button, i);
+        previewSelectorLayout->addWidget(button);
+    }
+    connect(previewGroup, SIGNAL(buttonClicked( int)), this, SLOT(setPreviewSize(int)));
 
     QWidget * indexFileSelector = new QWidget(this);
+    indexFileSelector->setContentsMargins(0, 0, 0, 0);
     QHBoxLayout * indexFileSelectorLayout = new QHBoxLayout(indexFileSelector);
     indexFileEditor = new QLineEdit(indexFileSelector);
     indexFileEditor->setMinimumWidth(200);
@@ -60,7 +74,7 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     QFormLayout * formLayout = new QFormLayout(formWidget);
     formLayout->addRow(tr("Bits per sample:"), bpsSelector);
     formLayout->addRow(tr("Preview size:"), previewSelector);
-    formLayout->addRow(tr("Index image:"), indexFileSelector);
+    formLayout->addRow(tr("Mask image:"), indexFileSelector);
     formWidget->setLayout(formLayout);
     layout->addWidget(formWidget, 1);
 

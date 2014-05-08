@@ -7,7 +7,6 @@ US28 As a developer, I want to drop DNG and XMP SDK dependency and build a custo
 
 Doing:
 US24 As a user, I want to save/load the image index to/from file, so that I can continue editing it in a later session. PR2
-US30 As a user, I want to be able to decide on several properties of the output DNG. Those are the size of the preview and the generation of an index image. PR1
 
 Done:
 US1: As a user, I want to load RAW files directly. PR1
@@ -32,5 +31,6 @@ US21 As a developer, I want to update the GUI texts and translations. PR1
 US23 As a user, I want a redo functionality in the deghosting tools. PR2
 US28 As a user, I want a help text when the tool is invoked with the "-h" switch. PR1
 US29 As a user, I want to generate output files with 16, 24 or 32 bits per pixel. PR1
+US30 As a user, I want to be able to decide on several properties of the output DNG. Those are the size of the preview and the generation of an index image. PR1
 US31 As a developer, I want a smarter MergeMap, that avoids saturation as much as possible. PR1
 

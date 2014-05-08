@@ -44,6 +44,9 @@ public:
     QString getIndexFileName() const {
         return indexFileEditor->text();
     }
+    void setIndexFileName(const QString & name) {
+        indexFileEditor->setText(name);
+    }
 
 private slots:
     void setBps(int index);

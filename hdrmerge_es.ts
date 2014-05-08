@@ -35,6 +35,14 @@
         <source>The input raw files.</source>
         <translation type="finished">Los ficheros raw de entrada.</translation>
     </message>
+    <message>
+        <source>Preview width.</source>
+        <translation type="finished">Ancho de la vista previa.</translation>
+    </message>
+    <message>
+        <source>Saves the mask to MASK_FILE as a PNG image.</source>
+        <translation type="finished">Guarda la máscara en MASK_FILE como imagen PNG.</translation>
+    </message>
 </context>
 <context>
     <name>LoadSave</name>
@@ -103,6 +111,30 @@
     <message>
         <source>DNG Properties</source>
         <translation type="finished">Propiedades DNG</translation>
+    </message>
+    <message>
+        <source>Full</source>
+        <translation type="finished">Completa</translation>
+    </message>
+    <message>
+        <source>Half</source>
+        <translation type="finished">Media</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation type="finished">Ninguna</translation>
+    </message>
+    <message>
+        <source>Preview size:</source>
+        <translation type="finished">Tamaño de la vista previa</translation>
+    </message>
+    <message>
+        <source>Mask image:</source>
+        <translation type="finished">Imagen de máscara</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="finished">Cancelar</translation>
     </message>
 </context>
 <context>

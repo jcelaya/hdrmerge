@@ -36,7 +36,8 @@ using namespace std;
 
 namespace hdrmerge {
 
-Launcher::Launcher() : outFileName(NULL), automatic(false), help(false), bps(16) {}
+Launcher::Launcher() : outFileName(nullptr), maskFileName(nullptr),
+automatic(false), help(false), bps(16), previewWidth(nullptr) {}
 
 
 int Launcher::startGUI() {
@@ -100,7 +101,16 @@ int Launcher::automaticMerge() {
     cout << QCoreApplication::translate("LoadSave", "Writing result to %1").arg(fileName.c_str()) << endl;
     DngWriter writer(stack, pi);
     writer.setBitsPerSample(bps);
-    writer.setPreviewWidth(stack.getWidth());
+    size_t pw = stack.getWidth();
+    if (previewWidth != nullptr) {
+        if (string("half") == previewWidth) {
+            pw /= 2;
+        } else if (string("none") == previewWidth) {
+            pw = 0;
+        }
+    }
+    writer.setPreviewWidth(pw);
+    writer.setIndexFileName(maskFileName);
     writer.write(fileName);
     return 0;
 }
@@ -115,6 +125,10 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
                 outFileName = argv[i];
                 automatic = true;
             }
+        } else if (string("-m") == argv[i]) {
+            if (++i < argc) {
+                maskFileName = argv[i];
+            }
         } else if (string("-a") == argv[i]) {
             automatic = true;
         } else if (string("--help") == argv[i]) {
@@ -123,6 +137,10 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
             if (++i < argc) {
                 int value = stoi(argv[i]);
                 if (value == 32 || value == 24 || value == 16) bps = value;
+            }
+        } else if (string("-p") == argv[i]) {
+            if (++i < argc) {
+                previewWidth = argv[i];
             }
         } else if (argv[i][0] != '-') {
             inFileNames.push_back(argv[i]);
@@ -133,15 +151,17 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
 
 void Launcher::showHelp() {
     auto tr = [&] (const char * text) { return QCoreApplication::translate("Help", text); };
-    cout << tr("Usage") << ": HDRMerge [--help] [-o OUT_FILE] [-a] [-b BPS] [RAW_FILES ...]" << endl;
+    cout << tr("Usage") << ": HDRMerge [--help] [-o OUT_FILE] [-a] [-b BPS] [-p full|half|none] [-m MASK_FILE] [RAW_FILES ...]" << endl;
     cout << tr("Merges RAW_FILES into OUT_FILE, to obtain an HDR raw image.") << endl;
     cout << endl;
     cout << tr("Options:") << endl;
-    cout << "    " << "--help        " << tr("Shows this message.") << endl;
-    cout << "    " << "-o OUT_FILE   " << tr("Sets OUT_FILE as the output file name.") << endl;
-    cout << "    " << "-a            " << tr("Calculates the output file name automatically. Ignores -o.") << endl;
-    cout << "    " << "-b BPS        " << tr("Bits per sample, can be 16, 24 or 32.") << endl;
-    cout << "    " << "RAW_FILES     " << tr("The input raw files.") << endl;
+    cout << "    " << "--help              " << tr("Shows this message.") << endl;
+    cout << "    " << "-o OUT_FILE         " << tr("Sets OUT_FILE as the output file name.") << endl;
+    cout << "    " << "-a                  " << tr("Calculates the output file name automatically. Ignores -o.") << endl;
+    cout << "    " << "-b BPS              " << tr("Bits per sample, can be 16, 24 or 32.") << endl;
+    cout << "    " << "-p full|half|none   " << tr("Preview width.") << endl;
+    cout << "    " << "-m MASK_FILE        " << tr("Saves the mask to MASK_FILE as a PNG image.") << endl;
+    cout << "    " << "RAW_FILES           " << tr("The input raw files.") << endl;
 }
 
 

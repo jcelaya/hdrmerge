@@ -45,9 +45,11 @@ private:
     char ** argvGUI;
     std::list<std::string> inFileNames;
     char * outFileName;
+    char * maskFileName;
     bool automatic;
     bool help;
     int bps;
+    char * previewWidth;
 };
 
 } // namespace hdrmerge

@@ -295,7 +295,7 @@ void DngWriter::addJpegPreview() {
 }
 
 
-void DngWriter::buildIndexImage(const QString & filename) {
+void DngWriter::buildIndexImage() {
     size_t width = stack.getWidth(), height = stack.getHeight();
     QImage indexImage(width, height, QImage::Format_Indexed8);
     int numColors = stack.size() - 1;
@@ -309,7 +309,7 @@ void DngWriter::buildIndexImage(const QString & filename) {
             indexImage.setPixel(col, row, stack.getImageAt(col, row));
         }
     }
-    indexImage.save(filename + "_index.png");
+    indexImage.save(indexFile);
 }
 
 
@@ -326,7 +326,7 @@ void DngWriter::write(const string & filename) {
     negative.SetRawFloatBitDepth(bps);
 
     if (!indexFile.isEmpty())
-        buildIndexImage(indexFile);
+        buildIndexImage();
 
     progress.advance(50, "Rendering preview");
     buildPreviewList();

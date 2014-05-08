@@ -362,6 +362,7 @@ void MainWindow::saveResult() {
                 fileName += ".dng";
             }
             DngPropertiesDialog dpd(this);
+            dpd.setIndexFileName((images->buildOutputFileName() + "_index.png").c_str());
             if (dpd.exec()) {
                 ProgressDialog pd(this);
                 pd.setWindowTitle(tr("Save DNG file"));

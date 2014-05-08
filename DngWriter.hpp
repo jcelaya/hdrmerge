@@ -80,7 +80,7 @@ private:
     void buildPreviewList();
     void buildExifMetadata();
     void addJpegPreview();
-    void buildIndexImage(const QString & filename);
+    void buildIndexImage();
 };
 
 } // namespace hdrmerge

@@ -33,7 +33,6 @@ Image::Image(uint16_t * rawImage, const MetaData & md) {
     buildImage(rawImage, new MetaData(md));
 }
 
-
 void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     metaData.reset(md);
     dx = dy = 0;
@@ -200,12 +199,12 @@ void Image::preScale() {
 }
 
 
-bool Image::isSaturated(size_t x, size_t y) const {
-    x -= dx; y -= dy;
-    size_t base = y*width + x;
-    size_t size = width*height;
-    for (size_t d : delta) {
-        if (base + d < size && rawPixels[base + d] >= max*0.9) return true;
-    }
-    return false;
-}
+// bool Image::isSaturated(size_t x, size_t y) const {
+//     x -= dx; y -= dy;
+//     size_t base = y*width + x;
+//     size_t size = width*height;
+//     for (size_t d : delta) {
+//         if (base + d < size && rawPixels[base + d] >= max*0.9) return true;
+//     }
+//     return false;
+// }

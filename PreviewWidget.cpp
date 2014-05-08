@@ -204,13 +204,15 @@ void PreviewWidget::paintPixels(int x, int y) {
     if (!stack.get()) return;
     EditAction & e = editActions.back();
     int r2 = radius * radius;
-    for (int row = -radius; row <= radius; ++row) {
-        for (int col = -radius; col <= radius; ++col) {
+    int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
+    int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
+    for (int row = ymin; row < ymax; ++row) {
+        for (int col = xmin; col < xmax; ++col) {
             if (row*row + col*col <= r2) {
                 size_t pos = (y + row)*width + (x + col);
                 int rcol = x + col, rrow = y + row;
                 rotate(rcol, rrow);
-                if (pos < width*height && stack->getImageAt(rcol, rrow) == e.oldLayer) {
+                if (stack->getImageAt(rcol, rrow) == e.oldLayer) {
                     e.points.push_back(QPoint(x + col, y + row));
                     stack->setImageAt(rcol, rrow, e.newLayer);
                 }

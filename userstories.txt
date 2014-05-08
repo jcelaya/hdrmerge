@@ -6,7 +6,6 @@ US27 As a user, I want to be able to cancel the load and writing of images. PR3
 US28 As a developer, I want to drop DNG and XMP SDK dependency and build a custom DNG writer. It will make US25 and US26 much easier. PR1
 
 Doing:
-US31 As a developer, I want a smarter MergeMap, that avoids saturation as much as possible. PR1
 US24 As a user, I want to save/load the image index to/from file, so that I can continue editing it in a later session. PR2
 
 Done:
@@ -32,4 +31,5 @@ US21 As a developer, I want to update the GUI texts and translations. PR1
 US23 As a user, I want a redo functionality in the deghosting tools. PR2
 US28 As a user, I want a help text when the tool is invoked with the "-h" switch. PR1
 US29 As a user, I want to generate output files with 16, 24 or 32 bits per pixel. PR1
+US31 As a developer, I want a smarter MergeMap, that avoids saturation as much as possible. PR1
 

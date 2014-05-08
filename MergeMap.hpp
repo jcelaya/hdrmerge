@@ -29,6 +29,7 @@
 namespace hdrmerge {
 
 class ImageStack;
+class Image;
 
 class MergeMap {
 public:
@@ -61,6 +62,9 @@ private:
         std::unique_ptr<float[]> map, tmp;
     };
     friend class BoxBlur;
+
+    void paintPixels(int x, int y, size_t radius, uint8_t oldLayer, uint8_t newLayer);
+    bool isNotSaturatedAround(const Image & img, size_t col, size_t row) const;
 
     size_t width, height;
     std::unique_ptr<uint8_t[]> index;

@@ -119,13 +119,13 @@ void ImageStack::compose(float * dst) const {
             int j = map[pos] > imageMax ? imageMax : ceil(map[pos]);
             double v = images[j]->exposureAt(col, row);
             // Adjust false highlights
-            if (j < imageMax && images[j]->isSaturatedStrict(col, row)) {
+            if (j < imageMax && images[j]->isSaturated(col, row)) {
                 v /= md.whiteMultAt(row, col);
             }
             if (j > 0) {
                 double p = j - map[pos];
                 double vv = images[j - 1]->exposureAt(col, row);
-                if (images[j - 1]->isSaturatedStrict(col, row)) {
+                if (images[j - 1]->isSaturated(col, row)) {
                     vv /= md.whiteMultAt(row, col);
                 }
                 v = v*(1.0 - p) + vv*p;

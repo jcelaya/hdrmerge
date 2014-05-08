@@ -59,8 +59,7 @@ public:
         x -= dx; y -= dy;
         return rawPixels[y*width + x] * relExp;
     }
-    bool isSaturated(size_t x, size_t y) const;
-    bool isSaturatedStrict(size_t x, size_t y) const {
+    bool isSaturated(size_t x, size_t y) const {
         x -= dx; y -= dy;
         return rawPixels[y*width + x] >= max;
     }

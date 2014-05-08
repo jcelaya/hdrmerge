@@ -30,8 +30,8 @@ void MergeMap::generateFrom(const ImageStack & images) {
     width = images.getWidth();
     height = images.getHeight();
     size_t size = width*height;
-    index.reset(new uint8_t[size]);
 
+    index.reset(new uint8_t[size]);
     std::fill_n(index.get(), size, 0);
     for (int i = 0; i < images.size() - 1; ++i) {
         const Image & img = images.getImage(i);
@@ -39,6 +39,49 @@ void MergeMap::generateFrom(const ImageStack & images) {
             for (size_t col = 0; col < width; ++col, ++pos) {
                 if (index[pos] == i && img.isSaturated(col, row)) {
                     ++index[pos];
+                    if (isNotSaturatedAround(img, col, row)) {
+                        paintPixels(col, row, 6, i, i + 1);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+bool MergeMap::isNotSaturatedAround(const Image & img, size_t col, size_t row) const {
+    if (row > 0) {
+        if ((col > 0 && !img.isSaturated(col - 1, row - 1)) ||
+            !img.isSaturated(col, row - 1) ||
+            (col < width - 1 && !img.isSaturated(col + 1, row - 1))) {
+            return true;
+        }
+    }
+    if ((col > 0 && !img.isSaturated(col - 1, row)) ||
+        (col < width - 1 && !img.isSaturated(col + 1, row))) {
+        return true;
+    }
+    if (row < height - 1) {
+        if ((col > 0 && !img.isSaturated(col - 1, row + 1)) ||
+            !img.isSaturated(col, row + 1) ||
+            (col < width - 1 && !img.isSaturated(col + 1, row + 1))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void MergeMap::paintPixels(int x, int y, size_t radius, uint8_t oldLayer, uint8_t newLayer) {
+    int r2 = radius * radius;
+    int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
+    int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
+    for (int row = ymin, rrow = y + row; row < ymax; ++row, ++rrow) {
+        for (int col = xmin, rcol = x + col; col < xmax; ++col, ++rcol) {
+            if (row*row + col*col <= r2) {
+                size_t pos = rrow*width + rcol;
+                if (index[pos] == oldLayer) {
+                    index[pos] = newLayer;
                 }
             }
         }

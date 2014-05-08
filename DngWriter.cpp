@@ -263,7 +263,6 @@ void DngWriter::addJpegPreview() {
     dng_render jpeg_render(host, negative);
     jpeg_render.SetFinalSpace(dng_space_sRGB::Get());
     jpeg_render.SetFinalPixelType(ttByte);
-    jpeg_render.SetMaximumSize(previewWidth);
     renderedPreview.Reset((dng_simple_image *)jpeg_render.Render());
     dng_pixel_buffer pbuffer;
     renderedPreview->GetPixelBuffer(pbuffer);
@@ -271,6 +270,7 @@ void DngWriter::addJpegPreview() {
     size_t width = pbuffer.fArea.W(), height = pbuffer.fArea.H();
     QImage pre_image(width, height, QImage::Format_RGB888);
     std::copy_n((uchar *)pbuffer.fData, width*height*3, pre_image.bits());
+    pre_image = pre_image.scaledToWidth(previewWidth);
     QByteArray ba;
     QBuffer buffer(&ba);
     buffer.open(QIODevice::WriteOnly);
@@ -281,8 +281,8 @@ void DngWriter::addJpegPreview() {
     jpeg_preview.Reset(new dng_jpeg_preview);
     jpeg_preview->fPhotometricInterpretation = piYCbCr;
     jpeg_preview->fYCbCrSubSampling          = dng_point(2, 2);
-    jpeg_preview->fPreviewSize.v             = height;
-    jpeg_preview->fPreviewSize.h             = width;
+    jpeg_preview->fPreviewSize.v             = pre_image.height();
+    jpeg_preview->fPreviewSize.h             = pre_image.width();
     jpeg_preview->fCompressedData.Reset(host.Allocate(ba.size()));
     jpeg_preview->fInfo.fApplicationName.Set_ASCII("HDRMerge");
     jpeg_preview->fInfo.fApplicationVersion.Set_ASCII(appVersion.c_str());

@@ -42,7 +42,7 @@ public:
         return previewSize;
     }
     QString getIndexFileName() const {
-        return indexFileEditor->text();
+        return indexFileSelector->isEnabled() ? indexFileEditor->text() : "";
     }
     void setIndexFileName(const QString & name) {
         indexFileEditor->setText(name);
@@ -52,6 +52,7 @@ private slots:
     void setBps(int index);
     void setPreviewSize(int index);
     void setIndexFileName();
+    void setIndexFileSelectorEnabled(int state);
 
 private:
     Q_OBJECT
@@ -59,6 +60,7 @@ private:
     int bps;
     int previewSize;
     QLineEdit * indexFileEditor;
+    QWidget * indexFileSelector;
 };
 
 } // namespace hdrmerge

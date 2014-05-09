@@ -291,6 +291,8 @@ void MainWindow::loadImages() {
         settings.setValue("lastOpenDirectory", lastDir);
         loadImages(files);
     }
+    shiftPressed = controlPressed = false;
+    dragToolAction->trigger();
 }
 
 
@@ -384,6 +386,8 @@ void MainWindow::saveResult() {
             }
         }
     }
+    shiftPressed = controlPressed = false;
+    dragToolAction->trigger();
 }
 
 

@@ -26,6 +26,7 @@
 #include <QButtonGroup>
 #include <QPushButton>
 #include <QFileDialog>
+#include <QCheckBox>
 #include "DngPropertiesDialog.hpp"
 
 namespace hdrmerge {
@@ -35,8 +36,8 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     QVBoxLayout * layout = new QVBoxLayout(this);
 
     QWidget * bpsSelector = new QWidget(this);
-    bpsSelector->setContentsMargins(0, 0, 0, 0);
     QHBoxLayout * bpsSelectorLayout = new QHBoxLayout(bpsSelector);
+    bpsSelectorLayout->setMargin(0);
     QButtonGroup * bpsGroup = new QButtonGroup(this);
     const char * buttonLabels[] = { "16", "24", "32" };
     for (int i = 0; i < 3; ++i) {
@@ -48,8 +49,8 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     connect(bpsGroup, SIGNAL(buttonClicked( int)), this, SLOT(setBps(int)));
 
     QWidget * previewSelector = new QWidget(this);
-    previewSelector->setContentsMargins(0, 0, 0, 0);
     QHBoxLayout * previewSelectorLayout = new QHBoxLayout(previewSelector);
+    previewSelectorLayout->setMargin(0);
     QButtonGroup * previewGroup = new QButtonGroup(this);
     const char * previewLabels[] = { "Full", "Half", "None" };
     for (int i = 0; i < 3; ++i) {
@@ -60,21 +61,26 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     }
     connect(previewGroup, SIGNAL(buttonClicked( int)), this, SLOT(setPreviewSize(int)));
 
-    QWidget * indexFileSelector = new QWidget(this);
-    indexFileSelector->setContentsMargins(0, 0, 0, 0);
+    QCheckBox * saveIndexFile = new QCheckBox(tr("Save"), this);
+
+    indexFileSelector = new QWidget(this);
     QHBoxLayout * indexFileSelectorLayout = new QHBoxLayout(indexFileSelector);
+    indexFileSelectorLayout->setMargin(0);
     indexFileEditor = new QLineEdit(indexFileSelector);
     indexFileEditor->setMinimumWidth(200);
     QPushButton * showFileDialog = new QPushButton("...", indexFileSelector);
     connect(showFileDialog, SIGNAL(clicked(bool)), this, SLOT(setIndexFileName()));
     indexFileSelectorLayout->addWidget(indexFileEditor);
     indexFileSelectorLayout->addWidget(showFileDialog);
+    connect(saveIndexFile, SIGNAL(stateChanged(int)), this, SLOT(setIndexFileSelectorEnabled(int)));
+    indexFileSelector->setEnabled(false);
 
     QWidget * formWidget = new QWidget(this);
     QFormLayout * formLayout = new QFormLayout(formWidget);
     formLayout->addRow(tr("Bits per sample:"), bpsSelector);
     formLayout->addRow(tr("Preview size:"), previewSelector);
-    formLayout->addRow(tr("Mask image:"), indexFileSelector);
+    formLayout->addRow(tr("Mask image:"), saveIndexFile);
+    formLayout->addRow("", indexFileSelector);
     formWidget->setLayout(formLayout);
     layout->addWidget(formWidget, 1);
 
@@ -113,5 +119,11 @@ void DngPropertiesDialog::setIndexFileName() {
         tr("PNG Images (*.png)"), NULL, QFileDialog::DontUseNativeDialog);
     indexFileEditor->setText(file);
 }
+
+
+void DngPropertiesDialog::setIndexFileSelectorEnabled(int state) {
+    indexFileSelector->setEnabled(state == 2);
+}
+
 
 } // namespace hdrmerge

@@ -126,15 +126,19 @@
     </message>
     <message>
         <source>Preview size:</source>
-        <translation type="finished">Tamaño de la vista previa</translation>
+        <translation type="finished">Tamaño de la vista previa:</translation>
     </message>
     <message>
         <source>Mask image:</source>
-        <translation type="finished">Imagen de máscara</translation>
+        <translation type="finished">Imagen de máscara:</translation>
     </message>
     <message>
         <source>Cancel</source>
         <translation type="finished">Cancelar</translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="finished">Guardar</translation>
     </message>
 </context>
 <context>

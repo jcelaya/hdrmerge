@@ -62,16 +62,9 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     relExp = 65535.0 / max;
     brightness /= size;
     subtractBlack();
+    preScale();
+    computeHalfLightPercentile();
     metaData->dumpInfo();
-    delta[0] = -width - 1;
-    delta[1] = -width;
-    delta[2] = -width + 1;
-    delta[3] = -1;
-    delta[4] = 0;
-    delta[5] = 1;
-    delta[6] = width - 1;
-    delta[7] = width;
-    delta[8] = width + 1;
 }
 
 
@@ -114,7 +107,7 @@ bool Image::isSameFormat(const Image & ref) const {
 void Image::relativeExposure(const Image & r, size_t w, size_t h) {
     // Minimize square error between images:
     // min. C(n) = sum(n*f(x) - g(x))^2  ->  n = sum(f(x)*g(x)) / sum(f(x)^2)
-    double numerator = 0, denom = 0, threshold = max * 0.8;
+    double numerator = 0, denom = 0, threshold = max * 0.9;
     for (size_t y = 0; y < h; ++y) {
         for (size_t x = 0; x < w; ++x) {
             size_t pos = (y - dy) * width - dx + x;
@@ -135,18 +128,30 @@ void Image::relativeExposure(const Image & r, size_t w, size_t h) {
 void Image::alignWith(const Image & r) {
     if (!good() || !r.good()) return;
     dx = dy = 0;
+    const double tolerance = 1.0/64;
+    uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
     for (int s = scaleSteps - 1; s >= 0; --s) {
         size_t curWidth = width >> (s + 1);
         size_t curHeight = height >> (s + 1);
         size_t minError = curWidth*curHeight;
+        Histogram hist1(r.scaled[s].get(), r.scaled[s].get() + curWidth*curHeight);
+        Histogram hist2(scaled[s].get(), scaled[s].get() + curWidth*curHeight);
+        uint16_t mth1 = hist1.getPercentile(r.halfLightPercent);
+        uint16_t mth2 = hist2.getPercentile(r.halfLightPercent);
+        Bitmap mtb1(curWidth, curHeight), mtb2(curWidth, curHeight),
+        excl1(curWidth, curHeight), excl2(curWidth, curHeight);
+        mtb1.mtb(r.scaled[s].get(), mth1);
+        mtb2.mtb(scaled[s].get(), mth2);
+        excl1.exclusion(r.scaled[s].get(), mth1, tolPixels);
+        excl2.exclusion(scaled[s].get(), mth2, tolPixels);
         Bitmap shiftMtb(curWidth, curHeight), shiftExcl(curWidth, curHeight);
         int curDx = dx, curDy = dy;
         for (int i = -1; i <= 1; ++i) {
             for (int j = -1; j <= 1; ++j) {
-                shiftMtb.shift(mtMap[s], curDx + i, curDy + j);
-                shiftExcl.shift(excludeMap[s], curDx + i, curDy + j);
-                shiftMtb.bitwiseXor(r.mtMap[s]);
-                shiftMtb.bitwiseAnd(r.excludeMap[s]);
+                shiftMtb.shift(mtb2, curDx + i, curDy + j);
+                shiftExcl.shift(excl2, curDx + i, curDy + j);
+                shiftMtb.bitwiseXor(mtb1);
+                shiftMtb.bitwiseAnd(excl1);
                 shiftMtb.bitwiseAnd(shiftExcl);
                 size_t err = shiftMtb.count();
                 if (err < minError) {
@@ -162,14 +167,12 @@ void Image::alignWith(const Image & r) {
 }
 
 
-void Image::preAlignSetup(double threshold, double tolerance) {
+void Image::preScale() {
     size_t curWidth = width;
     size_t curHeight = height;
     uint16_t * r2 = rawPixels.get();
-    unique_ptr<uint16_t[]> prev;
-    mtMap.reset(new Bitmap[scaleSteps]);
-    excludeMap.reset(new Bitmap[scaleSteps]);
-    uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
+
+    scaled.reset(new unique_ptr<uint16_t[]>[scaleSteps]);
     for (int s = 0; s < scaleSteps; ++s) {
         size_t prevWidth = curWidth;
         curWidth >>= 1;
@@ -184,13 +187,13 @@ void Image::preAlignSetup(double threshold, double tolerance) {
                 r[y*curWidth + x] = (value1 + value2 + value3 + value4) >> 2;
             }
         }
-        Histogram hist(r, r + curWidth*curHeight);
-        uint16_t mth = hist.getPercentile(threshold);
-        mtMap[s].resize(curWidth, curHeight);
-        excludeMap[s].resize(curWidth, curHeight);
-        mtMap[s].mtb(r, mth);
-        excludeMap[s].exclusion(r, mth, tolPixels);
         r2 = r;
-        prev.reset(r);
+        scaled[s].reset(r);
     }
+}
+
+
+void Image::computeHalfLightPercentile() {
+    Histogram histFull(rawPixels.get(), rawPixels.get() + width*height);
+    halfLightPercent = histFull.getFraction(max * 0.9) / 2.0;
 }

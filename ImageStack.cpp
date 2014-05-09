@@ -66,9 +66,6 @@ int ImageStack::load(const std::list<std::string> & fileNames, ProgressIndicator
 void ImageStack::align() {
     if (images.size() > 1) {
         int dx = 0, dy = 0;
-        for (auto & i : images) {
-            i->preAlignSetup(0.5, 1.0/64);
-        }
         for (auto cur = images.begin(), prev = cur++; cur != images.end(); prev = cur++) {
             dx = (*prev)->getDeltaX();
             dy = (*prev)->getDeltaY();

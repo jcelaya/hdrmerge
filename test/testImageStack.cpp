@@ -73,10 +73,6 @@ BOOST_AUTO_TEST_CASE(image_align) {
     Image e2(si2.pixelData, si2.md);
     Image e3(si3.pixelData, si3.md);
     Image e4(si4.pixelData, si4.md);
-    e1.preAlignSetup(0.5, 1.0/64);
-    e2.preAlignSetup(0.5, 1.0/64);
-    e3.preAlignSetup(0.5, 1.0/64);
-    e4.preAlignSetup(0.5, 1.0/64);
     BOOST_REQUIRE(e1.good());
     BOOST_REQUIRE(e2.good());
     BOOST_REQUIRE(e3.good());

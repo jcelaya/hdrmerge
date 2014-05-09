@@ -33,4 +33,5 @@ BOOST_AUTO_TEST_CASE(testHistogram) {
     BOOST_CHECK_EQUAL(h.getPercentile(0.5), 5);
     BOOST_CHECK_EQUAL(h.getPercentile(0.75), 7);
     BOOST_CHECK_EQUAL(h.getPercentile(0.2), 2);
+    BOOST_CHECK_EQUAL(h.getFraction(2), 3.0/14.0);
 }

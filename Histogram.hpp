@@ -51,6 +51,13 @@ public:
                 current += bins[++result];
         return result;
     }
+    double getFraction(uint16_t value) const {
+        double result = 0.0;
+        for (uint16_t i = 0; i <= value; ++i) {
+            result += bins[i];
+        }
+        return result / numSamples;
+    }
 
 private:
     unsigned int bins[65536];

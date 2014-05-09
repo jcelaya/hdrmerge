@@ -23,7 +23,6 @@
 #ifndef _IMAGE_H_
 #define _IMAGE_H_
 
-#include <vector>
 #include <memory>
 #include "MetaData.hpp"
 #include "Bitmap.hpp"
@@ -68,11 +67,9 @@ public:
         return relExp;
     }
     bool isSameFormat(const Image & ref) const;
-    void preAlignSetup(double threshold, double tolerance);
     void alignWith(const Image & r);
     void releaseAlignData() {
-        mtMap.reset();
-        excludeMap.reset();
+        scaled.reset();
     }
     void displace(int newDx, int newDy) {
         dx += newDx;
@@ -88,16 +85,17 @@ private:
     std::unique_ptr<MetaData> metaData;
     std::unique_ptr<uint16_t[]> rawPixels;
     size_t width, height;
-    std::unique_ptr<Bitmap[]> mtMap;
-    std::unique_ptr<Bitmap[]> excludeMap;
+    std::unique_ptr<std::unique_ptr<uint16_t[]>[]> scaled;
     int dx, dy;
     uint16_t max;
     double brightness;
     double relExp;          ///< Relative exposure, from data
-    int delta[9];
+    double halfLightPercent;
 
     void subtractBlack();
     void buildImage(uint16_t * rawImage, MetaData * md);
+    void preScale();
+    void computeHalfLightPercentile();
 };
 
 } // namespace hdrmerge

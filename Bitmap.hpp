@@ -30,6 +30,7 @@ namespace hdrmerge {
 
 class Bitmap {
 public:
+    Bitmap() : Bitmap(0, 0) {}
     Bitmap(size_t w, size_t h);
 
     void shift(const Bitmap & src, int dx, int dy);

@@ -22,7 +22,6 @@
 
 #include <fstream>
 #include <sstream>
-#include <cmath>
 #include "Bitmap.hpp"
 using namespace hdrmerge;
 

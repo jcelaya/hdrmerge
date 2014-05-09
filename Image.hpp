@@ -26,6 +26,7 @@
 #include <vector>
 #include <memory>
 #include "MetaData.hpp"
+#include "Bitmap.hpp"
 
 
 namespace hdrmerge {
@@ -67,7 +68,12 @@ public:
         return relExp;
     }
     bool isSameFormat(const Image & ref) const;
-    void alignWith(const Image & r, double threshold, double tolerance);
+    void preAlignSetup(double threshold, double tolerance);
+    void alignWith(const Image & r);
+    void releaseAlignData() {
+        mtMap.reset();
+        excludeMap.reset();
+    }
     void displace(int newDx, int newDy) {
         dx += newDx;
         dy += newDy;
@@ -82,14 +88,14 @@ private:
     std::unique_ptr<MetaData> metaData;
     std::unique_ptr<uint16_t[]> rawPixels;
     size_t width, height;
-    std::vector<std::unique_ptr<uint16_t[]>> grayscalePics;
+    std::unique_ptr<Bitmap[]> mtMap;
+    std::unique_ptr<Bitmap[]> excludeMap;
     int dx, dy;
     uint16_t max;
     double brightness;
     double relExp;          ///< Relative exposure, from data
     int delta[9];
 
-    void preScale();
     void subtractBlack();
     void buildImage(uint16_t * rawImage, MetaData * md);
 };

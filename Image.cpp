@@ -20,7 +20,6 @@
  *
  */
 
-#include <algorithm>
 #include <libraw/libraw.h>
 #include "Image.hpp"
 #include "Bitmap.hpp"
@@ -63,7 +62,6 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     relExp = 65535.0 / max;
     brightness /= size;
     subtractBlack();
-    preScale();
     metaData->dumpInfo();
     delta[0] = -width - 1;
     delta[1] = -width;
@@ -134,32 +132,21 @@ void Image::relativeExposure(const Image & r, size_t w, size_t h) {
 }
 
 
-void Image::alignWith(const Image & r, double threshold, double tolerance) {
+void Image::alignWith(const Image & r) {
     if (!good() || !r.good()) return;
     dx = dy = 0;
-    uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
     for (int s = scaleSteps - 1; s >= 0; --s) {
         size_t curWidth = width >> (s + 1);
         size_t curHeight = height >> (s + 1);
-        Histogram hist1(r.grayscalePics[s].get(), r.grayscalePics[s].get() + curWidth*curHeight);
-        Histogram hist2(grayscalePics[s].get(), grayscalePics[s].get() + curWidth*curHeight);
-        uint16_t mth1 = hist1.getPercentile(threshold);
-        uint16_t mth2 = hist2.getPercentile(threshold);
-        Bitmap mtb1(curWidth, curHeight), mtb2(curWidth, curHeight),
-        excl1(curWidth, curHeight), excl2(curWidth, curHeight);
-        mtb1.mtb(r.grayscalePics[s].get(), mth1);
-        mtb2.mtb(grayscalePics[s].get(), mth2);
-        excl1.exclusion(r.grayscalePics[s].get(), mth1, tolPixels);
-        excl2.exclusion(grayscalePics[s].get(), mth2, tolPixels);
         size_t minError = curWidth*curHeight;
         Bitmap shiftMtb(curWidth, curHeight), shiftExcl(curWidth, curHeight);
         int curDx = dx, curDy = dy;
         for (int i = -1; i <= 1; ++i) {
             for (int j = -1; j <= 1; ++j) {
-                shiftMtb.shift(mtb2, curDx + i, curDy + j);
-                shiftExcl.shift(excl2, curDx + i, curDy + j);
-                shiftMtb.bitwiseXor(mtb1);
-                shiftMtb.bitwiseAnd(excl1);
+                shiftMtb.shift(mtMap[s], curDx + i, curDy + j);
+                shiftExcl.shift(excludeMap[s], curDx + i, curDy + j);
+                shiftMtb.bitwiseXor(r.mtMap[s]);
+                shiftMtb.bitwiseAnd(r.excludeMap[s]);
                 shiftMtb.bitwiseAnd(shiftExcl);
                 size_t err = shiftMtb.count();
                 if (err < minError) {
@@ -175,10 +162,14 @@ void Image::alignWith(const Image & r, double threshold, double tolerance) {
 }
 
 
-void Image::preScale() {
+void Image::preAlignSetup(double threshold, double tolerance) {
     size_t curWidth = width;
     size_t curHeight = height;
     uint16_t * r2 = rawPixels.get();
+    unique_ptr<uint16_t[]> prev;
+    mtMap.reset(new Bitmap[scaleSteps]);
+    excludeMap.reset(new Bitmap[scaleSteps]);
+    uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
     for (int s = 0; s < scaleSteps; ++s) {
         size_t prevWidth = curWidth;
         curWidth >>= 1;
@@ -193,18 +184,13 @@ void Image::preScale() {
                 r[y*curWidth + x] = (value1 + value2 + value3 + value4) >> 2;
             }
         }
-        grayscalePics.emplace_back(r);
+        Histogram hist(r, r + curWidth*curHeight);
+        uint16_t mth = hist.getPercentile(threshold);
+        mtMap[s].resize(curWidth, curHeight);
+        excludeMap[s].resize(curWidth, curHeight);
+        mtMap[s].mtb(r, mth);
+        excludeMap[s].exclusion(r, mth, tolPixels);
         r2 = r;
+        prev.reset(r);
     }
 }
-
-
-// bool Image::isSaturated(size_t x, size_t y) const {
-//     x -= dx; y -= dy;
-//     size_t base = y*width + x;
-//     size_t size = width*height;
-//     for (size_t d : delta) {
-//         if (base + d < size && rawPixels[base + d] >= max*0.9) return true;
-//     }
-//     return false;
-// }

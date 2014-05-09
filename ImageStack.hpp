@@ -27,7 +27,6 @@
 #include <list>
 #include <string>
 #include <memory>
-#include "config.h"
 #include "Image.hpp"
 #include "ProgressIndicator.hpp"
 #include "MergeMap.hpp"

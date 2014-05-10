@@ -67,7 +67,7 @@ include_directories("${PROJECT_BINARY_DIR}")
 # Sources and headers
 set(hdrmerge_sources
     Launcher.cpp MainWindow.cpp PreviewWidget.cpp DraggableScrollArea.cpp DngPropertiesDialog.cpp
-    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp MergeMap.cpp DngWriter.cpp
+    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp MergeMap.cpp DngWriter.cpp DngFloatWriter.cpp
     camxyz.cpp exiv2dngstreamio.cpp exiv2meta.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp PreviewWidget.hpp
     DraggableScrollArea.hpp AboutDialog.hpp DngPropertiesDialog.hpp)

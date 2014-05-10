@@ -23,7 +23,6 @@
 #ifndef _DNGWRITER_HPP_
 #define _DNGWRITER_HPP_
 
-#include <fstream>
 #include <string>
 #include <QString>
 #include "config.h"
@@ -65,7 +64,6 @@ private:
     };
 
     ProgressIndicator & progress;
-    std::ofstream file;
     dng_memory_allocator memalloc;
     BasicHost host;
     DummyNegative negative;
@@ -83,7 +81,6 @@ private:
     void buildExifMetadata();
     void addJpegPreview();
     void buildIndexImage();
-    void createIFD();
 };
 
 } // namespace hdrmerge

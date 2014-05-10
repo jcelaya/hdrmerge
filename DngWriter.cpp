@@ -314,100 +314,30 @@ void DngWriter::buildIndexImage() {
 
 
 void DngWriter::write(const string & filename) {
-//     progress.advance(0, "Initialize negative");
-//     dng_xmp_sdk::InitializeSDK();
-//
-//     buildNegative();
-//
-//     progress.advance(25, "Rendering image");
-//     AutoPtr<dng_image> imageData(new DngFloatImage(stack.getWidth(), stack.getHeight(), memalloc));
-//     stack.compose(((DngFloatImage *)imageData.Get())->getImageBuffer());
-//     negative.SetStage1Image(imageData);
-//     negative.SetRawFloatBitDepth(bps);
-//
-//     if (!indexFile.isEmpty())
-//         buildIndexImage();
-//
-//     progress.advance(50, "Rendering preview");
-//     buildPreviewList();
-//
-//     progress.advance(75, "Writing output");
-//     dng_image_writer writer;
-//     dng_file_stream filestream(filename.c_str(), true);
-//     writer.WriteDNG(host, filestream, negative, &previewList);
-//
-//     dng_xmp_sdk::TerminateSDK();
-//     progress.advance(100, "Done writing!");
+    progress.advance(0, "Initialize negative");
+    dng_xmp_sdk::InitializeSDK();
 
-    file.open(filename, ios_base::binary);
-    createIFD();
-    file.close();
-}
+    buildNegative();
 
+    progress.advance(25, "Rendering image");
+    AutoPtr<dng_image> imageData(new DngFloatImage(stack.getWidth(), stack.getHeight(), memalloc));
+    stack.compose(((DngFloatImage *)imageData.Get())->getImageBuffer());
+    negative.SetStage1Image(imageData);
+    negative.SetRawFloatBitDepth(bps);
 
-struct TiffHeader {
-    union {
-        uint32_t endian;
-        struct {
-            uint16_t endian;
-            uint16_t magic;
-        } sep;
-    };
-    uint32_t offset;
-    // It sets the first two bytes to their correct value, given the architecture
-    TiffHeader() : endian(0x4D4D4949), offset(8) {
-        sep.magic = 42;
-    }
-};
+    if (!indexFile.isEmpty())
+        buildIndexImage();
 
+    progress.advance(50, "Rendering preview");
+    buildPreviewList();
 
-struct DirEntry {
-    uint16_t tag;
-    uint16_t type;
-    uint32_t count;
-    union {
-        uint32_t offset;
-        uint32_t value;
-    };
-    int bytesPerValue() const {
-        static int bytesPerValue[12] =
-            { 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8 };
-        return bytesPerValue[type];
-    }
-    uint32_t dataSize() const {
-        return count * bytesPerValue();
-    }
-};
+    progress.advance(75, "Writing output");
+    dng_image_writer writer;
+    dng_file_stream filestream(filename.c_str(), true);
+    writer.WriteDNG(host, filestream, negative, &previewList);
 
-
-class IFD {
-public:
-    void addEntry(const DirEntry & entry, std::initializer_list<uint8_t> data) {
-        entries.push_back(entry);
-        if (entry.dataSize() > 4) {
-            entries.back().offset = entryData.size();
-            entryData.insert(entryData.end(), data);
-            if (entryData.size() & 1) {
-                entryData.push_back(0);
-            }
-        }
-    }
-
-    IFD() : offset(0) {}
-
-private:
-    uint32_t offset;
-    std::vector<DirEntry> entries;
-    std::vector<uint8_t> entryData;
-};
-
-
-struct TiffFile {
-    TiffHeader header;
-};
-
-void DngWriter::createIFD() {
-
+    dng_xmp_sdk::TerminateSDK();
+    progress.advance(100, "Done writing!");
 }
 
 

@@ -60,6 +60,8 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     model = r.idata.model;
     colors = r.idata.colors;
     flip = r.sizes.flip;
+    if (flip == 0)
+        flip = 1;
     // LibRaw does not create this matrix for DNG files!!!
     if (!camXyz[0][0]) {
         adobe_cam_xyz(maker, model, (float *)camXyz);

@@ -37,7 +37,7 @@ public:
     bool isSameFormat(const MetaData & r) {
         return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc;
     }
-    int FC(int row, int col) const {
+    uint8_t FC(int row, int col) const {
         return (filters >> (((row << 1 & 14) | (col & 1)) << 1) & 3);
     }
     double logExp() const;

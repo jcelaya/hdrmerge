@@ -27,6 +27,7 @@
 #include <fstream>
 #include <string>
 #include <QString>
+#include <QImage>
 #include "config.h"
 #include "ImageStack.hpp"
 #include "ProgressIndicator.hpp"
@@ -62,6 +63,8 @@ private:
     size_t previewWidth;
     int bps;
     QString indexFile;
+    QImage thumbnail;
+    QImage preview;
 
     void createMainIFD();
     void createRawIFD();
@@ -69,6 +72,7 @@ private:
     void writeRawData();
     void buildIndexImage();
     void copyMetadata(const std::string & filename);
+    void renderPreviews();
 };
 
 } // namespace hdrmerge

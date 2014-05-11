@@ -37,7 +37,6 @@ public:
     QSize sizeHint() const;
 
 public slots:
-    void setGamma(float g);
     void setImageStack(ImageStack * s);
     void toggleAddPixelsTool(bool toggled);
     void toggleRmPixelsTool(bool toggled);
@@ -67,7 +66,6 @@ private:
     std::unique_ptr<ImageStack> stack;
     size_t width, height;
     int flip;
-    int gamma[65536];
     bool addPixels, rmPixels;
     int layer;
     int radius;

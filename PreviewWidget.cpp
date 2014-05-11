@@ -75,13 +75,6 @@ void PreviewWidget::rotate(int & x, int & y) const {
 }
 
 
-void PreviewWidget::setGamma(float g) {
-    g = 1.0f / g;
-    for (int i = 0; i < 65536; i++)
-        gamma[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g)) >> 8;
-}
-
-
 QSize PreviewWidget::sizeHint() const {
     return pixmap.get() ? pixmap->size() : QSize(0, 0);
 }
@@ -97,10 +90,10 @@ void PreviewWidget::paintEvent(QPaintEvent * event) {
 
 QRgb PreviewWidget::rgb(int col, int row) const {
     rotate(col, row);
-    int v = stack->value(col, row);
-    if (v < 0) v = 0;
-    else if (v > 65535) v = 65535;
-    v = gamma[v];
+    double d = stack->value(col, row);
+    if (d < 0) d = 0;
+    else if (d > 65535) d = 65535;
+    int v = stack->toneMap(d);
     int v70 = v*7/10;
     int color = stack->getImageAt(col, row);
     QRgb pixel;

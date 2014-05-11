@@ -103,7 +103,6 @@ void MainWindow::createGui() {
     layout->addWidget(previewArea);
 
     preview = new PreviewWidget(previewArea);
-    preview->setGamma(2.2f);
     previewArea->setWidget(preview);
 
     QWidget * toolArea = new QWidget(centralwidget);

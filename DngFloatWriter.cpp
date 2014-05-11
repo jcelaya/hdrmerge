@@ -223,21 +223,21 @@ void DngFloatWriter::buildIndexImage() {
 
 
 void DngFloatWriter::write(const string & filename) {
-    progress.advance(0, "Initialize metadata");
-    file.open(filename, ios_base::binary);
+    progress.advance(0, "Rendering image");
+    rawData.reset(new float[width * height]);
+    stack.compose(rawData.get());
 
+    progress.advance(25, "Rendering preview");
+    renderPreviews();
+
+    progress.advance(50, "Initialize metadata");
+    file.open(filename, ios_base::binary);
     createMainIFD();
     createRawIFD();
     size_t rawIFDOffset = 8 + mainIFD.length();
     mainIFD.setValue(SUBIFDS, rawIFDOffset);
     size_t dataOffset = rawIFDOffset + rawIFD.length();
     file.seekp(dataOffset);
-
-    progress.advance(25, "Rendering image");
-    rawData.reset(new float[width * height]);
-    stack.compose(rawData.get());
-
-    progress.advance(50, "Rendering preview");
 
     progress.advance(75, "Writing output");
     if (!indexFile.isEmpty())
@@ -252,6 +252,13 @@ void DngFloatWriter::write(const string & filename) {
 
     copyMetadata(filename);
     progress.advance(100, "Done writing!");
+}
+
+
+void DngFloatWriter::renderPreviews() {
+    QImage halfInterpolated(width, height, QImage::Format_RGB32);
+    // Make the half size interpolation, and apply tone curve
+    
 }
 
 

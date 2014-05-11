@@ -20,7 +20,7 @@ along with HDRMerge. If not, see <http://www.gnu.org/licenses/>.
 
 # What is HDRMerge?
 
-HDRMerge fuses two or more raw images into a single raw with an extended dynamic range. It can import any raw image supported by LibRaw, and outputs a DNG 1.4 image with 32-bit float data. The output raw is built from the less noisy pixels of the input, so that shadows maintain as much detail as possible. This tools also offers a GUI to remove 'ghosts' from the resulting image.
+HDRMerge fuses two or more raw images into a single raw with an extended dynamic range. It can import any raw image supported by LibRaw, and outputs a DNG 1.4 image with floating point data. The output raw is built from the less noisy pixels of the input, so that shadows maintain as much detail as possible. This tools also offers a GUI to remove 'ghosts' from the resulting image.
 
 ## Wait... Another HDR program??
 
@@ -47,9 +47,9 @@ HDRMerge also allows you to treat HDR images as any other raw image, introducing
 [1]: http://www.guillermoluijk.com/tutorial/zeronoise/index.html
 [2]: http://www.guillermoluijk.com/article/virtualraw/index_en.htm
 
-## Did you say DNG 1.4 with 32-bit float data? What is that?
+## Did you say DNG 1.4 with floating point data? What is that?
 
-In the last revision of the DNG SDK, version 1.4, Adobe introduced the possibility of encoding the data as 32-bit floating point numbers, instead of the usual 16-bit integers. In this way, the dynamic range that can be represented with such an encoding is vastly increased. Furthermore, it dedicates the same number of levels to each exposure step.
+In the last revision of the DNG SDK, version 1.4, Adobe introduced the possibility of encoding the data as 16-, 24- and 32-bit floating point numbers, instead of the usual 16-bit integers. In this way, the dynamic range that can be represented with such an encoding is vastly increased. Furthermore, the floating point encoding dedicates the same number of levels to each exposure step.
 
 The drawback is that very few programs read this format. Officially, only recent versions of Adobe products read it. I have confirmed Adobe Lightroom v5.4 myself. So, I also provide a patch for the fantastic [Rawtherapee][1] raw development program that allows it to import this format natively. Rawtherapee includes a tone mapping operator that produces great results (realistic ones, at least; if you like alien landscapes, this may be not for you).
 
@@ -105,7 +105,7 @@ Once the input images are loaded, the interface presents you with a 100% preview
 
 When some objects were moving while you took the shots, there will appear "ghosts". You can use the bottom toolbar to add or remove pixels from each image but the last one, until all the pixels that belong to a moving object only come from one of the input images. Usually, you will want to only remove pixels, starting with the first layer and then going down. Adding pixels to the first layers may result in burned areas appearing in the result image, so be careful. On the other hand, the pixels of the first layers contain less noise in the shadows. These operations can be undone and redone with the actions of the Edit menu.
 
-Once the preview is satisfactory, the Save HDR option of the File menu generates the output DNG file. You can select the number of bits per sample (16, 24 or 32), the size of the embedded preview (full, half or no preview) and whether to save an image with the mask that was used to merge the input files. The number of bits per sample has an important impact in the output file size. As a rule of thumb, the default value of 16 bits will be enough for merging 3 exposures with +2EV of difference between each one. For more exposures, you can try 24 bits. 32 bits will almost never be necessary, but it can be selected nevertheless.
+Once the preview is satisfactory, the Save HDR option of the File menu generates the output DNG file. You can select the number of bits per sample (16, 24 or 32), the size of the embedded preview (full, half or no preview) and whether to save an image with the mask that was used to merge the input files. The number of bits per sample has an important impact in the output file size. As a rule of thumb, the default value of 16 bits will be enough most of the time. Empirical tests (thanks to DrSlony) show no apparent difference between 16 and 32 bits, after merging 5 exposures with 2EV steps, despite strong manipulation of shadows/mid-tones/highlights. Nevertheless, if you see some unexpected noise in the shadows of the output image, you can try 24 bits. 32 bits will almost never be necessary, but it can be selected anyway.
 
 The program can also be run without GUI, in batch mode. This is accomplished either by providing an output file name with the "-o" switch, or by generating an automatic one with the "-a" switch. Other switches control the output parameters, refer to the output of the "--help" switch.
 

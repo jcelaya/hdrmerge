@@ -26,6 +26,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <cmath>
 #include "Image.hpp"
 #include "ProgressIndicator.hpp"
 #include "MergeMap.hpp"
@@ -52,7 +53,7 @@ struct SaveOptions {
 
 class ImageStack {
 public:
-    ImageStack() : width(0), height(0) {}
+    ImageStack() : width(0), height(0) { setGamma(2.2f); }
 
     int load(const LoadOptions & options, ProgressIndicator & progress);
     int save(const SaveOptions & options, ProgressIndicator & progress);
@@ -89,12 +90,17 @@ public:
         imageIndex[y*width + x] = i;
     }
     void compose(float * dst) const;
+    void setGamma(float g);
+    uint8_t toneMap(double v) {
+        return toneCurve[(int)std::floor(v)];
+    }
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
     MergeMap imageIndex;
     size_t width;     ///< Size of a row
     size_t height;    ///< Size of a column
+    uint8_t toneCurve[65536];
 
     void findIntersection();
 };

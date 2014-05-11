@@ -27,6 +27,14 @@ using namespace std;
 using namespace hdrmerge;
 
 
+void ImageStack::setGamma(float g) {
+    g = 1.0f / g;
+    for (int i = 0; i < 65536; i++) {
+        toneCurve[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g)) >> 8;
+    }
+}
+
+
 bool ImageStack::addImage(std::unique_ptr<Image> & i) {
     if (images.empty()) {
         width = i->getWidth();

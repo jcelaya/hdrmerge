@@ -54,7 +54,6 @@ private:
     ProgressIndicator & progress;
     std::ofstream file;
     const ImageStack & stack;
-    const std::string appVersion;
     IFD mainIFD, rawIFD, previewIFD;
     size_t width, height;
     size_t tileWidth, tileLength;
@@ -69,6 +68,7 @@ private:
     void calculateTiles();
     void writeRawData();
     void buildIndexImage();
+    void copyMetadata(const std::string & filename);
 };
 
 } // namespace hdrmerge

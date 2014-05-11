@@ -22,6 +22,7 @@
 
 #include <iostream>
 #include <cmath>
+#include <ctime>
 #include <algorithm>
 #include <libraw/libraw.h>
 #include "Log.hpp"
@@ -58,6 +59,12 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     aperture = r.other.aperture;
     maker = r.idata.make;
     model = r.idata.model;
+    description = r.other.desc;
+    char dateTimeTmp[20] = { 0 };
+    struct tm * timeinfo;
+    timeinfo = localtime (&r.other.timestamp);
+    strftime(dateTimeTmp, 20, "%Y:%m:%d %T", timeinfo);
+    dateTime = dateTimeTmp;
     colors = r.idata.colors;
     flip = r.sizes.flip;
     if (flip == 0)

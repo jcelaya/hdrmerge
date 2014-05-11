@@ -20,10 +20,13 @@
  *
  */
 
+#include <ctime>
 #include <iostream>
 #include <QImage>
 #include <QBuffer>
 #include <zlib.h>
+#include <exiv2/exif.hpp>
+#include <exiv2/image.hpp>
 #include "config.h"
 #include "DngFloatWriter.hpp"
 using namespace std;
@@ -32,7 +35,7 @@ using namespace std;
 namespace hdrmerge {
 
 DngFloatWriter::DngFloatWriter(const ImageStack & s, ProgressIndicator & pi)
-    : progress(pi), stack(s), appVersion("HDRMerge " HDRMERGE_VERSION_STRING),
+    : progress(pi), stack(s),
     width(stack.getWidth()), height(stack.getHeight()), previewWidth(width), bps(16) {}
 
 
@@ -73,17 +76,49 @@ enum {
     UNIQUENAME = 50708,
     SUBIFDS = 330,
 
+    TIFFEPSTD = 37398,
+    MAKE = 271,
+    MODEL = 272,
+    SOFTWARE = 305,
+    DATETIMEORIGINAL = 36867,
+    DATETIME = 306,
+    IMAGEDESCRIPTION = 270,
+    RESOLUTIONUNIT = 269,
+    XRESOLUTION = 282,
+    YRESOLUTION = 283,
+    COPYRIGHT = 33432,
 } Tag;
 
 
 void DngFloatWriter::createMainIFD() {
+    const MetaData & md = stack.getImage(0).getMetaData();
     uint8_t dngVersion[] = { 1, 4, 0, 0 };
-    mainIFD.addEntry(DNGVERSION, IFD::IFD::BYTE, 4, dngVersion);
-    mainIFD.addEntry(DNGBACKVERSION, IFD::IFD::BYTE, 4, dngVersion);
+    mainIFD.addEntry(DNGVERSION, IFD::BYTE, 4, dngVersion);
+    mainIFD.addEntry(DNGBACKVERSION, IFD::BYTE, 4, dngVersion);
     // Thumbnail set thumbnail->AddTagSet (mainIFD)
+    uint8_t tiffep[] = { 1, 0, 0, 0 };
+    mainIFD.addEntry(TIFFEPSTD, IFD::BYTE, 4, tiffep);
+    mainIFD.addEntry(MAKE, IFD::ASCII, md.maker.length() + 1, md.maker.c_str());
+    mainIFD.addEntry(MODEL, IFD::ASCII, md.model.length() + 1, md.model.c_str());
+    std::string appVersion("HDRMerge " HDRMERGE_VERSION_STRING);
+    mainIFD.addEntry(SOFTWARE, IFD::ASCII, appVersion.length() + 1, appVersion.c_str());
+    mainIFD.addEntry(RESOLUTIONUNIT, IFD::SHORT, 3); // Cm
+    uint32_t resolution[] = { 100, 1 };
+    mainIFD.addEntry(XRESOLUTION, IFD::RATIONAL, 1, resolution);
+    mainIFD.addEntry(YRESOLUTION, IFD::RATIONAL, 1, resolution);
+    char empty[] = { 0 };
+    mainIFD.addEntry(COPYRIGHT, IFD::ASCII, 1, empty);
+    mainIFD.addEntry(IMAGEDESCRIPTION, IFD::ASCII, md.description.length() + 1, md.description.c_str());
+    char dateTime[20] = { 0 };
+    time_t rawtime;
+    struct tm * timeinfo;
+    time (&rawtime);
+    timeinfo = localtime (&rawtime);
+    int chars = strftime(dateTime, 20, "%Y:%m:%d %T", timeinfo);
+    mainIFD.addEntry(DATETIME, IFD::ASCII, chars + 1, dateTime);
+    mainIFD.addEntry(DATETIMEORIGINAL, IFD::ASCII, md.dateTime.length() + 1, md.dateTime.c_str());
 
     // Profile
-    const MetaData & md = stack.getImage(0).getMetaData();
     mainIFD.addEntry(CALIBRATIONILLUMINANT, IFD::SHORT, 21); // D65
     string profName(md.maker + " " + md.model);
     mainIFD.addEntry(PROFILENAME, IFD::ASCII, profName.length() + 1, profName.c_str());
@@ -187,21 +222,6 @@ void DngFloatWriter::buildIndexImage() {
 }
 
 
-struct TiffHeader {
-    union {
-        uint32_t endian;
-        struct {
-            uint16_t endian;
-            uint16_t magic;
-        } sep;
-    };
-    uint32_t offset;
-    // It sets the first two bytes to their correct value, given the architecture
-    TiffHeader() : endian(0x4D4D4949), offset(8) { sep.magic = 42; }
-    void write(ofstream & file) const { file.write((const char *)this, 8); }
-};
-
-
 void DngFloatWriter::write(const string & filename) {
     progress.advance(0, "Initialize metadata");
     file.open(filename, ios_base::binary);
@@ -229,7 +249,49 @@ void DngFloatWriter::write(const string & filename) {
     mainIFD.write(file, false);
     rawIFD.write(file, false);
     file.close();
+
+    copyMetadata(filename);
     progress.advance(100, "Done writing!");
+}
+
+
+void DngFloatWriter::copyMetadata(const string & filename) {
+    try {
+        Exiv2::Image::AutoPtr src = Exiv2::ImageFactory::open(stack.getImage(stack.size() - 1).getMetaData().fileName);
+        src->readMetadata();
+        Exiv2::Image::AutoPtr result = Exiv2::ImageFactory::open(filename);
+        result->readMetadata();
+
+        const Exiv2::XmpData & srcXmp = src->xmpData();
+        Exiv2::XmpData & dstXmp = result->xmpData();
+        for (const auto & datum : srcXmp) {
+            if (dstXmp.findKey(Exiv2::XmpKey(datum.key())) == dstXmp.end()) {
+                dstXmp.add(datum);
+            }
+        }
+
+        const Exiv2::IptcData & srcIptc = src->iptcData();
+        Exiv2::IptcData & dstIptc = result->iptcData();
+        for (const auto & datum : srcIptc) {
+            if (dstIptc.findKey(Exiv2::IptcKey(datum.key())) == dstIptc.end()) {
+                dstIptc.add(datum);
+            }
+        }
+
+        const Exiv2::ExifData & srcExif = src->exifData();
+        Exiv2::ExifData & dstExif = result->exifData();
+        for (const auto & datum : srcExif) {
+            if (datum.groupName() != "Image" && datum.groupName().substr(0, 8) != "SubImage"
+                    && dstExif.findKey(Exiv2::ExifKey(datum.key())) == dstExif.end()) {
+                dstExif.add(datum);
+            }
+        }
+
+        result->writeMetadata();
+    }
+    catch (Exiv2::Error& e) {
+        std::cerr << "Exiv2 error: " << e.what() << std::endl;
+    }
 }
 
 

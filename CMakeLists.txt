@@ -10,9 +10,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 find_package(Qt4 REQUIRED)
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
-
-# Boost Test
+find_package(LibRaw REQUIRED)
+find_package(Exiv2 REQUIRED)
+find_package(ZLIB REQUIRED)
 find_package(Boost 1.46 COMPONENTS unit_test_framework)
+include_directories(${LibRaw_INCLUDE_DIR} ${EXIV2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS})
 
 # OpenMP
 find_package(OpenMP)
@@ -21,37 +23,13 @@ if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-# LibRaw
-find_package(LibRaw REQUIRED)
-
-# Exiv2
-find_package(Exiv2 REQUIRED)
-
-# Build dngsdk and xmpsdk
-if(WIN32) # Set Windows rules.
-    add_definitions(-DqWinOS=1 -DqMacOS=0 -DWIN_ENV=1)
-else(WIN32) # Set Linux & co rules.
-    add_definitions(-DqWinOS=0 -DqMacOS=0 -DqLinux=1 -DqAndroid=1 -DUNIX_ENV=1 -DqDNGUseStdInt=1 -DqDNGThreadSafe=1)
-endif(WIN32)
-add_definitions(-DqDNGDebug=0 -DqDNGValidateTarget=0 -DqDNGUseLibJPEG=0 -DqDNGXMPDocOps=0)
-
-# Check processor endianness
-include(TestBigEndian)
-TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
-if(NOT IS_BIG_ENDIAN)
-    add_definitions(-DqDNGLittleEndian=1)
-endif(NOT IS_BIG_ENDIAN)
-
-include_directories(third_party/dng_sdk third_party/xmp_sdk/public/include)
-add_subdirectory(third_party)
-
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
 # The version number.
 set (HDRMERGE_VERSION_MAJOR 0)
-set (HDRMERGE_VERSION_MINOR 3)
+set (HDRMERGE_VERSION_MINOR 4)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
@@ -67,14 +45,14 @@ include_directories("${PROJECT_BINARY_DIR}")
 # Sources and headers
 set(hdrmerge_sources
     Launcher.cpp MainWindow.cpp PreviewWidget.cpp DraggableScrollArea.cpp DngPropertiesDialog.cpp
-    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp MergeMap.cpp DngWriter.cpp DngFloatWriter.cpp
-    camxyz.cpp TiffDirectory.cpp exiv2dngstreamio.cpp exiv2meta.cpp)
+    Image.cpp ImageStack.cpp Bitmap.cpp MetaData.cpp MergeMap.cpp DngFloatWriter.cpp
+    camxyz.cpp TiffDirectory.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp PreviewWidget.hpp
     DraggableScrollArea.hpp AboutDialog.hpp DngPropertiesDialog.hpp)
 set(hdrmerge_translations hdrmerge_es.ts)
 
 # Libs
-set(hdrmerge_libs ${QT_LIBRARIES} ${EXIV2_LIBRARY} ${LibRaw_LIBRARIES} dngsdk ${XMP_LIBRARIES} pthread dl)
+set(hdrmerge_libs ${QT_LIBRARIES} ${EXIV2_LIBRARY} ${LibRaw_LIBRARIES} ${ZLIB_LIBRARIES})
 
 # Qt4 intermediate files
 QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})

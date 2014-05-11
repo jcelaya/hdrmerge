@@ -4,9 +4,13 @@ US25 As a user, I want to be able to run HDRMerge on Windows. PR2
 US26 As a user, I want to be able to run HDRMerge on Mac OS. PR2
 US27 As a user, I want to be able to cancel the load and writing of images. PR3
 US28 As a developer, I want to drop DNG and XMP SDK dependency and build a custom DNG writer. It will make US25 and US26 much easier. PR1
+US32 As a user, I want a Load dialog, to create a list of files to load and select other (future) loading options. PR1
+	US32-1 The list has an add and remove button, to add and remove files before loading them.
+	US32-2 The dialog has a checkbox to select whether images should be aligned or not.
 
 Doing:
 US24 As a user, I want to save/load the image index to/from file, so that I can continue editing it in a later session. PR2
+US33 As a user, I want to select whether images should be aligned or not, and obtain an output DNG that is size-compatible with the inputs. PR1
 
 Done:
 US1: As a user, I want to load RAW files directly. PR1

@@ -67,7 +67,7 @@ public:
     float isoSpeed;
     float shutter;
     float aperture;
-    std::string maker, model;
+    std::string maker, model, description, dateTime;
     int colors;
     int flip;
 };

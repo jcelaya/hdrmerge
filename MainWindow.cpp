@@ -40,7 +40,7 @@
 #include <QSpinBox>
 #include "config.h"
 #include "AboutDialog.hpp"
-#include "DngWriter.hpp"
+#include "DngFloatWriter.hpp"
 #include "ImageStack.hpp"
 #include "PreviewWidget.hpp"
 #include "DraggableScrollArea.hpp"

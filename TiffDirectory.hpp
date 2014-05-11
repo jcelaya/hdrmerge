@@ -28,6 +28,20 @@
 
 namespace hdrmerge {
 
+struct TiffHeader {
+    union {
+        uint32_t endian;
+        struct {
+            uint16_t endian;
+            uint16_t magic;
+        } sep;
+    };
+    uint32_t offset;
+    // It sets the first two bytes to their correct value, given the architecture
+    TiffHeader() : endian(0x4D4D4949), offset(8) { sep.magic = 42; }
+    void write(std::ostream & file) const { file.write((const char *)this, 8); }
+};
+
 class IFD {
 public:
     enum {

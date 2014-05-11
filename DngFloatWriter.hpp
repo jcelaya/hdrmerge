@@ -67,19 +67,37 @@ private:
         }
     };
 
+    enum {
+        BYTE = 1,
+        ASCII,
+        SHORT,
+        LONG,
+        RATIONAL,
+        SBYTE,
+        UNDEFINED,
+        SSHORT,
+        SLONG,
+        SRATIONAL,
+        FLOAT,
+        DOUBLE
+    } Type;
+
     class IFD {
     public:
         template <typename T> void addEntry(uint16_t tag, uint16_t type, const T & value) {
-            if (sizeof(T) > 4) {
-                addEntry(tag, type, 1, &value);
-            } else {
-                union {
-                    uint32_t longValue;
-                    T value;
-                } leftJustify;
-                leftJustify.longValue = 0;
-                leftJustify.value = value;
-                entries.push_back(DirEntry({tag, type, 1, leftJustify.longValue}));
+            DirEntry * entry = &(*entries.insert(entries.end(), DirEntry({tag, type, 1, 0})));
+            setValue(entry, value);
+        }
+        template <typename T> void setValue(uint16_t tag, const T * value) {
+            DirEntry * entry = getEntry(tag);
+            if (entry) {
+                setValue(entry, (const void *)value);
+            }
+        }
+        template <typename T> void setValue(uint16_t tag, const T & value) {
+            DirEntry * entry = getEntry(tag);
+            if (entry) {
+                setValue(entry, value);
             }
         }
         void addEntry(uint16_t tag, uint16_t type, uint32_t count, const void * data);
@@ -89,6 +107,25 @@ private:
     private:
         std::vector<DirEntry> entries;
         std::vector<uint8_t> entryData;
+
+        DirEntry * getEntry(uint16_t tag);
+        void setValue(DirEntry * entry, const void * data);
+        template <typename T> void setValue(DirEntry * entry, const T & value) {
+            if (sizeof(T) > 4) {
+                setValue(entry, (const void *)&value);
+            } else {
+                uint32_t leftJustified = 0;
+                switch (entry->type) {
+                    case BYTE: case ASCII: case SBYTE: case UNDEFINED:
+                        *((uint8_t *)&leftJustified) = (uint8_t) value; break;
+                    case SHORT: case SSHORT:
+                        *((uint16_t *)&leftJustified) = (uint16_t) value; break;
+                    case LONG: case SLONG: case FLOAT:
+                        leftJustified = *((uint32_t *)&value); break;
+                }
+                entry->offset = leftJustified;
+            }
+        }
     };
 
     ProgressIndicator & progress;
@@ -96,12 +133,18 @@ private:
     const ImageStack & stack;
     const std::string appVersion;
     IFD mainIFD, rawIFD, previewIFD;
+    size_t width, height;
+    size_t tileWidth, tileLength;
+    size_t tilesAcross, tilesDown;
 
     size_t previewWidth;
     int bps;
     QString indexFile;
 
-    void createIFD();
+    void createMainIFD();
+    void createRawIFD();
+    void calculateTiles();
+    void writeRawData();
 };
 
 } // namespace hdrmerge

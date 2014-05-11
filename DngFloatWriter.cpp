@@ -36,60 +36,6 @@ DngFloatWriter::DngFloatWriter(const ImageStack & s, ProgressIndicator & pi)
     width(stack.getWidth()), height(stack.getHeight()), previewWidth(width), bps(16) {}
 
 
-void DngFloatWriter::IFD::addEntry(uint16_t tag, uint16_t type, uint32_t count, const void * data) {
-    uint32_t newSize = entryData.size();
-    DirEntry * entry = &(*entries.insert(entries.end(), DirEntry({tag, type, count, newSize})));
-    uint32_t dataSize = entry->dataSize();
-    if (dataSize > 4) {
-        newSize += dataSize;
-        if (newSize & 1)
-            ++newSize;
-        entryData.resize(newSize);
-    }
-    setValue(entry, data);
-}
-
-
-void DngFloatWriter::IFD::setValue(DirEntry * entry, const void * data) {
-    const uint8_t * castedData = reinterpret_cast<const uint8_t *>(data);
-    size_t dataSize = entry->dataSize();
-    if (dataSize > 4) {
-        std::copy_n(castedData, dataSize, &entryData[entry->offset]);
-    } else {
-        std::copy_n(castedData, dataSize, (uint8_t *)&entry->offset);
-    }
-}
-
-
-void DngFloatWriter::IFD::write(ofstream & file, bool hasNext) {
-    uint16_t numEntries = entries.size();
-    uint32_t offsetData = (uint32_t)file.tellp() + 12*numEntries + 6;
-    sort(entries.begin(), entries.end());
-    uint32_t offsetNext = hasNext ? offsetData + entryData.size() : 0;
-    for (auto & entry : entries) {
-        if (entry.dataSize() > 4) {
-            entry.offset += offsetData;
-        }
-    }
-    file.write((const char *)&numEntries, 2);
-    file.write((const char *)&entries[0], 12*numEntries);
-    file.write((const char *)&offsetNext, 4);
-    file.write((const char *)&entryData[0], entryData.size());
-}
-
-
-size_t DngFloatWriter::IFD::length() const {
-    return 6 + 12*entries.size() + entryData.size();
-}
-
-
-DngFloatWriter::DirEntry * DngFloatWriter::IFD::getEntry(uint16_t tag) {
-    auto it = entries.begin();
-    while (it != entries.end() && it->tag != tag) it++;
-    return it == entries.end() ? nullptr : &(*it);
-}
-
-
 enum {
     DNGVERSION = 50706,
     DNGBACKVERSION = 50707,
@@ -132,39 +78,39 @@ enum {
 
 void DngFloatWriter::createMainIFD() {
     uint8_t dngVersion[] = { 1, 4, 0, 0 };
-    mainIFD.addEntry(DNGVERSION, BYTE, 4, dngVersion);
-    mainIFD.addEntry(DNGBACKVERSION, BYTE, 4, dngVersion);
+    mainIFD.addEntry(DNGVERSION, IFD::IFD::BYTE, 4, dngVersion);
+    mainIFD.addEntry(DNGBACKVERSION, IFD::IFD::BYTE, 4, dngVersion);
     // Thumbnail set thumbnail->AddTagSet (mainIFD)
 
     // Profile
     const MetaData & md = stack.getImage(0).getMetaData();
-    mainIFD.addEntry(CALIBRATIONILLUMINANT, SHORT, 21); // D65
+    mainIFD.addEntry(CALIBRATIONILLUMINANT, IFD::SHORT, 21); // D65
     string profName(md.maker + " " + md.model);
-    mainIFD.addEntry(PROFILENAME, ASCII, profName.length() + 1, profName.c_str());
+    mainIFD.addEntry(PROFILENAME, IFD::ASCII, profName.length() + 1, profName.c_str());
     int32_t colorMatrix[18];
     for (int im = 0, id = 0; im < 9; ++im, ++id) {
         colorMatrix[id] = std::round(md.camXyz[0][im] * 10000.0f);
         colorMatrix[++id] = 10000;
     }
-    mainIFD.addEntry(COLORMATRIX, SRATIONAL, 9, colorMatrix);
+    mainIFD.addEntry(COLORMATRIX, IFD::SRATIONAL, 9, colorMatrix);
 
     // Color
     uint32_t analogBalance[] = { 1, 1, 1, 1, 1, 1 };
-    mainIFD.addEntry(ANALOGBALANCE, RATIONAL, 3, analogBalance);
+    mainIFD.addEntry(ANALOGBALANCE, IFD::RATIONAL, 3, analogBalance);
     double minWb = std::min(md.camMul[0], std::min(md.camMul[1], md.camMul[2]));
     double wb[] = { minWb/md.camMul[0], minWb/md.camMul[1], minWb/md.camMul[2] };
     uint32_t cameraNeutral[] = {
         (uint32_t)std::round(1000000.0 * wb[0]), 1000000,
         (uint32_t)std::round(1000000.0 * wb[1]), 1000000,
         (uint32_t)std::round(1000000.0 * wb[2]), 1000000};
-    mainIFD.addEntry(CAMERANEUTRAL, RATIONAL, 3, cameraNeutral);
+    mainIFD.addEntry(CAMERANEUTRAL, IFD::RATIONAL, 3, cameraNeutral);
 
-    mainIFD.addEntry(ORIENTATION, SHORT, md.flip);
+    mainIFD.addEntry(ORIENTATION, IFD::SHORT, md.flip);
     string cameraName(md.maker + " " + md.model);
-    mainIFD.addEntry(UNIQUENAME, ASCII, cameraName.length() + 1, &cameraName[0]);
+    mainIFD.addEntry(UNIQUENAME, IFD::ASCII, cameraName.length() + 1, &cameraName[0]);
     // TODO: Add Digest and Unique ID
     // TODO: Add XMP and Exif and private data
-    mainIFD.addEntry(SUBIFDS, LONG, 1);
+    mainIFD.addEntry(SUBIFDS, IFD::LONG, 1);
 }
 
 
@@ -186,40 +132,58 @@ void DngFloatWriter::calculateTiles() {
 
 
 void DngFloatWriter::createRawIFD() {
-    rawIFD.addEntry(NEWSUBFILETYPE, LONG, 0);
-    rawIFD.addEntry(IMAGEWIDTH, LONG, width);
-    rawIFD.addEntry(IMAGELENGTH, LONG, height);
-    rawIFD.addEntry(SAMPLESPERPIXEL, SHORT, 1);
-    rawIFD.addEntry(BITSPERSAMPLE, SHORT, bps);
+    rawIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 0);
+    rawIFD.addEntry(IMAGEWIDTH, IFD::LONG, width);
+    rawIFD.addEntry(IMAGELENGTH, IFD::LONG, height);
+    rawIFD.addEntry(SAMPLESPERPIXEL, IFD::SHORT, 1);
+    rawIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, bps);
     if (bps == 24) {
-        rawIFD.addEntry(FILLORDER, SHORT, 1);
+        rawIFD.addEntry(FILLORDER, IFD::SHORT, 1);
     }
-    rawIFD.addEntry(PLANARCONFIG, SHORT, 1);
-    rawIFD.addEntry(COMPRESSION, SHORT, 8); // Deflate
-    rawIFD.addEntry(PREDICTOR, SHORT, 34894); //FP2X
-    rawIFD.addEntry(SAMPLEFORMAT, SHORT, 3); // Floating Point
+    rawIFD.addEntry(PLANARCONFIG, IFD::SHORT, 1);
+    rawIFD.addEntry(COMPRESSION, IFD::SHORT, 8); // Deflate
+    rawIFD.addEntry(PREDICTOR, IFD::SHORT, 34894); //FP2X
+    rawIFD.addEntry(SAMPLEFORMAT, IFD::SHORT, 3); // Floating Point
 
     calculateTiles();
     uint32_t numTiles = tilesAcross * tilesDown;
     uint32_t buffer[numTiles];
-    rawIFD.addEntry(TILEWIDTH, LONG, tileWidth);
-    rawIFD.addEntry(TILELENGTH, LONG, tileLength);
-    rawIFD.addEntry(TILEOFFSETS, LONG, numTiles, buffer);
-    rawIFD.addEntry(TILEBYTES, LONG, numTiles, buffer);
+    rawIFD.addEntry(TILEWIDTH, IFD::LONG, tileWidth);
+    rawIFD.addEntry(TILELENGTH, IFD::LONG, tileLength);
+    rawIFD.addEntry(TILEOFFSETS, IFD::LONG, numTiles, buffer);
+    rawIFD.addEntry(TILEBYTES, IFD::LONG, numTiles, buffer);
 
-    rawIFD.addEntry(WHITELEVEL, SHORT, 1);
-    rawIFD.addEntry(PHOTOINTERPRETATION, SHORT, 32803); // CFA
+    rawIFD.addEntry(WHITELEVEL, IFD::SHORT, 1);
+    rawIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, 32803); // CFA
     uint16_t cfaPatternDim[] = { 2, 2 };
-    rawIFD.addEntry(CFAPATTERNDIM, SHORT, 2, cfaPatternDim);
+    rawIFD.addEntry(CFAPATTERNDIM, IFD::SHORT, 2, cfaPatternDim);
     const MetaData & md = stack.getImage(0).getMetaData();
     uint8_t cfaPattern[] = { md.FC(0, 0), md.FC(0, 1), md.FC(1, 0), md.FC(1, 1) };
     for (uint8_t & i : cfaPattern) {
         if (i == 3) i = 1;
     }
-    rawIFD.addEntry(CFAPATTERN, BYTE, 4, cfaPattern);
+    rawIFD.addEntry(CFAPATTERN, IFD::BYTE, 4, cfaPattern);
     uint8_t cfaPlaneColor[] = { 0, 1, 2 };
-    rawIFD.addEntry(CFAPLANECOLOR, BYTE, 3, cfaPlaneColor);
-    rawIFD.addEntry(CFALAYOUT, SHORT, 1);
+    rawIFD.addEntry(CFAPLANECOLOR, IFD::BYTE, 3, cfaPlaneColor);
+    rawIFD.addEntry(CFALAYOUT, IFD::SHORT, 1);
+}
+
+
+void DngFloatWriter::buildIndexImage() {
+    size_t width = stack.getWidth(), height = stack.getHeight();
+    QImage indexImage(width, height, QImage::Format_Indexed8);
+    int numColors = stack.size() - 1;
+    for (int c = 0; c < numColors; ++c) {
+        int gray = (256 * c) / numColors;
+        indexImage.setColor(c, qRgb(gray, gray, gray));
+    }
+    indexImage.setColor(numColors, qRgb(255, 255, 255));
+    for (size_t row = 0; row < height; ++row) {
+        for (size_t col = 0; col < width; ++col) {
+            indexImage.setPixel(col, row, stack.getImageAt(col, row));
+        }
+    }
+    indexImage.save(indexFile);
 }
 
 
@@ -239,6 +203,7 @@ struct TiffHeader {
 
 
 void DngFloatWriter::write(const string & filename) {
+    progress.advance(0, "Initialize metadata");
     file.open(filename, ios_base::binary);
 
     createMainIFD();
@@ -247,6 +212,16 @@ void DngFloatWriter::write(const string & filename) {
     mainIFD.setValue(SUBIFDS, rawIFDOffset);
     size_t dataOffset = rawIFDOffset + rawIFD.length();
     file.seekp(dataOffset);
+
+    progress.advance(25, "Rendering image");
+    rawData.reset(new float[width * height]);
+    stack.compose(rawData.get());
+
+    progress.advance(50, "Rendering preview");
+
+    progress.advance(75, "Writing output");
+    if (!indexFile.isEmpty())
+        buildIndexImage();
     // Write previews
     writeRawData();
     file.seekp(0);
@@ -254,6 +229,7 @@ void DngFloatWriter::write(const string & filename) {
     mainIFD.write(file, false);
     rawIFD.write(file, false);
     file.close();
+    progress.advance(100, "Done writing!");
 }
 
 
@@ -363,8 +339,6 @@ static void compressFloats(Bytef * dst, int tileWidth, int bytesps) {
 
 
 void DngFloatWriter::writeRawData() {
-    unique_ptr<float[]> rawData(new float[width * height]);
-    stack.compose(rawData.get());
     size_t tileCount = tilesAcross * tilesDown;
     uint32_t tileOffsets[tileCount];
     uint32_t tileBytes[tileCount];

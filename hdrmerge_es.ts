@@ -91,8 +91,8 @@
         <translation type="finished">¡Carga completada!</translation>
     </message>
     <message>
-        <source>Initialize negative</source>
-        <translation type="finished">Inicializar negativo</translation>
+        <source>Initialize metadata</source>
+        <translation type="finished">Inicializar metadatos</translation>
     </message>
     <message>
         <source>Rendering image</source>

@@ -246,16 +246,10 @@ void MainWindow::about() {
 }
 
 
-void MainWindow::preload(const list<string> & fileNames) {
-    for (auto & name : fileNames)
-        preLoadFiles << QString::fromLocal8Bit(name.c_str());
-}
-
-
 void MainWindow::showEvent(QShowEvent * event) {
-    if (!preLoadFiles.empty()) {
-        loadImages(preLoadFiles);
-        preLoadFiles.clear();
+    if (preloadOptions && !preloadOptions->fileNames.empty()) {
+        loadImages(*preloadOptions);
+        preloadOptions = nullptr;
     }
 }
 
@@ -289,31 +283,32 @@ void MainWindow::loadImages() {
         QString lastDir = QDir(files.front()).absolutePath();
         lastDir.truncate(lastDir.lastIndexOf('/'));
         settings.setValue("lastOpenDirectory", lastDir);
-        loadImages(files);
+        LoadOptions options;
+        unsigned int numImages = files.size();
+        for (int i = 0; i < numImages; ++i) {
+            options.fileNames.push_back(QDir::toNativeSeparators(files[i]).toLocal8Bit().constData());
+        }
+        loadImages(options);
     }
     shiftPressed = controlPressed = false;
     dragToolAction->trigger();
 }
 
 
-void MainWindow::loadImages(const QStringList & files) {
-    if (!files.empty()) {
-        unsigned int numImages = files.size();
-        list<string> inFileNames;
-        for (int i = 0; i < numImages; ++i) {
-            inFileNames.push_back(QDir::toNativeSeparators(files[i]).toLocal8Bit().constData());
-        }
+void MainWindow::loadImages(const LoadOptions & options) {
+    if (!options.fileNames.empty()) {
+        unsigned int numImages = options.fileNames.size();
         ImageStack * newImages = new ImageStack();
         ProgressDialog progress(this);
         progress.setWindowTitle(tr("Open raw images"));
-        QFuture<int> error = QtConcurrent::run([&] () { return newImages->load(inFileNames, progress); });
+        QFuture<int> error = QtConcurrent::run([&] () { return newImages->load(options, progress); });
         while (error.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         if (error.result()) {
             int i = progress.getPercent() * (numImages + 1) / 100;
             QString message = error.result() == 1 ?
-                tr("Unable to open file %1.").arg(files[i]) :
-                tr("File %1 has not the same format as the previous ones.").arg(files[i]);
+                tr("Unable to open file %1.").arg(options.fileNames[i].c_str()) :
+                tr("File %1 has not the same format as the previous ones.").arg(options.fileNames[i].c_str());
             QMessageBox::warning(this, tr("Error opening file"), message);
             delete newImages;
             return;
@@ -369,17 +364,16 @@ void MainWindow::saveResult() {
                 ProgressDialog pd(this);
                 pd.setWindowTitle(tr("Save DNG file"));
                 QFuture<void> result = QtConcurrent::run([&]() {
-                    DngWriter writer(*images, pd);
-                    writer.setBitsPerSample(dpd.getBps());
-                    size_t previewWidth;
+                    SaveOptions options;
+                    options.bps = dpd.getBps();
+                    options.maskFileName = dpd.getIndexFileName().toUtf8().constData();
+                    options.fileName = fileName;
                     switch (dpd.getPreviewSize()) {
-                        case 0: previewWidth = images->getWidth(); break;
-                        case 1: previewWidth = images->getWidth() / 2; break;
-                        default: previewWidth = 0;
+                        case 0: options.previewSize = images->getWidth(); break;
+                        case 1: options.previewSize = images->getWidth() / 2; break;
+                        default: options.previewSize = 0;
                     }
-                    writer.setPreviewWidth(previewWidth);
-                    writer.setIndexFileName(dpd.getIndexFileName());
-                    writer.write(fileName);
+                    images->save(options, pd);
                 });
                 while (result.isRunning())
                     QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);

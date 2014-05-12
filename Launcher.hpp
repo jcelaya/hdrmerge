@@ -25,6 +25,7 @@
 
 #include <list>
 #include <string>
+#include "ImageStack.hpp"
 
 namespace hdrmerge {
 
@@ -43,12 +44,10 @@ private:
 
     int argcGUI;
     char ** argvGUI;
-    std::list<std::string> inFileNames;
-    char * outFileName;
-    char * maskFileName;
+    LoadOptions options;
+    SaveOptions wOptions;
     bool automatic;
     bool help;
-    int bps;
     char * previewWidth;
 };
 

@@ -24,7 +24,6 @@
 #define _IMAGESTACK_H_
 
 #include <vector>
-#include <list>
 #include <string>
 #include <memory>
 #include "Image.hpp"
@@ -34,11 +33,29 @@
 
 namespace hdrmerge {
 
+
+struct LoadOptions {
+    std::vector<std::string> fileNames;
+    bool align;
+    LoadOptions() : align(true) {}
+};
+
+
+struct SaveOptions {
+    int bps;
+    int previewSize;
+    std::string fileName;
+    std::string maskFileName;
+    SaveOptions() : bps(16), previewSize(0) {}
+};
+
+
 class ImageStack {
 public:
     ImageStack() : width(0), height(0) {}
 
-    int load(const std::list<std::string> & fileNames, ProgressIndicator & progress);
+    int load(const LoadOptions & options, ProgressIndicator & progress);
+    int save(const SaveOptions & options, ProgressIndicator & progress);
     void align();
     void computeRelExposures();
     void generateImageIndex() {

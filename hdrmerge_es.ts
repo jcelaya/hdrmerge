@@ -8,8 +8,8 @@
         <translation type="finished">Uso</translation>
     </message>
     <message>
-        <source>Merges RAW_FILES into OUT_FILE, to obtain an HDR raw image.</source>
-        <translation type="finished">Mezcla RAW_FILES en OUT_FILE, para obtener una imagen HDR raw.</translation>
+        <source>Merges RAW_FILES into an HDR DNG raw image.</source>
+        <translation type="finished">Mezcla RAW_FILES en una imagen HDR DNG raw.</translation>
     </message>
     <message>
         <source>Options:</source>
@@ -42,6 +42,10 @@
     <message>
         <source>Saves the mask to MASK_FILE as a PNG image.</source>
         <translation type="finished">Guarda la máscara en MASK_FILE como imagen PNG.</translation>
+    </message>
+    <message>
+        <source>Do not auto-align source images.</source>
+        <translation type="finished">No auto-alinear las imágenes de origen.</translation>
     </message>
 </context>
 <context>

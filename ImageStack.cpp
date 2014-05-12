@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include "ImageStack.hpp"
+#include "DngWriter.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -41,10 +42,10 @@ bool ImageStack::addImage(std::unique_ptr<Image> & i) {
 }
 
 
-int ImageStack::load(const std::list<std::string> & fileNames, ProgressIndicator & progress) {
-    int step = 100 / (fileNames.size() + 1);
+int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) {
+    int step = 100 / (options.fileNames.size() + 1);
     int p = -step;
-    for (auto & name : fileNames) {
+    for (auto & name : options.fileNames) {
         progress.advance(p += step, "Loading %1", name.c_str());
         std::unique_ptr<Image> image(new Image(name.c_str()));
         if (image.get() == nullptr || !image->good()) {
@@ -54,12 +55,23 @@ int ImageStack::load(const std::list<std::string> & fileNames, ProgressIndicator
             return 2;
         }
     }
-    progress.advance(p += step, "Aligning");
-    align();
+    if (options.align) {
+        progress.advance(p += step, "Aligning");
+        align();
+    }
     computeRelExposures();
     imageIndex.generateFrom(*this);
-    progress.advance(p += step, "Done loading!");
+    progress.advance(100, "Done loading!");
     return 0;
+}
+
+
+int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) {
+    DngWriter writer(*this, progress);
+    writer.setBitsPerSample(options.bps);
+    writer.setPreviewWidth(options.previewSize);
+    writer.setIndexFileName(options.maskFileName.c_str());
+    writer.write(options.fileName);
 }
 
 
@@ -147,12 +159,12 @@ void ImageStack::compose(float * dst) const {
 
 string ImageStack::buildOutputFileName() const {
     string name;
-    std::list<string> names;
+    std::vector<string> names;
     for (auto & image : images) {
         const string & f = image->getMetaData().fileName;
         names.push_back(f.substr(0, f.find_last_of('.')));
     }
-    names.sort();
+    sort(names.begin(), names.end());
     if (names.size() > 1) {
         string & last = names.back();
         int pos = last.length() - 1;

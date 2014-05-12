@@ -31,7 +31,6 @@
 #include <QMenu>
 #include <QEvent>
 #include <QMutex>
-#include <QStringList>
 #include <QToolBar>
 
 
@@ -40,6 +39,7 @@ namespace hdrmerge {
 class ImageStack;
 class PreviewWidget;
 class DraggableScrollArea;
+class LoadOptions;
 
 class MainWindow : public QMainWindow {
 public:
@@ -52,7 +52,9 @@ public:
     /// Triggered when the window is closed, exit the application
     void closeEvent(QCloseEvent * event);
     /// Preloads a list of images
-    void preload(const std::list<std::string> & fileNames);
+    void preload(const LoadOptions * o) {
+        preloadOptions = o;
+    }
 
 protected:
     void keyPressEvent(QKeyEvent * event);
@@ -61,7 +63,7 @@ protected:
 private slots:
     void about();
     void loadImages();
-    void loadImages(const QStringList & files);
+    void loadImages(const LoadOptions & options);
     void saveResult();
     void layerSelected(QAction * action);
 
@@ -94,7 +96,7 @@ private:
     QActionGroup * layerSelectorGroup;
 
     ImageStack * images;
-    QStringList preLoadFiles;
+    const LoadOptions * preloadOptions;
     bool shiftPressed, controlPressed;
 };
 

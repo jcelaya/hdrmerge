@@ -30,20 +30,17 @@
 #include <QLocale>
 #include "Launcher.hpp"
 #include "MainWindow.hpp"
-#include "ImageStack.hpp"
-#include "DngWriter.hpp"
 using namespace std;
 
 namespace hdrmerge {
 
-Launcher::Launcher() : outFileName(nullptr), maskFileName(nullptr),
-automatic(false), help(false), bps(16), previewWidth(nullptr) {}
+Launcher::Launcher() : automatic(false), help(false), previewWidth(nullptr) {}
 
 
 int Launcher::startGUI() {
     // Create main window
     MainWindow mw;
-    mw.preload(inFileNames);
+    mw.preload(&options);
     mw.show();
 
     return QApplication::exec();
@@ -79,39 +76,31 @@ private:
 int Launcher::automaticMerge() {
     CoutProgressIndicator pi;
     ImageStack stack;
-    if (stack.load(inFileNames, pi)) {
-        int i = pi.getPercent() * (inFileNames.size() + 1) / 100;
-        for (auto & name : inFileNames) {
-            if (!i--) {
-                cout << QCoreApplication::translate("LoadSave", "Error loading %1").arg(name.c_str()) << endl;
-                return 1;
-            }
+    if (stack.load(options, pi)) {
+        int i = pi.getPercent() * (options.fileNames.size() + 1) / 100;
+        if (i) {
+            cout << QCoreApplication::translate("LoadSave", "Error loading %1").arg(options.fileNames[i].c_str()) << endl;
+            return 1;
         }
     }
-    string fileName;
-    if (outFileName != NULL) {
-        fileName = outFileName;
-        size_t extPos = fileName.find_last_of('.');
-        if (extPos > fileName.length() || fileName.substr(extPos) != ".dng") {
-            fileName += ".dng";
+    if (!wOptions.fileName.empty()) {
+        size_t extPos = wOptions.fileName.find_last_of('.');
+        if (extPos > wOptions.fileName.length() || wOptions.fileName.substr(extPos) != ".dng") {
+            wOptions.fileName += ".dng";
         }
     } else {
-        fileName = stack.buildOutputFileName() + ".dng";
+        wOptions.fileName = stack.buildOutputFileName() + ".dng";
     }
-    cout << QCoreApplication::translate("LoadSave", "Writing result to %1").arg(fileName.c_str()) << endl;
-    DngWriter writer(stack, pi);
-    writer.setBitsPerSample(bps);
-    size_t pw = stack.getWidth();
+    cout << QCoreApplication::translate("LoadSave", "Writing result to %1").arg(wOptions.fileName.c_str()) << endl;
+    wOptions.previewSize = stack.getWidth();
     if (previewWidth != nullptr) {
         if (string("half") == previewWidth) {
-            pw /= 2;
+            wOptions.previewSize /= 2;
         } else if (string("none") == previewWidth) {
-            pw = 0;
+            wOptions.previewSize = 0;
         }
     }
-    writer.setPreviewWidth(pw);
-    writer.setIndexFileName(maskFileName);
-    writer.write(fileName);
+    stack.save(wOptions, pi);
     return 0;
 }
 
@@ -122,28 +111,30 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
     for (int i = 1; i < argc; ++i) {
         if (string("-o") == argv[i]) {
             if (++i < argc) {
-                outFileName = argv[i];
+                wOptions.fileName = argv[i];
                 automatic = true;
             }
         } else if (string("-m") == argv[i]) {
             if (++i < argc) {
-                maskFileName = argv[i];
+                wOptions.maskFileName = argv[i];
             }
         } else if (string("-a") == argv[i]) {
             automatic = true;
+        } else if (string("-n") == argv[i] || string("--no-align") == argv[i]) {
+            options.align = false;
         } else if (string("--help") == argv[i]) {
             help = true;
         } else if (string("-b") == argv[i]) {
             if (++i < argc) {
                 int value = stoi(argv[i]);
-                if (value == 32 || value == 24 || value == 16) bps = value;
+                if (value == 32 || value == 24 || value == 16) wOptions.bps = value;
             }
         } else if (string("-p") == argv[i]) {
             if (++i < argc) {
                 previewWidth = argv[i];
             }
         } else if (argv[i][0] != '-') {
-            inFileNames.push_back(argv[i]);
+            options.fileNames.push_back(argv[i]);
         }
     }
 }
@@ -151,22 +142,23 @@ void Launcher::parseCommandLine(int argc, char * argv[]) {
 
 void Launcher::showHelp() {
     auto tr = [&] (const char * text) { return QCoreApplication::translate("Help", text); };
-    cout << tr("Usage") << ": HDRMerge [--help] [-o OUT_FILE] [-a] [-b BPS] [-p full|half|none] [-m MASK_FILE] [RAW_FILES ...]" << endl;
-    cout << tr("Merges RAW_FILES into OUT_FILE, to obtain an HDR raw image.") << endl;
+    cout << tr("Usage") << ": HDRMerge [--help] [OPTIONS ...] [RAW_FILES ...]" << endl;
+    cout << tr("Merges RAW_FILES into an HDR DNG raw image.") << endl;
     cout << endl;
     cout << tr("Options:") << endl;
     cout << "    " << "--help              " << tr("Shows this message.") << endl;
-    cout << "    " << "-o OUT_FILE         " << tr("Sets OUT_FILE as the output file name.") << endl;
     cout << "    " << "-a                  " << tr("Calculates the output file name automatically. Ignores -o.") << endl;
     cout << "    " << "-b BPS              " << tr("Bits per sample, can be 16, 24 or 32.") << endl;
-    cout << "    " << "-p full|half|none   " << tr("Preview width.") << endl;
     cout << "    " << "-m MASK_FILE        " << tr("Saves the mask to MASK_FILE as a PNG image.") << endl;
+    cout << "    " << "-n|--no-align       " << tr("Do not auto-align source images.") << endl;
+    cout << "    " << "-o OUT_FILE         " << tr("Sets OUT_FILE as the output file name.") << endl;
+    cout << "    " << "-p full|half|none   " << tr("Preview width.") << endl;
     cout << "    " << "RAW_FILES           " << tr("The input raw files.") << endl;
 }
 
 
 int Launcher::run() {
-    bool useGUI = !help && (!automatic || inFileNames.empty());
+    bool useGUI = !help && (!automatic || options.fileNames.empty());
 
     QApplication app(argcGUI, argvGUI, useGUI);
 

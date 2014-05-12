@@ -22,7 +22,7 @@
 
 #include <algorithm>
 #include "ImageStack.hpp"
-#include "DngWriter.hpp"
+#include "DngFloatWriter.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -75,7 +75,7 @@ int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) 
 
 
 int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) {
-    DngWriter writer(*this, progress);
+    DngFloatWriter writer(*this, progress);
     writer.setBitsPerSample(options.bps);
     writer.setPreviewWidth(options.previewSize);
     writer.setIndexFileName(options.maskFileName.c_str());

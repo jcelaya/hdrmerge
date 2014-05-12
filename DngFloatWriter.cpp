@@ -123,9 +123,11 @@ void DngFloatWriter::createMainIFD() {
     string profName(md.maker + " " + md.model);
     mainIFD.addEntry(PROFILENAME, IFD::ASCII, profName.length() + 1, profName.c_str());
     int32_t colorMatrix[18];
-    for (int im = 0, id = 0; im < 9; ++im, ++id) {
-        colorMatrix[id] = std::round(md.camXyz[0][im] * 10000.0f);
-        colorMatrix[++id] = 10000;
+    for (int row = 0, i = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            colorMatrix[i++] = std::round(md.camXyz[row][col] * 10000.0f);
+            colorMatrix[i++] = 10000;
+        }
     }
     mainIFD.addEntry(COLORMATRIX, IFD::SRATIONAL, 9, colorMatrix);
 
@@ -258,7 +260,7 @@ void DngFloatWriter::write(const string & filename) {
 void DngFloatWriter::renderPreviews() {
     QImage halfInterpolated(width, height, QImage::Format_RGB32);
     // Make the half size interpolation, and apply tone curve
-    
+
 }
 
 

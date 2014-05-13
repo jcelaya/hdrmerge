@@ -24,6 +24,7 @@
 #include <cmath>
 #include <algorithm>
 #include <libraw/libraw.h>
+#include "Log.hpp"
 #include "MetaData.hpp"
 using namespace hdrmerge;
 using namespace std;
@@ -94,14 +95,10 @@ void MetaData::adjustWhite() {
 
 void MetaData::dumpInfo() const {
     // Show idata
-    cout << "Image " << fileName << ", " << width << 'x' << height << ", by " << maker << ", model " << model << endl;
-    cout << colors << " colors with mask " << hex << filters << dec << ", " << cdesc << ", " << max << " max value" << endl;
+    Log::msg(Log::DEBUG, "Image ", fileName, ", ", width, 'x', height, ", by ", maker, ", model ", model);
+    Log::msg(Log::DEBUG, colors, " colors with mask ", hex, filters, dec, ", ", cdesc, ", ", max, " max value");
     // Show other
-    cout << "ISO:" << isoSpeed << " shutter:1/" << (1.0/shutter) << " aperture:f" << aperture << " exposure:" << logExp() << " steps" << endl;
+    Log::msg(Log::DEBUG, "ISO:", isoSpeed, " shutter:1/", (1.0/shutter), " aperture:f", aperture, " exposure:", logExp(), " steps");
     // Show matrices
-    cout << "White balance:";
-    for (int c = 0; c < 3; ++c) {
-        cout << " " << camMul[c];
-    }
-    cout << endl;
+    Log::msg(Log::DEBUG, "White balance: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
 }

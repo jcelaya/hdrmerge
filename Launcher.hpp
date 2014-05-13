@@ -31,24 +31,23 @@ namespace hdrmerge {
 
 class Launcher {
 public:
-    Launcher();
+    Launcher(int argc, char * argv[]);
 
-    void parseCommandLine(int argc, char * argv[]);
+    void parseCommandLine();
 
     int run();
 
 private:
+    bool checkGUI();
     int startGUI();
     int automaticMerge();
     void showHelp();
 
-    int argcGUI;
-    char ** argvGUI;
+    int argc;
+    char ** argv;
     LoadOptions options;
     SaveOptions wOptions;
-    bool automatic;
     bool help;
-    char * previewWidth;
 };
 
 } // namespace hdrmerge

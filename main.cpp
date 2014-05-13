@@ -23,7 +23,6 @@
 #include "Launcher.hpp"
 
 int main(int argc, char * argv[]) {
-    hdrmerge::Launcher launcher;
-    launcher.parseCommandLine(argc, argv);
+    hdrmerge::Launcher launcher(argc, argv);
     return launcher.run();
 }

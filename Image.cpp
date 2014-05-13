@@ -46,10 +46,8 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
             uint16_t v = rawImage[rrow*md->rawWidth + rcol];
             rawPixels[row*width + col] = v;
             brightness += v;
-            for (int c = 0; c < 4; ++c) {
-                if (v > maxPerColor[md->FC(row, col)]) {
-                    maxPerColor[md->FC(row, col)] = v;
-                }
+            if (v > maxPerColor[md->FC(row, col)]) {
+                maxPerColor[md->FC(row, col)] = v;
             }
         }
     }

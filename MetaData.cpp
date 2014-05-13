@@ -35,7 +35,7 @@ void adobe_cam_xyz(const string & t_make, const string & t_model, float * cam_xy
 
 
 MetaData::MetaData() : width(0), height(0), rawWidth(0), topMargin(0), leftMargin(0), filters(0),
-max(0), black(0), cblack{}, camMul{}, camXyz{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
+max(0), black(0), cblack{}, camMul{}, camXyz{}, rgbCam{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
 MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
@@ -54,6 +54,7 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     copy_n(r.color.cam_mul, 4, camMul);
     adjustWhite();
     copy_n((float *)r.color.cam_xyz, 3*4, (float *)camXyz);
+    copy_n((float *)r.color.rgb_cam, 4*3, (float *)rgbCam);
     isoSpeed = r.other.iso_speed;
     shutter = r.other.shutter;
     aperture = r.other.aperture;

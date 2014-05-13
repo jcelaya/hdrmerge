@@ -56,15 +56,16 @@ private:
     std::ofstream file;
     const ImageStack & stack;
     IFD mainIFD, rawIFD, previewIFD;
-    size_t width, height;
-    size_t tileWidth, tileLength;
-    size_t tilesAcross, tilesDown;
+    uint32_t width, height;
+    uint32_t tileWidth, tileLength;
+    uint32_t tilesAcross, tilesDown;
     std::unique_ptr<float[]> rawData;
-    size_t previewWidth;
+    uint32_t previewWidth;
     int bps;
     QString indexFile;
     QImage thumbnail;
     QImage preview;
+    uint32_t subIFDoffsets[2];
 
     void createMainIFD();
     void createRawIFD();
@@ -73,6 +74,8 @@ private:
     void buildIndexImage();
     void copyMetadata(const std::string & filename);
     void renderPreviews();
+    void writePreviews();
+    void createPreviewIFD();
 };
 
 } // namespace hdrmerge

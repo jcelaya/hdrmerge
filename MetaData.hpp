@@ -64,6 +64,7 @@ public:
     uint16_t cblack[4];
     float camMul[4];
     float camXyz[4][3];
+    float rgbCam[3][4];
     float isoSpeed;
     float shutter;
     float aperture;

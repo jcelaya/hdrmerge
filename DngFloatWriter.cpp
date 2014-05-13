@@ -21,14 +21,12 @@
  */
 
 #include <ctime>
-#include <iostream>
-#include <QImage>
 #include <QBuffer>
 #include <zlib.h>
-#include <exiv2/exif.hpp>
-#include <exiv2/image.hpp>
+#include <exiv2/exiv2.hpp>
 #include "config.h"
 #include "DngFloatWriter.hpp"
+#include "Renderer.hpp"
 using namespace std;
 
 
@@ -54,11 +52,15 @@ enum {
     SAMPLESPERPIXEL = 277,
     BITSPERSAMPLE = 258,
     FILLORDER = 266,
+    ACTIVEAREA = 50829,
 
     TILEWIDTH = 322,
     TILELENGTH = 323,
     TILEOFFSETS = 324,
     TILEBYTES = 325,
+    ROWSPERSTRIP = 278,
+    STRIPOFFSETS = 273,
+    STRIPBYTES = 279,
 
     PLANARCONFIG = 284,
     COMPRESSION = 259,
@@ -87,7 +89,53 @@ enum {
     XRESOLUTION = 282,
     YRESOLUTION = 283,
     COPYRIGHT = 33432,
+
+    YCBCRCOEFFS = 529,
+    YCBCRSUBSAMPLING = 530,
+    YCBCRPOSITIONING = 531,
+    REFBLACKWHITE = 532,
 } Tag;
+
+
+void DngFloatWriter::write(const string & filename) {
+    progress.advance(0, "Rendering image");
+    rawData.reset(new float[width * height]);
+    stack.compose(rawData.get());
+
+    progress.advance(25, "Rendering preview");
+    renderPreviews();
+
+    progress.advance(50, "Initialize metadata");
+    file.open(filename, ios_base::binary);
+    createMainIFD();
+    subIFDoffsets[0] = 8 + mainIFD.length();
+    createRawIFD();
+    size_t dataOffset = subIFDoffsets[0] + rawIFD.length();
+    if (previewWidth > 0) {
+        createPreviewIFD();
+        subIFDoffsets[1] = subIFDoffsets[0] + rawIFD.length();
+        dataOffset += previewIFD.length();
+    }
+    mainIFD.setValue(SUBIFDS, (const  void *)subIFDoffsets);
+    file.seekp(dataOffset);
+
+    progress.advance(75, "Writing output");
+    if (!indexFile.isEmpty())
+        buildIndexImage();
+    writePreviews();
+    writeRawData();
+    file.seekp(0);
+    TiffHeader().write(file);
+    mainIFD.write(file, false);
+    rawIFD.write(file, false);
+    if (previewWidth > 0) {
+        previewIFD.write(file, false);
+    }
+    file.close();
+
+    copyMetadata(filename);
+    progress.advance(100, "Done writing!");
+}
 
 
 void DngFloatWriter::createMainIFD() {
@@ -95,7 +143,6 @@ void DngFloatWriter::createMainIFD() {
     uint8_t dngVersion[] = { 1, 4, 0, 0 };
     mainIFD.addEntry(DNGVERSION, IFD::BYTE, 4, dngVersion);
     mainIFD.addEntry(DNGBACKVERSION, IFD::BYTE, 4, dngVersion);
-    // Thumbnail set thumbnail->AddTagSet (mainIFD)
     uint8_t tiffep[] = { 1, 0, 0, 0 };
     mainIFD.addEntry(TIFFEPSTD, IFD::BYTE, 4, tiffep);
     mainIFD.addEntry(MAKE, IFD::ASCII, md.maker.length() + 1, md.maker.c_str());
@@ -146,17 +193,30 @@ void DngFloatWriter::createMainIFD() {
     string cameraName(md.maker + " " + md.model);
     mainIFD.addEntry(UNIQUENAME, IFD::ASCII, cameraName.length() + 1, &cameraName[0]);
     // TODO: Add Digest and Unique ID
-    // TODO: Add XMP and Exif and private data
-    mainIFD.addEntry(SUBIFDS, IFD::LONG, 1);
+    mainIFD.addEntry(SUBIFDS, IFD::LONG, previewWidth > 0 ? 2 : 1, subIFDoffsets);
+
+    // Thumbnail
+    mainIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 1);
+    mainIFD.addEntry(IMAGEWIDTH, IFD::LONG, thumbnail.width());
+    mainIFD.addEntry(IMAGELENGTH, IFD::LONG, thumbnail.height());
+    mainIFD.addEntry(SAMPLESPERPIXEL, IFD::SHORT, 3);
+    uint16_t bpsthumb[] = {8, 8, 8};
+    mainIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, 3, bpsthumb);
+    mainIFD.addEntry(PLANARCONFIG, IFD::SHORT, 1);
+    mainIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, 2); // RGB
+    mainIFD.addEntry(COMPRESSION, IFD::SHORT, 1); // Uncompressed
+    mainIFD.addEntry(ROWSPERSTRIP, IFD::LONG, thumbnail.height());
+    mainIFD.addEntry(STRIPBYTES, IFD::LONG, 0);
+    mainIFD.addEntry(STRIPOFFSETS, IFD::LONG, 0);
 }
 
 
 void DngFloatWriter::calculateTiles() {
     int bytesPerTile = 512 * 1024;
     int cellSize = 16;
-    size_t bytesPerSample = bps >> 3;
-    size_t samplesPerTile = bytesPerTile / bytesPerSample;
-    size_t tileSide = std::round(std::sqrt(samplesPerTile));
+    uint32_t bytesPerSample = bps >> 3;
+    uint32_t samplesPerTile = bytesPerTile / bytesPerSample;
+    uint32_t tileSide = std::round(std::sqrt(samplesPerTile));
     tileWidth = std::min(width, tileSide);
     tilesAcross = (width + tileWidth - 1) / tileWidth;;
     tileWidth = (width + tilesAcross - 1) / tilesAcross;
@@ -172,6 +232,8 @@ void DngFloatWriter::createRawIFD() {
     rawIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 0);
     rawIFD.addEntry(IMAGEWIDTH, IFD::LONG, width);
     rawIFD.addEntry(IMAGELENGTH, IFD::LONG, height);
+    uint32_t aa[] = { 0, 0, height, width };
+    rawIFD.addEntry(ACTIVEAREA, IFD::LONG, 4, aa);
     rawIFD.addEntry(SAMPLESPERPIXEL, IFD::SHORT, 1);
     rawIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, bps);
     if (bps == 24) {
@@ -206,6 +268,29 @@ void DngFloatWriter::createRawIFD() {
 }
 
 
+void DngFloatWriter::createPreviewIFD() {
+    previewIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 1);
+    previewIFD.addEntry(IMAGEWIDTH, IFD::LONG, preview.width());
+    previewIFD.addEntry(IMAGELENGTH, IFD::LONG, preview.height());
+    previewIFD.addEntry(SAMPLESPERPIXEL, IFD::SHORT, 3);
+    uint16_t bpspre[] = {8, 8, 8};
+    previewIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, 3, bpspre);
+    previewIFD.addEntry(PLANARCONFIG, IFD::SHORT, 1);
+    previewIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, 6); // YCbCr
+    previewIFD.addEntry(COMPRESSION, IFD::SHORT, 7); // JPEG
+    previewIFD.addEntry(ROWSPERSTRIP, IFD::LONG, preview.height());
+    previewIFD.addEntry(STRIPBYTES, IFD::LONG, 0);
+    previewIFD.addEntry(STRIPOFFSETS, IFD::LONG, 0);
+    uint16_t subsampling[] = { 2, 2 };
+    previewIFD.addEntry(YCBCRSUBSAMPLING, IFD::SHORT, 2, subsampling);
+    previewIFD.addEntry(YCBCRPOSITIONING, IFD::SHORT, 2);
+    uint32_t coefficients[] = { 299, 1000, 587, 1000, 114, 1000 };
+    previewIFD.addEntry(YCBCRCOEFFS, IFD::RATIONAL, 3, coefficients);
+    uint32_t refs[] = { 0, 1, 255, 1, 128, 1, 255, 1, 128, 1, 255, 1};
+    previewIFD.addEntry(REFBLACKWHITE, IFD::RATIONAL, 6, refs);
+}
+
+
 void DngFloatWriter::buildIndexImage() {
     size_t width = stack.getWidth(), height = stack.getHeight();
     QImage indexImage(width, height, QImage::Format_Indexed8);
@@ -224,43 +309,12 @@ void DngFloatWriter::buildIndexImage() {
 }
 
 
-void DngFloatWriter::write(const string & filename) {
-    progress.advance(0, "Rendering image");
-    rawData.reset(new float[width * height]);
-    stack.compose(rawData.get());
-
-    progress.advance(25, "Rendering preview");
-    renderPreviews();
-
-    progress.advance(50, "Initialize metadata");
-    file.open(filename, ios_base::binary);
-    createMainIFD();
-    createRawIFD();
-    size_t rawIFDOffset = 8 + mainIFD.length();
-    mainIFD.setValue(SUBIFDS, rawIFDOffset);
-    size_t dataOffset = rawIFDOffset + rawIFD.length();
-    file.seekp(dataOffset);
-
-    progress.advance(75, "Writing output");
-    if (!indexFile.isEmpty())
-        buildIndexImage();
-    // Write previews
-    writeRawData();
-    file.seekp(0);
-    TiffHeader().write(file);
-    mainIFD.write(file, false);
-    rawIFD.write(file, false);
-    file.close();
-
-    copyMetadata(filename);
-    progress.advance(100, "Done writing!");
-}
-
-
 void DngFloatWriter::renderPreviews() {
-    QImage halfInterpolated(width, height, QImage::Format_RGB32);
-    // Make the half size interpolation, and apply tone curve
-
+    Renderer r(rawData.get(), width, height, stack.getImage(0).getMetaData());
+    r.process();
+    thumbnail = r.getScaledVersion(256).convertToFormat(QImage::Format_RGB888);
+    if (previewWidth > 0)
+        preview = r.getScaledVersion(previewWidth);
 }
 
 
@@ -300,6 +354,23 @@ void DngFloatWriter::copyMetadata(const string & filename) {
     }
     catch (Exiv2::Error& e) {
         std::cerr << "Exiv2 error: " << e.what() << std::endl;
+    }
+}
+
+
+void DngFloatWriter::writePreviews() {
+    size_t thumbsize = thumbnail.width() * thumbnail.height() * 3;
+    mainIFD.setValue(STRIPBYTES, thumbsize);
+    mainIFD.setValue(STRIPOFFSETS, file.tellp());
+    file.write((const char *)thumbnail.bits(), thumbsize);
+    if (previewWidth > 0) {
+        QByteArray ba;
+        QBuffer buffer(&ba);
+        buffer.open(QIODevice::WriteOnly);
+        preview.save(&buffer, "JPEG", 90);
+        previewIFD.setValue(STRIPBYTES, ba.size());
+        previewIFD.setValue(STRIPOFFSETS, file.tellp());
+        file.write(ba.constData(), ba.size());
     }
 }
 

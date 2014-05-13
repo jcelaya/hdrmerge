@@ -60,6 +60,7 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     relExp = 65535.0 / max;
     brightness /= size;
     subtractBlack();
+    metaData->max = max;
     preScale();
     computeHalfLightPercentile();
     metaData->dumpInfo();

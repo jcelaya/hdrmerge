@@ -24,8 +24,8 @@
         <translation type="finished">Establece OUT_FILE como el nombre del fichero de salida.</translation>
     </message>
     <message>
-        <source>Calculates the output file name automatically. Ignores -o.</source>
-        <translation type="finished">Calcula el nombre del fichero de salida automáticamente. Ignora -o.</translation>
+        <source>Calculates the output file name automatically.</source>
+        <translation type="finished">Calcula el nombre del fichero de salida automáticamente.</translation>
     </message>
     <message>
         <source>Bits per sample, can be 16, 24 or 32.</source>
@@ -46,6 +46,26 @@
     <message>
         <source>Do not auto-align source images.</source>
         <translation type="finished">No auto-alinear las imágenes de origen.</translation>
+    </message>
+    <message>
+        <source>Verbose mode.</source>
+        <translation type="finished">Mostrar información de progreso.</translation>
+    </message>
+    <message>
+        <source>Debug mode.</source>
+        <translation type="finished">Modo depuración.</translation>
+    </message>
+    <message>
+        <source>If similar options are specified, only the last one prevails.</source>
+        <translation type="finished">Si se dan opciones similares, sólo la ultima de ellas se tiene en cuenta.</translation>
+    </message>
+    <message>
+        <source>Invalid %1 parameter, using default.</source>
+        <translation type="finished">Parámetro %1 inválido, se usará el valor por defecto.</translation>
+    </message>
+    <message>
+        <source>If neither -a nor -o options are given, the GUI will be presented.</source>
+        <translation type="finished">Si no se dan las opciones -a o -o, se mostrará la GUI.</translation>
     </message>
 </context>
 <context>

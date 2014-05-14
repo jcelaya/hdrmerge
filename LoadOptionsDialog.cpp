@@ -54,7 +54,7 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     connect(addButton, SIGNAL(clicked(bool)), this, SLOT(addFiles()));
     connect(removeButton, SIGNAL(clicked(bool)), this, SLOT(removeFiles()));
 
-    alignBox = new QCheckBox(tr("Align source images"), this);
+    alignBox = new QCheckBox(tr("Align source images."), this);
     alignBox->setChecked(true);
     layout->addWidget(alignBox, 0);
 
@@ -70,7 +70,7 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     layout->addWidget(buttons, 0, Qt::AlignHCenter);
 
     setLayout(layout);
-    setWindowTitle(tr("Load raw images"));
+    setWindowTitle(tr("Open raw images"));
     addFiles();
 }
 

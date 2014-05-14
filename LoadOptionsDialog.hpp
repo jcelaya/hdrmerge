@@ -20,42 +20,36 @@
  *
  */
 
-#ifndef _DNGPROPERTIESDIALOG_H_
-#define _DNGPROPERTIESDIALOG_H_
+#ifndef _LOADOPTIONSDIALOG_H_
+#define _LOADOPTIONSDIALOG_H_
 
 #include <QDialog>
-#include <QLineEdit>
+#include <QListWidget>
+#include <QCheckBox>
 #include "LoadSaveOptions.hpp"
 
 namespace hdrmerge {
 
-class DngPropertiesDialog : public QDialog, public SaveOptions {
+class LoadOptionsDialog : public QDialog, public LoadOptions {
 public:
-    DngPropertiesDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
+    LoadOptionsDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
 
-    /// Triggered when the dialog is closed
     void closeEvent(QCloseEvent * event) { reject(); }
-
-    void setIndexFileName(const QString & name) {
-        indexFileEditor->setText(name);
-    }
 
 public slots:
     virtual void accept();
+    void addFiles();
+    void removeFiles();
 
 private slots:
-    void setBps(int index);
-    void setPreviewSize(int index);
-    void setIndexFileName();
-    void setIndexFileSelectorEnabled(int state);
 
 private:
     Q_OBJECT
 
-    QLineEdit * indexFileEditor;
-    QWidget * indexFileSelector;
+    QListWidget * fileList;
+    QCheckBox * alignBox;
 };
 
 } // namespace hdrmerge
 
-#endif // _DNGPROPERTIESDIALOG_H_
+#endif // _LOADOPTIONSDIALOG_H_

@@ -45,6 +45,7 @@
 #include "PreviewWidget.hpp"
 #include "DraggableScrollArea.hpp"
 #include "DngPropertiesDialog.hpp"
+#include "LoadOptionsDialog.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -254,40 +255,9 @@ void MainWindow::showEvent(QShowEvent * event) {
 
 
 void MainWindow::loadImages() {
-    QSettings settings;
-    QVariant lastDirSetting = settings.value("lastOpenDirectory");
-    QString filter(tr("Raw images ("
-        "*.3fr "
-        "*.ari *.arw "
-        "*.bay "
-        "*.crw *.cr2 *.cap "
-        "*.dcs *.dcr *.dng *.drf "
-        "*.eip *.erf "
-        "*.fff "
-        "*.iiq "
-        "*.k25 *.kdc "
-        "*.mdc *.mef *.mos *.mrw "
-        "*.nef *.nrw "
-        "*.obm *.orf "
-        "*.pef *.ptx *.pxn "
-        "*.r3d *.raf *.raw *.rwl *.rw2 *.rwz "
-        "*.sr2 *.srf *.srw "
-        "*.x3f"
-        ")"));
-    QStringList files = QFileDialog::getOpenFileNames(this, tr("Open raw images"),
-        lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
-        filter, NULL, QFileDialog::DontUseNativeDialog);
-    if (!files.empty()) {
-        // Save last dir
-        QString lastDir = QDir(files.front()).absolutePath();
-        lastDir.truncate(lastDir.lastIndexOf('/'));
-        settings.setValue("lastOpenDirectory", lastDir);
-        LoadOptions options;
-        unsigned int numImages = files.size();
-        for (int i = 0; i < numImages; ++i) {
-            options.fileNames.push_back(QDir::toNativeSeparators(files[i]).toLocal8Bit().constData());
-        }
-        loadImages(options);
+    LoadOptionsDialog lod;
+    if (lod.exec()) {
+        loadImages(lod);
     }
     shiftPressed = controlPressed = false;
     dragToolAction->trigger();

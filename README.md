@@ -66,28 +66,13 @@ Currently, HDRMerge is only supported in Linux. HDRMerge depends on:
 * Qt (tested with version 4.8)
 * LibRaw (tested with version 0.16.0)
 * Exiv2 (tested with version 0.23)
-* DNG SDK 1.4 (its source code is included with HDRMerge)
-* XMP SDK (tested with version CC 2013.06)
+* ZLib (tested with version 1.2.7)
 
 You will need the development files of these libraries, CMake version 2.8.8 or greater and gcc 4.8 or greater.
 
-## Building the XMP SDK
-
-You can obtain the Adobe XMP SDK from <http://www.adobe.com/devnet/xmp.html>. To build it:
-
-1. Unzip the sdk in the `third_party` directory.
-+  Rename the XMP SDK directory as `xmp_sdk`.
-+  Cd into `xmp_sdk/third_party` and follow the instructions to download libexpat and zlib.
-+  Cd into `xmp_sdk/build` and run 'make StaticAll'. Known problems:
-    - Depending on your version of gcc, it may give lots of warnings, just ignore them.
-    - It may fail at `shared/SharedConfig_Common.cmake`, comment out the lines failing.
-    - Also, `XMPFiles/source/NativeMetadataSupport/ValueObject.h` should include `string.h`.
-+  Move or symlink `public/libraries/*/release/staticXMPCore.ar` to
-    `public/libraries/libXMPCore.a` (note that you must change its name: starts with **lib**, ends with **.a**). The same with `public/libraries/*/release/staticXMPFiles.ar`, named as `libXMPFiles.a`.
-
 ## Building HDRMerge
 
-Once the XMP SDK is compiled, the steps to compile and install HDRMerge are:
+The steps to compile and install HDRMerge are:
 
     $ mkdir build; cd build
     $ cmake ..

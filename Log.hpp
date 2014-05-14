@@ -24,6 +24,8 @@
 #define _LOG_HPP_
 
 #include <ostream>
+#include <string>
+#include <QString>
 
 namespace hdrmerge {
 
@@ -70,6 +72,11 @@ private:
         output(args...);
     }
 };
+
+
+inline std::ostream & operator<<(std::ostream & os, const QString & s) {
+    return os << std::string(s.toUtf8().constData());
+}
 
 } // namespace hdrmerge
 

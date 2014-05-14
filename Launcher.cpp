@@ -50,11 +50,6 @@ int Launcher::startGUI() {
 }
 
 
-static std::ostream & operator<<(std::ostream & os, const QString & s) {
-    return os << string(s.toUtf8().constData());
-}
-
-
 struct CoutProgressIndicator : public ProgressIndicator {
     CoutProgressIndicator() : currentPercent(0) {}
 

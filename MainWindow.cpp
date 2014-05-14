@@ -360,19 +360,11 @@ void MainWindow::saveResult() {
             DngPropertiesDialog dpd(this);
             dpd.setIndexFileName((images->buildOutputFileName() + "_index.png").c_str());
             if (dpd.exec()) {
+                dpd.fileName = fileName;
                 ProgressDialog pd(this);
                 pd.setWindowTitle(tr("Save DNG file"));
                 QFuture<void> result = QtConcurrent::run([&]() {
-                    SaveOptions options;
-                    options.bps = dpd.getBps();
-                    options.maskFileName = dpd.getIndexFileName().toUtf8().constData();
-                    options.fileName = fileName;
-                    switch (dpd.getPreviewSize()) {
-                        case 0: options.previewSize = images->getWidth(); break;
-                        case 1: options.previewSize = images->getWidth() / 2; break;
-                        default: options.previewSize = 0;
-                    }
-                    images->save(options, pd);
+                    images->save(dpd, pd);
                 });
                 while (result.isRunning())
                     QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);

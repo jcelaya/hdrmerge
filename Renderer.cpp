@@ -63,14 +63,14 @@ void Renderer::process() {
 
 
 void Renderer::whiteBalance() {
-    double dmax = 0;
+    double dmin = 10000000.0;
     for (int c = 0; c < 4; ++c) {
-        if (dmax < md.camMul[c])
-            dmax = md.camMul[c];
+        if (dmin > md.camMul[c])
+            dmin = md.camMul[c];
     }
     float scale_mul[4];
     for (int c = 0; c < 4; ++c) {
-        scale_mul[c] = (md.camMul[c] /= dmax);
+        scale_mul[c] = (md.camMul[c] /= dmin);
     }
     size_t size = height*width;
     float * dst = image[0];

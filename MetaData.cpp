@@ -68,8 +68,13 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     dateTime = dateTimeTmp;
     colors = r.idata.colors;
     flip = r.sizes.flip;
-    if (flip == 0)
-        flip = 1;
+    switch (flip) {
+        case 0: tiffOrientation = 1; break;
+        case 3: tiffOrientation = 3; break;
+        case 5: tiffOrientation = 8; break;
+        case 6: tiffOrientation = 6; break;
+        default: tiffOrientation = 9; break;
+    }
     // LibRaw does not create this matrix for DNG files!!!
     if (!camXyz[0][0]) {
         adobe_cam_xyz(maker, model, (float *)camXyz);

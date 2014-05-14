@@ -29,7 +29,7 @@
 #include <cmath>
 #include "Image.hpp"
 #include "ProgressIndicator.hpp"
-#include "MergeMap.hpp"
+#include "EditableMask.hpp"
 #include "LoadSaveOptions.hpp"
 
 namespace hdrmerge {
@@ -41,9 +41,10 @@ public:
     int load(const LoadOptions & options, ProgressIndicator & progress);
     int save(const SaveOptions & options, ProgressIndicator & progress);
     void align();
+    void crop();
     void computeRelExposures();
-    void generateImageIndex() {
-        imageIndex.generateFrom(*this);
+    void generateMask() {
+        mask.generateFrom(*this);
     }
 
     size_t size() const { return images.size(); }
@@ -66,26 +67,21 @@ public:
     bool addImage(std::unique_ptr<Image> & i);
     std::string buildOutputFileName() const;
     double value(size_t x, size_t y) const;
-    int getImageAt(size_t x, size_t y) const {
-        return imageIndex[y*width + x];
-    }
-    void setImageAt(size_t x, size_t y, int i) {
-        imageIndex[y*width + x] = i;
-    }
     void compose(float * dst) const;
     void setGamma(float g);
     uint8_t toneMap(double v) {
         return toneCurve[(int)std::floor(v)];
     }
+    EditableMask & getMask() {
+        return mask;
+    }
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
-    MergeMap imageIndex;
-    size_t width;     ///< Size of a row
-    size_t height;    ///< Size of a column
+    EditableMask mask;
+    size_t width;
+    size_t height;
     uint8_t toneCurve[65536];
-
-    void findIntersection();
 };
 
 } // namespace hdrmerge

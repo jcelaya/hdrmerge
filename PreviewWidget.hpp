@@ -52,15 +52,9 @@ protected:
 
 private slots:
     void paintImage(int x, int y, const QImage & image);
-    void paintPixels(int x, int y);
 
 private:
     Q_OBJECT
-
-    struct EditAction {
-        int oldLayer, newLayer;
-        std::list<QPoint> points;
-    };
 
     std::unique_ptr<QPixmap> pixmap;
     std::unique_ptr<ImageStack> stack;
@@ -69,14 +63,11 @@ private:
     bool addPixels, rmPixels;
     int layer;
     int radius;
-    std::list<EditAction> editActions;
-    std::list<EditAction>::iterator nextAction;
 
     void render(int minx, int miny, int maxx, int maxy);
     QRgb rgb(int col, int row) const;
     QPixmap createCursor(bool plus);
     void rotate(int & x, int & y) const;
-    void modifyLayer(const std::list<QPoint> & points, int oldayer);
 };
 
 } // namespace hdrmerge

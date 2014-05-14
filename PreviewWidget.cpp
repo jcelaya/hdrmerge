@@ -32,7 +32,7 @@ using namespace hdrmerge;
 
 
 PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent), width(0), height(0), flip(0),
-addPixels(false), rmPixels(false), layer(0), radius(5), nextAction(editActions.end()) {
+addPixels(false), rmPixels(false), layer(0), radius(5) {
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 }
 
@@ -48,8 +48,6 @@ void PreviewWidget::setImageStack(ImageStack * s) {
         height = stack->getHeight();
     }
     pixmap.reset();
-    editActions.clear();
-    nextAction = editActions.end();
     QtConcurrent::run(this, &PreviewWidget::render, 0, 0, width, height);
 }
 
@@ -95,7 +93,7 @@ QRgb PreviewWidget::rgb(int col, int row) const {
     else if (d > 65535) d = 65535;
     int v = stack->toneMap(d);
     int v70 = v*7/10;
-    int color = stack->getImageAt(col, row);
+    int color = stack->getMask().getImageAt(col, row);
     QRgb pixel;
     switch (color) {
         case 0:
@@ -182,73 +180,33 @@ void PreviewWidget::toggleRmPixelsTool(bool toggled) {
 void PreviewWidget::mousePressEvent(QMouseEvent * event) {
     if (addPixels || rmPixels) {
         event->accept();
-        editActions.erase(nextAction, editActions.end());
-        editActions.emplace_back();
-        nextAction = editActions.end();
-        editActions.back().oldLayer = addPixels ? layer + 1 : layer;
-        editActions.back().newLayer = addPixels ? layer : layer + 1;
-        paintPixels(event->x(), event->y());
+        stack->getMask().startAction(addPixels, layer);
+        int x = event->x(), y = event->y();
+        rotate(x, y);
+        stack->getMask().paintPixels(x, y, radius);
+        render(x - radius, y - radius, x + radius + 1, y + radius + 1);
     } else
         event->ignore();
 }
 void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
     if (addPixels || rmPixels) {
         event->accept();
-        paintPixels(event->x(), event->y());
+        int x = event->x(), y = event->y();
+        rotate(x, y);
+        stack->getMask().paintPixels(x, y, radius);
+        render(x - radius, y - radius, x + radius + 1, y + radius + 1);
     } else
         event->ignore();
 }
 
 
-void PreviewWidget::paintPixels(int x, int y) {
-    if (!stack.get()) return;
-    EditAction & e = editActions.back();
-    int r2 = radius * radius;
-    int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
-    int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
-    for (int row = ymin; row < ymax; ++row) {
-        for (int col = xmin; col < xmax; ++col) {
-            if (row*row + col*col <= r2) {
-                size_t pos = (y + row)*width + (x + col);
-                int rcol = x + col, rrow = y + row;
-                rotate(rcol, rrow);
-                if (stack->getImageAt(rcol, rrow) == e.oldLayer) {
-                    e.points.push_back(QPoint(x + col, y + row));
-                    stack->setImageAt(rcol, rrow, e.newLayer);
-                }
-            }
-        }
-    }
-    render(x - radius, y - radius, x + radius + 1, y + radius + 1);
-}
-
-
-void PreviewWidget::modifyLayer(const std::list<QPoint> & points, int layer) {
-    int minx = width + 1, miny = height + 1, maxx = -1, maxy = -1;
-    for (auto p : points) {
-        int rcol = p.x(), rrow = p.y();
-        rotate(rcol, rrow);
-        stack->setImageAt(rcol, rrow, layer);
-        if (p.x() < minx) minx = p.x();
-        if (p.x() > maxx) maxx = p.x();
-        if (p.y() < miny) miny = p.y();
-        if (p.y() > maxy) maxy = p.y();
-    }
-    render(minx, miny, maxx + 1, maxy + 1);
-}
-
-
 void PreviewWidget::undo() {
-    if (nextAction != editActions.begin()) {
-        --nextAction;
-        modifyLayer(nextAction->points, nextAction->oldLayer);
-    }
+    EditableMask::Area a = stack->getMask().undo();
+    render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
 }
 
 
 void PreviewWidget::redo() {
-    if (nextAction != editActions.end()) {
-        modifyLayer(nextAction->points, nextAction->newLayer);
-        ++nextAction;
-    }
+    EditableMask::Area a = stack->getMask().redo();
+    render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
 }

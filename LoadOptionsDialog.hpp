@@ -41,13 +41,15 @@ public slots:
     void addFiles();
     void removeFiles();
 
-private slots:
-
+protected:
+    virtual void showEvent(QShowEvent * event);
+    
 private:
     Q_OBJECT
 
     QListWidget * fileList;
     QCheckBox * alignBox;
+    QCheckBox * cropBox;
 };
 
 } // namespace hdrmerge

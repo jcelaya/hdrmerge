@@ -101,7 +101,8 @@ void Bitmap::applyRowMask(int dx) {
             bits[padiv] &= amask;
             for (size_t i = padiv + 1; i < pbdiv; ++i)
                 bits[i] &= 0;
-            bits[pbdiv] &= bmask;
+            if (pbdiv < size)
+                bits[pbdiv] &= bmask;
         }
     }
 }

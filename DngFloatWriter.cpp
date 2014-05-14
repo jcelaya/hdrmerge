@@ -121,8 +121,6 @@ void DngFloatWriter::write(const string & filename) {
     file.seekp(dataOffset);
 
     progress.advance(75, "Writing output");
-    if (!indexFile.isEmpty())
-        buildIndexImage();
     writePreviews();
     writeRawData();
     file.seekp(0);
@@ -289,24 +287,6 @@ void DngFloatWriter::createPreviewIFD() {
     previewIFD.addEntry(YCBCRCOEFFS, IFD::RATIONAL, 3, coefficients);
     uint32_t refs[] = { 0, 1, 255, 1, 128, 1, 255, 1, 128, 1, 255, 1};
     previewIFD.addEntry(REFBLACKWHITE, IFD::RATIONAL, 6, refs);
-}
-
-
-void DngFloatWriter::buildIndexImage() {
-    size_t width = stack.getWidth(), height = stack.getHeight();
-    QImage indexImage(width, height, QImage::Format_Indexed8);
-    int numColors = stack.size() - 1;
-    for (int c = 0; c < numColors; ++c) {
-        int gray = (256 * c) / numColors;
-        indexImage.setColor(c, qRgb(gray, gray, gray));
-    }
-    indexImage.setColor(numColors, qRgb(255, 255, 255));
-    for (size_t row = 0; row < height; ++row) {
-        for (size_t col = 0; col < width; ++col) {
-            indexImage.setPixel(col, row, stack.getImageAt(col, row));
-        }
-    }
-    indexImage.save(indexFile);
 }
 
 
@@ -492,14 +472,14 @@ static void compressFloats(Bytef * dst, int tileWidth, int bytesps) {
     if (bytesps == 2) {
         uint16_t * dst16 = (uint16_t *) dst;
         uint32_t * dst32 = (uint32_t *) dst;
-        for (int index = 0; index < tileWidth; ++index) {
-            dst16[index] = DNG_FloatToHalf(dst32[index]);
+        for (int i = 0; i < tileWidth; ++i) {
+            dst16[i] = DNG_FloatToHalf(dst32[i]);
         }
     } else if (bytesps == 3) {
         uint8_t  * dst8  = (uint8_t *)  dst;
         uint32_t * dst32 = (uint32_t *) dst;
-        for (int index = 0; index < tileWidth; ++index) {
-            DNG_FloatToFP24(dst32[index], dst8);
+        for (int i = 0; i < tileWidth; ++i) {
+            DNG_FloatToFP24(dst32[i], dst8);
             dst8 += 3;
         }
     }

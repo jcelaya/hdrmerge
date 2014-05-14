@@ -75,7 +75,7 @@ public:
         dx += newDx;
         dy += newDy;
     }
-    void relativeExposure(const Image & nextImage, size_t w, size_t h);
+    void relativeExposure(const Image & nextImage);
 
     static bool comparePointers(const std::unique_ptr<Image> & l, const std::unique_ptr<Image> & r) {
         return l->brightness > r->brightness;

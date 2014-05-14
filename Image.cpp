@@ -24,6 +24,7 @@
 #include "Image.hpp"
 #include "Bitmap.hpp"
 #include "Histogram.hpp"
+#include "Log.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -103,16 +104,22 @@ bool Image::isSameFormat(const Image & ref) const {
 }
 
 
-void Image::relativeExposure(const Image & r, size_t w, size_t h) {
+void Image::relativeExposure(const Image & r) {
+    int reldx = dx - std::max(dx, r.dx);
+    int relrdx = r.dx - std::max(dx, r.dx);
+    int w = width + reldx + relrdx;
+    int reldy = dy - std::max(dy, r.dy);
+    int relrdy = r.dy - std::max(dy, r.dy);
+    int h = height + reldy + relrdy;
     // Minimize square error between images:
     // min. C(n) = sum(n*f(x) - g(x))^2  ->  n = sum(f(x)*g(x)) / sum(f(x)^2)
     double numerator = 0, denom = 0, threshold = max * 0.9;
-    for (size_t y = 0; y < h; ++y) {
-        for (size_t x = 0; x < w; ++x) {
-            size_t pos = (y - dy) * width - dx + x;
+    for (int y = 0; y < h; ++y) {
+        for (int x = 0; x < w; ++x) {
+            int pos = (y - reldy) * width - reldx + x;
             double v = rawPixels[pos];
             if (v > 0 && v < threshold) {
-                size_t rpos = (y - r.dy) * width - r.dx + x;
+                int rpos = (y - relrdy) * width - relrdx + x;
                 double nv = r.rawPixels[rpos];
                 numerator += v * nv;
                 denom += v * v;
@@ -135,8 +142,8 @@ void Image::alignWith(const Image & r) {
         size_t minError = curWidth*curHeight;
         Histogram hist1(r.scaled[s].get(), r.scaled[s].get() + curWidth*curHeight);
         Histogram hist2(scaled[s].get(), scaled[s].get() + curWidth*curHeight);
-        uint16_t mth1 = hist1.getPercentile(r.halfLightPercent);
-        uint16_t mth2 = hist2.getPercentile(r.halfLightPercent);
+        uint16_t mth1 = hist1.getPercentile(halfLightPercent);
+        uint16_t mth2 = hist2.getPercentile(halfLightPercent);
         Bitmap mtb1(curWidth, curHeight), mtb2(curWidth, curHeight),
         excl1(curWidth, curHeight), excl2(curWidth, curHeight);
         mtb1.mtb(r.scaled[s].get(), mth1);
@@ -163,6 +170,9 @@ void Image::alignWith(const Image & r) {
         dx <<= 1;
         dy <<= 1;
     }
+    dx += r.dx;
+    dy += r.dy;
+    Log::msg(Log::DEBUG, "Image ", metaData->fileName, " displaced to (", dx, ", ", dy, ")");
 }
 
 

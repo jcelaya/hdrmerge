@@ -328,7 +328,7 @@ void MainWindow::saveResult() {
                 fileName += ".dng";
             }
             DngPropertiesDialog dpd(this);
-            dpd.setIndexFileName((images->buildOutputFileName() + "_index.png").c_str());
+            dpd.setMaskFileName((images->buildOutputFileName() + "_mask.png").c_str());
             if (dpd.exec()) {
                 dpd.fileName = fileName;
                 ProgressDialog pd(this);

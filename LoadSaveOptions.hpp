@@ -31,7 +31,8 @@ namespace hdrmerge {
 struct LoadOptions {
     std::vector<std::string> fileNames;
     bool align;
-    LoadOptions() : align(true) {}
+    bool crop;
+    LoadOptions() : align(true), crop(true) {}
 };
 
 

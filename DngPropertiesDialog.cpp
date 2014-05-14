@@ -63,26 +63,26 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     connect(previewGroup, SIGNAL(buttonClicked( int)), this, SLOT(setPreviewSize(int)));
     previewSize = 2;
 
-    QCheckBox * saveIndexFile = new QCheckBox(tr("Save"), this);
+    QCheckBox * saveMaskFile = new QCheckBox(tr("Save"), this);
 
-    indexFileSelector = new QWidget(this);
-    QHBoxLayout * indexFileSelectorLayout = new QHBoxLayout(indexFileSelector);
-    indexFileSelectorLayout->setMargin(0);
-    indexFileEditor = new QLineEdit(indexFileSelector);
-    indexFileEditor->setMinimumWidth(200);
-    QPushButton * showFileDialog = new QPushButton("...", indexFileSelector);
-    connect(showFileDialog, SIGNAL(clicked(bool)), this, SLOT(setIndexFileName()));
-    indexFileSelectorLayout->addWidget(indexFileEditor);
-    indexFileSelectorLayout->addWidget(showFileDialog);
-    connect(saveIndexFile, SIGNAL(stateChanged(int)), this, SLOT(setIndexFileSelectorEnabled(int)));
-    indexFileSelector->setEnabled(false);
+    maskFileSelector = new QWidget(this);
+    QHBoxLayout * maskFileSelectorLayout = new QHBoxLayout(maskFileSelector);
+    maskFileSelectorLayout->setMargin(0);
+    maskFileEditor = new QLineEdit(maskFileSelector);
+    maskFileEditor->setMinimumWidth(200);
+    QPushButton * showFileDialog = new QPushButton("...", maskFileSelector);
+    connect(showFileDialog, SIGNAL(clicked(bool)), this, SLOT(setMaskFileName()));
+    maskFileSelectorLayout->addWidget(maskFileEditor);
+    maskFileSelectorLayout->addWidget(showFileDialog);
+    connect(saveMaskFile, SIGNAL(stateChanged(int)), this, SLOT(setMaskFileSelectorEnabled(int)));
+    maskFileSelector->setEnabled(false);
 
     QWidget * formWidget = new QWidget(this);
     QFormLayout * formLayout = new QFormLayout(formWidget);
     formLayout->addRow(tr("Bits per sample:"), bpsSelector);
     formLayout->addRow(tr("Preview size:"), previewSelector);
-    formLayout->addRow(tr("Mask image:"), saveIndexFile);
-    formLayout->addRow("", indexFileSelector);
+    formLayout->addRow(tr("Mask image:"), saveMaskFile);
+    formLayout->addRow("", maskFileSelector);
     formWidget->setLayout(formLayout);
     layout->addWidget(formWidget, 1);
 
@@ -103,14 +103,14 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
 
 
 void DngPropertiesDialog::accept() {
-    maskFileName = indexFileSelector->isEnabled() ?
-        QDir::toNativeSeparators(indexFileEditor->text()).toUtf8().constData() : "";
+    maskFileName = maskFileSelector->isEnabled() ?
+        QDir::toNativeSeparators(maskFileEditor->text()).toUtf8().constData() : "";
     QDialog::accept();
 }
 
 
-void DngPropertiesDialog::setBps(int index) {
-    switch (index) {
+void DngPropertiesDialog::setBps(int i) {
+    switch (i) {
         case 0: bps = 16; break;
         case 1: bps = 24; break;
         case 2: bps = 32; break;
@@ -118,20 +118,20 @@ void DngPropertiesDialog::setBps(int index) {
 }
 
 
-void DngPropertiesDialog::setPreviewSize(int index) {
-    previewSize = index;
+void DngPropertiesDialog::setPreviewSize(int i) {
+    previewSize = i;
 }
 
 
-void DngPropertiesDialog::setIndexFileName() {
+void DngPropertiesDialog::setMaskFileName() {
     QString file = QFileDialog::getSaveFileName(this, tr("Save DNG file"), "",
         tr("PNG Images (*.png)"), NULL, QFileDialog::DontUseNativeDialog);
-    indexFileEditor->setText(file);
+    maskFileEditor->setText(file);
 }
 
 
-void DngPropertiesDialog::setIndexFileSelectorEnabled(int state) {
-    indexFileSelector->setEnabled(state == 2);
+void DngPropertiesDialog::setMaskFileSelectorEnabled(int state) {
+    maskFileSelector->setEnabled(state == 2);
 }
 
 

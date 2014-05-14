@@ -45,13 +45,9 @@ public:
     void setBitsPerSample(int b) {
         bps = b;
     }
-    void setIndexFileName(const QString & name) {
-        indexFile = name;
-    }
     void write(const std::string & filename);
 
 private:
-
     ProgressIndicator & progress;
     std::ofstream file;
     const ImageStack & stack;
@@ -62,7 +58,6 @@ private:
     std::unique_ptr<float[]> rawData;
     uint32_t previewWidth;
     int bps;
-    QString indexFile;
     QImage thumbnail;
     QImage preview;
     uint32_t subIFDoffsets[2];
@@ -71,7 +66,6 @@ private:
     void createRawIFD();
     void calculateTiles();
     void writeRawData();
-    void buildIndexImage();
     void copyMetadata(const std::string & filename);
     void renderPreviews();
     void writePreviews();

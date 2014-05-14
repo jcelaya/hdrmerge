@@ -58,6 +58,10 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     alignBox->setChecked(true);
     layout->addWidget(alignBox, 0);
 
+    cropBox = new QCheckBox(tr("Crop result image to optimal size."), this);
+    cropBox->setChecked(true);
+    layout->addWidget(cropBox, 0);
+
     QWidget * buttons = new QWidget(this);
     QHBoxLayout * buttonsLayout = new QHBoxLayout(buttons);
     QPushButton * acceptButton = new QPushButton(tr("Accept"), this);
@@ -72,6 +76,13 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     setLayout(layout);
     setWindowTitle(tr("Open raw images"));
     addFiles();
+}
+
+
+void LoadOptionsDialog::showEvent(QShowEvent * event) {
+    if (fileList->count() == 0) {
+        QMetaObject::invokeMethod(this, "reject", Qt::QueuedConnection);
+    }
 }
 
 
@@ -131,6 +142,7 @@ void LoadOptionsDialog::removeFiles() {
 
 void LoadOptionsDialog::accept() {
     align = alignBox->isChecked();
+    crop = cropBox->isChecked();
     for (int i = 0; i < fileList->count(); ++i) {
         fileNames.push_back(fileList->item(i)->data(Qt::UserRole).toString().toUtf8().constData());
     }

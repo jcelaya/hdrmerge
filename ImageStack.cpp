@@ -23,6 +23,7 @@
 #include <algorithm>
 #include "ImageStack.hpp"
 #include "DngFloatWriter.hpp"
+#include "Log.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -66,9 +67,12 @@ int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) 
     if (options.align) {
         progress.advance(p += step, "Aligning");
         align();
+        //if (options.crop) {
+            crop();
+        //}
     }
     computeRelExposures();
-    imageIndex.generateFrom(*this);
+    mask.generateFrom(*this);
     progress.advance(100, "Done loading!");
     return 0;
 }
@@ -78,28 +82,26 @@ int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) 
     DngFloatWriter writer(*this, progress);
     writer.setBitsPerSample(options.bps);
     writer.setPreviewWidth((options.previewSize * width) / 2);
-    writer.setIndexFileName(options.maskFileName.c_str());
     writer.write(options.fileName);
+    if (!options.maskFileName.empty()) {
+        Log::msg(Log::DEBUG, "Saving mask to ", options.maskFileName);
+        mask.writeMaskImage(options.maskFileName);
+    }
 }
 
 
 void ImageStack::align() {
     if (images.size() > 1) {
-        int dx = 0, dy = 0;
-        for (auto cur = images.begin(), prev = cur++; cur != images.end(); prev = cur++) {
-            dx = (*prev)->getDeltaX();
-            dy = (*prev)->getDeltaY();
-            (*cur)->alignWith(**prev);
-            (*cur)->displace(dx, dy);
+        for (auto cur = images.rbegin(), next = cur++; cur != images.rend(); next = cur++) {
+            (*cur)->alignWith(**next);
         }
         for (auto & i : images) {
             i->releaseAlignData();
         }
-        findIntersection();
     }
 }
 
-void ImageStack::findIntersection() {
+void ImageStack::crop() {
     int dx = 0, dy = 0;
     for (auto & i : images) {
         int newDx = max(dx, i->getDeltaX());
@@ -119,19 +121,19 @@ void ImageStack::findIntersection() {
 
 void ImageStack::computeRelExposures() {
     for (auto cur = images.rbegin(), next = cur++; cur != images.rend(); next = cur++) {
-        (*cur)->relativeExposure(**next, width, height);
+        (*cur)->relativeExposure(**next);
     }
 }
 
 
 double ImageStack::value(size_t x, size_t y) const {
-    Image & img = *images[getImageAt(x, y)];
+    Image & img = *images[mask.getImageAt(x, y)];
     return img.exposureAt(x, y);
 }
 
 
 void ImageStack::compose(float * dst) const {
-    unique_ptr<float[]> map = imageIndex.blur();
+    unique_ptr<float[]> map = mask.blur();
     const MetaData & md = images.front()->getMetaData();
     int imageMax = images.size() - 1;
     float max = 0.0;

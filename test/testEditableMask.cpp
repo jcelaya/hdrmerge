@@ -22,19 +22,19 @@
 
 #include <iostream>
 #include <sstream>
-#include "../MergeMap.hpp"
+#include "../EditableMask.hpp"
 #include "SampleImage.hpp"
 #include "time.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;
 
-BOOST_AUTO_TEST_CASE(testMergeMap1) {
+BOOST_AUTO_TEST_CASE(testEditableMask) {
     SampleImage image("test/testMap.png");
     size_t size = image.md.width * image.md.height;
     uint16_t * src = image.pixelData;
     image.pixelData = new uint16_t[size];
-    MergeMap map(image.md.width, image.md.height);
+    EditableMask map(image.md.width, image.md.height);
     for (int radius = 1; radius < 25; radius += 3) {
         for (size_t i = 0; i < size; ++i) {
             map[i] = src[i];

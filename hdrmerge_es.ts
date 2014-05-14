@@ -137,6 +137,10 @@
         <translation type="finished">Alinear imágenes.</translation>
     </message>
     <message>
+        <source>Crop result image to optimal size.</source>
+        <translation type="finished">Recortar resultado al tamaño óptimo.</translation>
+    </message>
+    <message>
         <source>Accept</source>
         <translation type="finished">Aceptar</translation>
     </message>

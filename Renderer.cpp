@@ -123,7 +123,8 @@ void Renderer::convertToRgb() {
         }
         for(int c = 0; c < 3; ++c) {
             float v = out[c];
-            if (v > 65535.0) v = 65535.0;
+            if (v > 65535.0f) v = 65535.0f;
+            else if (v < 0.0f) v = 0.0f;
             img[c] = v;
         }
     }

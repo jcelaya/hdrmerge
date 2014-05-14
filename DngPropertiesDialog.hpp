@@ -33,27 +33,26 @@ class DngPropertiesDialog : public QDialog, public SaveOptions {
 public:
     DngPropertiesDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
 
-    /// Triggered when the dialog is closed
     void closeEvent(QCloseEvent * event) { reject(); }
 
-    void setIndexFileName(const QString & name) {
-        indexFileEditor->setText(name);
+    void setMaskFileName(const QString & name) {
+        maskFileEditor->setText(name);
     }
 
 public slots:
     virtual void accept();
 
 private slots:
-    void setBps(int index);
-    void setPreviewSize(int index);
-    void setIndexFileName();
-    void setIndexFileSelectorEnabled(int state);
+    void setBps(int i);
+    void setPreviewSize(int i);
+    void setMaskFileName();
+    void setMaskFileSelectorEnabled(int state);
 
 private:
     Q_OBJECT
 
-    QLineEdit * indexFileEditor;
-    QWidget * indexFileSelector;
+    QLineEdit * maskFileEditor;
+    QWidget * maskFileSelector;
 };
 
 } // namespace hdrmerge

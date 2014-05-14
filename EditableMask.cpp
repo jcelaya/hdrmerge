@@ -22,23 +22,49 @@
 
 #include <algorithm>
 #include <cmath>
-#include "MergeMap.hpp"
+#include <QImage>
+#include "EditableMask.hpp"
 #include "ImageStack.hpp"
+#include "Log.hpp"
 using namespace hdrmerge;
 
-void MergeMap::generateFrom(const ImageStack & images) {
+void EditableMask::writeMaskImage(const std::string & maskFile) {
+    QImage maskImage(width, height, QImage::Format_Indexed8);
+    int numColors = numLayers - 1;
+    for (int c = 0; c < numColors; ++c) {
+        int gray = (256 * c) / numColors;
+        maskImage.setColor(c, qRgb(gray, gray, gray));
+    }
+    maskImage.setColor(numColors, qRgb(255, 255, 255));
+    for (size_t row = 0, pos = 0; row < height; ++row) {
+        for (size_t col = 0; col < width; ++col, ++pos) {
+            maskImage.setPixel(col, row, mask[pos]);
+        }
+    }
+    if (!maskImage.save(QString(maskFile.c_str()))) {
+        Log::msg(Log::PROGRESS, "Cannot save mask image to ", maskFile);
+    }
+}
+
+
+void EditableMask::generateFrom(const ImageStack & images) {
     width = images.getWidth();
     height = images.getHeight();
+    numLayers = images.size();
+    editActions.clear();
+    nextAction = editActions.end();
     size_t size = width*height;
 
-    index.reset(new uint8_t[size]);
-    std::fill_n(index.get(), size, 0);
-    for (int i = 0; i < images.size() - 1; ++i) {
+    mask.reset(new uint8_t[size]);
+    std::unique_ptr<uint8_t[]> tmp(new uint8_t[size]);
+    std::fill_n(mask.get(), size, 0);
+    for (int i = 0; i < numLayers - 1; ++i) {
+        std::copy_n(mask.get(), size, tmp.get());
         const Image & img = images.getImage(i);
         for (size_t row = 0, pos = 0; row < height; ++row) {
             for (size_t col = 0; col < width; ++col, ++pos) {
-                if (index[pos] == i && img.isSaturated(col, row)) {
-                    ++index[pos];
+                if (tmp[pos] == i && img.isSaturated(col, row)) {
+                    mask[pos] = i + 1;
                     if (isNotSaturatedAround(img, col, row)) {
                         paintPixels(col, row, 6, i, i + 1);
                     }
@@ -49,7 +75,7 @@ void MergeMap::generateFrom(const ImageStack & images) {
 }
 
 
-bool MergeMap::isNotSaturatedAround(const Image & img, size_t col, size_t row) const {
+bool EditableMask::isNotSaturatedAround(const Image & img, size_t col, size_t row) const {
     if (row > 0) {
         if ((col > 0 && !img.isSaturated(col - 1, row - 1)) ||
             !img.isSaturated(col, row - 1) ||
@@ -72,7 +98,17 @@ bool MergeMap::isNotSaturatedAround(const Image & img, size_t col, size_t row) c
 }
 
 
-void MergeMap::paintPixels(int x, int y, size_t radius, uint8_t oldLayer, uint8_t newLayer) {
+void EditableMask::startAction(bool add, int layer) {
+    editActions.erase(nextAction, editActions.end());
+    editActions.emplace_back();
+    nextAction = editActions.end();
+    editActions.back().oldLayer = add ? layer + 1 : layer;
+    editActions.back().newLayer = add ? layer : layer + 1;
+}
+
+
+void EditableMask::paintPixels(int x, int y, size_t radius) {
+    EditAction & e = editActions.back();
     int r2 = radius * radius;
     int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
     int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
@@ -80,8 +116,9 @@ void MergeMap::paintPixels(int x, int y, size_t radius, uint8_t oldLayer, uint8_
         for (int col = xmin, rcol = x + col; col < xmax; ++col, ++rcol) {
             if (row*row + col*col <= r2) {
                 size_t pos = rrow*width + rcol;
-                if (index[pos] == oldLayer) {
-                    index[pos] = newLayer;
+                if (mask[pos] == e.oldLayer) {
+                    e.points.push_back({x + col, y + row});
+                    mask[pos] = e.newLayer;
                 }
             }
         }
@@ -89,23 +126,78 @@ void MergeMap::paintPixels(int x, int y, size_t radius, uint8_t oldLayer, uint8_
 }
 
 
-std::unique_ptr<float[]> MergeMap::blur() const {
+void EditableMask::paintPixels(int x, int y, size_t radius, int oldLayer, int newLayer) {
+    int r2 = radius * radius;
+    int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
+    int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
+    for (int row = ymin, rrow = y + row; row < ymax; ++row, ++rrow) {
+        for (int col = xmin, rcol = x + col; col < xmax; ++col, ++rcol) {
+            if (row*row + col*col <= r2) {
+                size_t pos = rrow*width + rcol;
+                if (mask[pos] == oldLayer) {
+                    mask[pos] = newLayer;
+                }
+            }
+        }
+    }
+}
+
+
+EditableMask::Area EditableMask::undo() {
+    Area result;
+    if (nextAction != editActions.begin()) {
+        --nextAction;
+        result = modifyLayer(nextAction->points, nextAction->oldLayer);
+    }
+    return result;
+}
+
+
+EditableMask::Area EditableMask::redo() {
+    Area result;
+    if (nextAction != editActions.end()) {
+        result = modifyLayer(nextAction->points, nextAction->newLayer);
+        ++nextAction;
+    }
+    return result;
+}
+
+
+EditableMask::Area EditableMask::modifyLayer(const std::list<Point> & points, int layer) {
+    Area a;
+    a.minx = width + 1;
+    a.miny = height + 1;
+    a.maxx = -1;
+    a.maxy = -1;
+    for (auto p : points) {
+        int rcol = p.x, rrow = p.y;
+        mask[p.y * width + p.x] = layer;
+        if (p.x < a.minx) a.minx = p.x;
+        if (p.x > a.maxx) a.maxx = p.x;
+        if (p.y < a.miny) a.miny = p.y;
+        if (p.y > a.maxy) a.maxy = p.y;
+    }
+    return a;
+}
+
+
+std::unique_ptr<float[]> EditableMask::blur() const {
     return blur(3);
 }
 
 
-std::unique_ptr<float[]> MergeMap::blur(size_t radius) const {
+std::unique_ptr<float[]> EditableMask::blur(size_t radius) const {
     BoxBlur b(*this, radius);
     return b.getResult();
 }
 
 
-MergeMap::BoxBlur::BoxBlur(const MergeMap & src, size_t radius) : m(src) {
+EditableMask::BoxBlur::BoxBlur(const EditableMask & src, size_t radius) : m(src) {
     // From http://blog.ivank.net/fastest-gaussian-blur.html
     map.reset(new float[m.width*m.height]);
     tmp.reset(new float[m.width*m.height]);
     for (size_t i = 0; i < m.width*m.height; ++i) {
-        map[i] = m.index[i];
+        map[i] = m.mask[i];
     }
     size_t hr = std::round(radius*0.39);
     boxBlur_4(hr);
@@ -114,7 +206,7 @@ MergeMap::BoxBlur::BoxBlur(const MergeMap & src, size_t radius) : m(src) {
 }
 
 
-void MergeMap::BoxBlur::boxBlur_4(size_t radius) {
+void EditableMask::BoxBlur::boxBlur_4(size_t radius) {
     boxBlurH_4(radius);
     map.swap(tmp);
     boxBlurT_4(radius);
@@ -122,7 +214,7 @@ void MergeMap::BoxBlur::boxBlur_4(size_t radius) {
 }
 
 
-void MergeMap::BoxBlur::boxBlurH_4(size_t r) {
+void EditableMask::BoxBlur::boxBlurH_4(size_t r) {
     float iarr = 1.0 / (r+r+1);
     for (size_t i = 0; i < m.height; ++i) {
         size_t ti = i * m.width, li = ti, ri = ti + r;
@@ -146,7 +238,7 @@ void MergeMap::BoxBlur::boxBlurH_4(size_t r) {
 }
 
 
-void MergeMap::BoxBlur::boxBlurT_4(size_t r) {
+void EditableMask::BoxBlur::boxBlurT_4(size_t r) {
     float iarr = 1.0 / (r+r+1);
     for (size_t i = 0; i < m.width; ++i) {
         size_t ti = i, li = ti, ri = ti + r*m.width;

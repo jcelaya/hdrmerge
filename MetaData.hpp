@@ -71,6 +71,7 @@ public:
     std::string maker, model, description, dateTime;
     int colors;
     int flip;
+    int tiffOrientation;
 };
 
 } // namespace hdrmerge

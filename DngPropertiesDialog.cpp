@@ -32,7 +32,7 @@
 namespace hdrmerge {
 
 DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
-        : QDialog(parent, f), bps(16), previewSize(0) {
+        : QDialog(parent, f), SaveOptions() {
     QVBoxLayout * layout = new QVBoxLayout(this);
 
     QWidget * bpsSelector = new QWidget(this);
@@ -47,6 +47,7 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
         bpsSelectorLayout->addWidget(button);
     }
     connect(bpsGroup, SIGNAL(buttonClicked( int)), this, SLOT(setBps(int)));
+    bps = 16;
 
     QWidget * previewSelector = new QWidget(this);
     QHBoxLayout * previewSelectorLayout = new QHBoxLayout(previewSelector);
@@ -56,10 +57,11 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     for (int i = 0; i < 3; ++i) {
         QRadioButton * button = new QRadioButton(tr(previewLabels[i]), this);
         button->setChecked(i == 0);
-        previewGroup->addButton(button, i);
+        previewGroup->addButton(button, 2 - i);
         previewSelectorLayout->addWidget(button);
     }
     connect(previewGroup, SIGNAL(buttonClicked( int)), this, SLOT(setPreviewSize(int)));
+    previewSize = 2;
 
     QCheckBox * saveIndexFile = new QCheckBox(tr("Save"), this);
 
@@ -97,6 +99,13 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
 
     setLayout(layout);
     setWindowTitle(tr("DNG Properties"));
+}
+
+
+void DngPropertiesDialog::accept() {
+    maskFileName = indexFileSelector->isEnabled() ?
+        QDir::toNativeSeparators(indexFileEditor->text()).toUtf8().constData() : "";
+    QDialog::accept();
 }
 
 

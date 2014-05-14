@@ -30,26 +30,9 @@
 #include "Image.hpp"
 #include "ProgressIndicator.hpp"
 #include "MergeMap.hpp"
-
+#include "LoadSaveOptions.hpp"
 
 namespace hdrmerge {
-
-
-struct LoadOptions {
-    std::vector<std::string> fileNames;
-    bool align;
-    LoadOptions() : align(true) {}
-};
-
-
-struct SaveOptions {
-    int bps;
-    int previewSize;
-    std::string fileName;
-    std::string maskFileName;
-    SaveOptions() : bps(16), previewSize(0) {}
-};
-
 
 class ImageStack {
 public:

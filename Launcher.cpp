@@ -94,8 +94,6 @@ int Launcher::automaticMerge() {
         wOptions.fileName = stack.buildOutputFileName() + ".dng";
     }
     Log::msg(Log::PROGRESS, tr("Writing result to %1").arg(wOptions.fileName.c_str()));
-    wOptions.previewSize *= stack.getWidth();
-    wOptions.previewSize /= 2;
     stack.save(wOptions, progress);
     return 0;
 }

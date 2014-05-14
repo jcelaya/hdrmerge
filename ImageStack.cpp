@@ -77,7 +77,7 @@ int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) 
 int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) {
     DngFloatWriter writer(*this, progress);
     writer.setBitsPerSample(options.bps);
-    writer.setPreviewWidth(options.previewSize);
+    writer.setPreviewWidth((options.previewSize * width) / 2);
     writer.setIndexFileName(options.maskFileName.c_str());
     writer.write(options.fileName);
 }

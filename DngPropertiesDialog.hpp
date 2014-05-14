@@ -25,28 +25,23 @@
 
 #include <QDialog>
 #include <QLineEdit>
+#include "LoadSaveOptions.hpp"
 
 namespace hdrmerge {
 
-class DngPropertiesDialog : public QDialog {
+class DngPropertiesDialog : public QDialog, public SaveOptions {
 public:
     DngPropertiesDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
 
     /// Triggered when the dialog is closed
     void closeEvent(QCloseEvent * event) { accept(); }
 
-    int getBps() const {
-        return bps;
-    }
-    int getPreviewSize() const {
-        return previewSize;
-    }
-    QString getIndexFileName() const {
-        return indexFileSelector->isEnabled() ? indexFileEditor->text() : "";
-    }
     void setIndexFileName(const QString & name) {
         indexFileEditor->setText(name);
     }
+
+public slots:
+    virtual void accept();
 
 private slots:
     void setBps(int index);
@@ -57,8 +52,6 @@ private slots:
 private:
     Q_OBJECT
 
-    int bps;
-    int previewSize;
     QLineEdit * indexFileEditor;
     QWidget * indexFileSelector;
 };

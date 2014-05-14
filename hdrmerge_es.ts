@@ -123,6 +123,37 @@
     </message>
 </context>
 <context>
+    <name>hdrmerge::LoadOptionsDialog</name>
+    <message>
+        <source>Add</source>
+        <translation type="finished">Añadir</translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="finished">Borrar</translation>
+    </message>
+    <message>
+        <source>Align source images.</source>
+        <translation type="finished">Alinear imágenes.</translation>
+    </message>
+    <message>
+        <source>Accept</source>
+        <translation type="finished">Aceptar</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="finished">Cancelar</translation>
+    </message>
+    <message>
+        <source>Raw images (*.3fr *.ari *.arw *.bay *.crw *.cr2 *.cap *.dcs *.dcr *.dng *.drf *.eip *.erf *.fff *.iiq *.k25 *.kdc *.mdc *.mef *.mos *.mrw *.nef *.nrw *.obm *.orf *.pef *.ptx *.pxn *.r3d *.raf *.raw *.rwl *.rw2 *.rwz *.sr2 *.srf *.srw *.x3f)</source>
+        <translation type="finished">Images raw (*.3fr *.ari *.arw *.bay *.crw *.cr2 *.cap *.dcs *.dcr *.dng *.drf *.eip *.erf *.fff *.iiq *.k25 *.kdc *.mdc *.mef *.mos *.mrw *.nef *.nrw *.obm *.orf *.pef *.ptx *.pxn *.r3d *.raf *.raw *.rwl *.rw2 *.rwz *.sr2 *.srf *.srw *.x3f)</translation>
+    </message>
+    <message>
+        <source>Open raw images</source>
+        <translation type="finished">Abrir imágenes raw</translation>
+    </message>
+</context>
+<context>
     <name>hdrmerge::DngPropertiesDialog</name>
     <message>
         <source>Bits per sample:</source>
@@ -234,14 +265,6 @@
     <message>
         <source>&amp;Help</source>
         <translation type="finished">Ay&amp;uda</translation>
-    </message>
-    <message>
-        <source>Raw images (*.3fr *.ari *.arw *.bay *.crw *.cr2 *.cap *.dcs *.dcr *.dng *.drf *.eip *.erf *.fff *.iiq *.k25 *.kdc *.mdc *.mef *.mos *.mrw *.nef *.nrw *.obm *.orf *.pef *.ptx *.pxn *.r3d *.raf *.raw *.rwl *.rw2 *.rwz *.sr2 *.srf *.srw *.x3f)</source>
-        <translation type="finished">Images raw (*.3fr *.ari *.arw *.bay *.crw *.cr2 *.cap *.dcs *.dcr *.dng *.drf *.eip *.erf *.fff *.iiq *.k25 *.kdc *.mdc *.mef *.mos *.mrw *.nef *.nrw *.obm *.orf *.pef *.ptx *.pxn *.r3d *.raf *.raw *.rwl *.rw2 *.rwz *.sr2 *.srf *.srw *.x3f)</translation>
-    </message>
-    <message>
-        <source>Open raw images</source>
-        <translation type="finished">Abrir imágenes raw</translation>
     </message>
     <message>
         <source>Unable to open file %1.</source>

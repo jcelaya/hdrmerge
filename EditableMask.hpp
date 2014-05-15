@@ -91,7 +91,7 @@ private:
     std::list<EditAction> editActions;
     std::list<EditAction>::iterator nextAction;
 
-    bool isNotSaturatedAround(const Image & img, size_t col, size_t row) const;
+    bool isSaturatedAround(const Image & img, size_t col, size_t row) const;
     Area modifyLayer(const std::list<Point> & points, int oldayer);
     void paintPixels(int x, int y, size_t radius, int oldLayer);
 };

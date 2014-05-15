@@ -59,7 +59,7 @@ public:
         return alignedPixels[y*width + x] * relExp;
     }
     bool isSaturated(size_t x, size_t y) const {
-        return alignedPixels[y*width + x] >= max;
+        return alignedPixels[y*width + x] >= satThreshold;
     }
     double getRelativeExposure() const {
         return relExp;
@@ -88,6 +88,7 @@ private:
     std::unique_ptr<std::unique_ptr<uint16_t[]>[]> scaled;
     int dx, dy;
     uint16_t max;
+    uint16_t satThreshold;
     double brightness;
     double relExp;          ///< Relative exposure, from data
     double halfLightPercent;

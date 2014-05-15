@@ -24,7 +24,7 @@
 #include <sstream>
 #include "../EditableMask.hpp"
 #include "SampleImage.hpp"
-#include "time.hpp"
+#include "../Log.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;
@@ -40,8 +40,8 @@ BOOST_AUTO_TEST_CASE(testEditableMask) {
             map[i] = src[i];
         }
         unique_ptr<float[]> blurred;
-        double blurTime = measureTime([&] () {blurred = map.blur(radius);});
-        cout << "Image blurred with radius " << radius << " in " << blurTime << " seconds" << endl;
+        string title = string("Blur with radius ") + to_string(radius);
+        measureTime(title.c_str(), [&] () {blurred = map.blur(radius);});
         for (size_t i = 0; i < size; ++i) {
             image.pixelData[i] = std::round(blurred[i]);
         }

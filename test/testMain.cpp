@@ -23,3 +23,11 @@
 #define BOOST_TEST_MODULE hdrmerge
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
+#include "../Log.hpp"
+#include <iostream>
+
+static int setLog() {
+    hdrmerge::Log::setOutputStream(std::cout);
+    hdrmerge::Log::setMinimumPriority(0);
+}
+static int foo = setLog();

@@ -108,7 +108,7 @@ public:
     void resize(size_t w, size_t h);
 
     std::string dumpInfo();
-    void dumpFile();
+    void dumpFile(const std::string & fileName);
 
 private:
     static const int ones[256];

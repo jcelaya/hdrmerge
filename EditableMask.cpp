@@ -61,10 +61,12 @@ void EditableMask::generateFrom(const ImageStack & images) {
     for (size_t row = 0, pos = 0; row < height; ++row) {
         for (size_t col = 0; col < width; ++col, ++pos) {
             int i = mask[pos];
-            while (i < numLayers - 1 && images.getImage(i).isSaturated(col, row)) ++i;
+            while (i < numLayers - 1 &&
+                (images.getImage(i).isSaturated(col, row) ||
+                isSaturatedAround(images.getImage(i), col, row))) ++i;
             if (mask[pos] < i) {
                 mask[pos] = i;
-                if (isNotSaturatedAround(images.getImage(i - 1), col, row)) {
+                if (!isSaturatedAround(images.getImage(i - 1), col, row)) {
                     paintPixels(col, row, 6, i);
                 }
             }
@@ -73,26 +75,26 @@ void EditableMask::generateFrom(const ImageStack & images) {
 }
 
 
-bool EditableMask::isNotSaturatedAround(const Image & img, size_t col, size_t row) const {
+bool EditableMask::isSaturatedAround(const Image & img, size_t col, size_t row) const {
     if (row > 0) {
         if ((col > 0 && !img.isSaturated(col - 1, row - 1)) ||
             !img.isSaturated(col, row - 1) ||
             (col < width - 1 && !img.isSaturated(col + 1, row - 1))) {
-            return true;
+            return false;
         }
     }
     if ((col > 0 && !img.isSaturated(col - 1, row)) ||
         (col < width - 1 && !img.isSaturated(col + 1, row))) {
-        return true;
+        return false;
     }
     if (row < height - 1) {
         if ((col > 0 && !img.isSaturated(col - 1, row + 1)) ||
             !img.isSaturated(col, row + 1) ||
             (col < width - 1 && !img.isSaturated(col + 1, row + 1))) {
-            return true;
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
 

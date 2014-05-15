@@ -90,13 +90,12 @@ private:
     uint16_t max;
     uint16_t satThreshold;
     double brightness;
-    double relExp;          ///< Relative exposure, from data
+    double relExp;
     double halfLightPercent;
 
     void subtractBlack();
     void buildImage(uint16_t * rawImage, MetaData * md);
     void preScale();
-    void computeHalfLightPercentile();
 };
 
 } // namespace hdrmerge

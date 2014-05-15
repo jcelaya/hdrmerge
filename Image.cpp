@@ -65,7 +65,6 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     metaData->max = max;
     satThreshold = 0.99*max;
     preScale();
-    computeHalfLightPercentile();
     metaData->dumpInfo();
 }
 
@@ -139,8 +138,9 @@ void Image::alignWith(const Image & r) {
     Timer t("Align images");
     if (!good() || !r.good()) return;
     dx = dy = 0;
-    const double tolerance = 1.0/64;
-    uint16_t tolPixels = (uint16_t)std::floor(32768*tolerance);
+    const double tolerance = 1.0/16;
+    Histogram histFull(rawPixels.get(), rawPixels.get() + width*height);
+    double halfLightPercent = histFull.getFraction(max * 0.9) / 2.0;
     for (int s = scaleSteps - 1; s >= 0; --s) {
         size_t curWidth = width >> (s + 1);
         size_t curHeight = height >> (s + 1);
@@ -149,12 +149,14 @@ void Image::alignWith(const Image & r) {
         Histogram hist2(scaled[s].get(), scaled[s].get() + curWidth*curHeight);
         uint16_t mth1 = hist1.getPercentile(halfLightPercent);
         uint16_t mth2 = hist2.getPercentile(halfLightPercent);
+        uint16_t tolPixels1 = (uint16_t)std::floor(mth1*tolerance);
+        uint16_t tolPixels2 = (uint16_t)std::floor(mth2*tolerance);
         Bitmap mtb1(curWidth, curHeight), mtb2(curWidth, curHeight),
         excl1(curWidth, curHeight), excl2(curWidth, curHeight);
         mtb1.mtb(r.scaled[s].get(), mth1);
         mtb2.mtb(scaled[s].get(), mth2);
-        excl1.exclusion(r.scaled[s].get(), mth1, tolPixels);
-        excl2.exclusion(scaled[s].get(), mth2, tolPixels);
+        excl1.exclusion(r.scaled[s].get(), mth1, tolPixels1);
+        excl2.exclusion(scaled[s].get(), mth2, tolPixels2);
         Bitmap shiftMtb(curWidth, curHeight), shiftExcl(curWidth, curHeight);
         int curDx = dx, curDy = dy;
         for (int i = -1; i <= 1; ++i) {
@@ -205,10 +207,4 @@ void Image::preScale() {
         r2 = r;
         scaled[s].reset(r);
     }
-}
-
-
-void Image::computeHalfLightPercentile() {
-    Histogram histFull(rawPixels.get(), rawPixels.get() + width*height);
-    halfLightPercent = histFull.getFraction(max * 0.9) / 2.0;
 }

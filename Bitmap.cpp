@@ -168,7 +168,7 @@ std::string Bitmap::dumpInfo() {
 }
 
 void Bitmap::dumpFile(const std::string & fileName) {
-    std::ofstream of(fileName);
+    std::ofstream of(fileName + ".pbm");
     of << "P1\n# Foo\n" << rowWidth << " " << (numBits/rowWidth) << "\n";
     size_t tb = 0;
     for (size_t i = 0; i < size; ++i) {

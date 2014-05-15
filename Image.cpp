@@ -25,7 +25,6 @@
 #include "Bitmap.hpp"
 #include "Histogram.hpp"
 #include "Log.hpp"
-#include "test/time.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -64,6 +63,7 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     brightness /= size;
     subtractBlack();
     metaData->max = max;
+    satThreshold = 0.99*max;
     preScale();
     computeHalfLightPercentile();
     metaData->dumpInfo();

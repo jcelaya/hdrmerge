@@ -20,9 +20,10 @@
  *
  */
 
+#include <iostream>
 #include "../ImageStack.hpp"
 #include "SampleImage.hpp"
-#include "time.hpp"
+#include "../Log.hpp"
 #include <boost/test/unit_test.hpp>
 #include <boost/config/no_tr1/complex.hpp>
 using namespace hdrmerge;
@@ -88,12 +89,13 @@ BOOST_AUTO_TEST_CASE(image_align) {
     BOOST_CHECK_EQUAL(e3.getDeltaY(), 26);
     BOOST_CHECK_EQUAL(e4.getDeltaX(), 32);
     BOOST_CHECK_EQUAL(e4.getDeltaY(), -4);
+    // Align in chain, should remain aligned with e1
     e3.alignWith(e2);
     e4.alignWith(e3);
-    BOOST_CHECK_EQUAL(e3.getDeltaX(), 18);
-    BOOST_CHECK_EQUAL(e3.getDeltaY(), -6);
-    BOOST_CHECK_EQUAL(e4.getDeltaX(), -6);
-    BOOST_CHECK_EQUAL(e4.getDeltaY(), -30);
+    BOOST_CHECK_EQUAL(e3.getDeltaX(), 38);
+    BOOST_CHECK_EQUAL(e3.getDeltaY(), 26);
+    BOOST_CHECK_EQUAL(e4.getDeltaX(), 32);
+    BOOST_CHECK_EQUAL(e4.getDeltaY(), -4);
 }
 
 BOOST_AUTO_TEST_CASE(stack_load) {
@@ -131,8 +133,8 @@ BOOST_AUTO_TEST_CASE(stack_align) {
     BOOST_REQUIRE(images.addImage(e2));
     BOOST_REQUIRE(images.addImage(e3));
     BOOST_REQUIRE(images.addImage(e4));
-    double alignTime = measureTime([&] () {images.align();});
-    cerr << "Images aligned in " << alignTime << " seconds." << endl;
+    measureTime("Align images total", [&] () {images.align();});
+    images.crop();
     BOOST_CHECK_EQUAL(images.getWidth(), 962);
     BOOST_CHECK_EQUAL(images.getHeight(), 564);
     BOOST_CHECK_EQUAL(e1ref.getDeltaX(), -38);
@@ -149,12 +151,11 @@ BOOST_AUTO_TEST_CASE(stack_align) {
 BOOST_AUTO_TEST_CASE(auto_exposure) {
     ImageStack images;
     unique_ptr<Image> e1, e2, e3;
-    double time = measureTime([&] () {
+    measureTime("Load images", [&] () {
         e1.reset(new Image(image1));
         e2.reset(new Image(image2));
         e3.reset(new Image(image3));
     });
-    cerr << "Images loaded in " << time << " seconds." << endl;
     BOOST_REQUIRE(e1->good());
     BOOST_REQUIRE(e2->good());
     BOOST_REQUIRE(e3->good());
@@ -163,17 +164,16 @@ BOOST_AUTO_TEST_CASE(auto_exposure) {
     images.addImage(e2);
     images.addImage(e3);
     Image & e1ref = images.getImage(0), & e2ref = images.getImage(1), & e3ref = images.getImage(2);
-    time = measureTime([&] () {
+    measureTime("Align images", [&] () {
         images.align();
     });
-    cerr << "Images aligned in " << time << " seconds." << endl;
 
-    time = measureTime([&] () {
+    measureTime("Compute relative exposures", [&] () {
         images.computeRelExposures();
     });
     double metaImmExp = 1.0 / (1 << (int)(e1ref.getMetaData().logExp() - e2ref.getMetaData().logExp()));
     double dataImmExp = e1ref.getRelativeExposure() / e2ref.getRelativeExposure();
-    cerr << "Relative exposure from data: " << dataImmExp << " in " << time << " seconds." << endl;
+    cerr << "Relative exposure from data: " << dataImmExp << endl;
     cerr << "Relative exposure from metadata: " << metaImmExp << endl;
 }
 

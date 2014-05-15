@@ -56,6 +56,7 @@ void Bitmap::resize(size_t w, size_t h) {
     size_t extra = numBits & 31 ? 1 : 0;
     size = (numBits >> 5) + extra;
     bits.reset(new uint32_t[size]);
+    bits[size-1] &= allOnes >> (32 - (numBits & 31));
 }
 
 
@@ -76,7 +77,6 @@ void Bitmap::shift(const Bitmap & src, int dx, int dy) {
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
     applyRowMask(dx);
-    dumpFile();
 }
 
 
@@ -112,7 +112,6 @@ void Bitmap::bitwiseXor(const Bitmap & r) {
     for (size_t i = 0; i < size; ++i) {
         bits[i] ^= r.bits[i];
     }
-    dumpFile();
 }
 
 
@@ -120,7 +119,6 @@ void Bitmap::bitwiseAnd(const Bitmap & r) {
     for (size_t i = 0; i < size; ++i) {
         bits[i] &= r.bits[i];
     }
-    dumpFile();
 }
 
 
@@ -130,7 +128,6 @@ void Bitmap::mtb(const uint16_t * pixels, uint16_t mth) {
         p.set(pixels[i++] > mth);
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
-    dumpFile();
 }
 
 
@@ -142,7 +139,6 @@ void Bitmap::exclusion(const uint16_t * pixels, uint16_t mth, uint16_t tolerance
         ++i;
     }
     bits[size-1] &= allOnes >> (32 - (numBits & 31));
-    dumpFile();
 }
 
 
@@ -160,28 +156,28 @@ size_t Bitmap::count() const {
 
 std::string Bitmap::dumpInfo() {
     std::ostringstream oss;
-    size_t tb = 0;
-    for (size_t i = 0; i < size; ++i) {
-        uint32_t value = bits[i];
-        for (int b = 0; tb < numBits && b < 32; ++tb, ++b) {
-            oss << (value % 2);
-            value >>= 1;
+    iterator it = position(0, 0);
+    int height = numBits / rowWidth;
+    for (int row = 0; row < height; ++row) {
+        for (int col = 0; col < rowWidth; ++col, ++it) {
+            oss << (it.get() ? '1' : '0');
         }
+        oss << std::endl;
     }
     return oss.str();
 }
 
-void Bitmap::dumpFile() {
-//     std::ofstream of("bitmap.pbm");
-//     of << "P1\n# Foo\n" << rowWidth << " " << (numBits/rowWidth) << "\n";
-//     size_t tb = 0;
-//     for (size_t i = 0; i < size; ++i) {
-//         uint32_t value = bits[i];
-//         for (int b = 0; tb < numBits && b < 32; ++tb, ++b) {
-//             of << ' ' << (value % 2);
-//             value >>= 1;
-//         }
-//         of << "\n";
-//     }
+void Bitmap::dumpFile(const std::string & fileName) {
+    std::ofstream of(fileName);
+    of << "P1\n# Foo\n" << rowWidth << " " << (numBits/rowWidth) << "\n";
+    size_t tb = 0;
+    for (size_t i = 0; i < size; ++i) {
+        uint32_t value = bits[i];
+        for (int b = 0; tb < numBits && b < 32; ++tb, ++b) {
+            of << ' ' << (value % 2);
+            value >>= 1;
+        }
+        of << "\n";
+    }
 }
 

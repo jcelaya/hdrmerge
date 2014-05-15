@@ -26,6 +26,7 @@
 #include <ostream>
 #include <string>
 #include <QString>
+#include <ctime>
 
 namespace hdrmerge {
 
@@ -76,6 +77,26 @@ private:
 
 inline std::ostream & operator<<(std::ostream & os, const QString & s) {
     return os << std::string(s.toUtf8().constData());
+}
+
+class Timer {
+public:
+    Timer(const char * n) : name(n) {
+        start = std::clock();
+    }
+    ~Timer() {
+        double t = (std::clock() - start) / (double) CLOCKS_PER_SEC;
+        Log::msg(Log::DEBUG, name, ": ", t, " seconds");
+    }
+
+private:
+    std::clock_t start;
+    const char * name;
+};
+
+template <typename Func> void measureTime(const char * name, Func f) {
+    Timer t(name);
+    f();
 }
 
 } // namespace hdrmerge

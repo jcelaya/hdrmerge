@@ -52,7 +52,6 @@ BOOST_AUTO_TEST_CASE(bitmap_shift) {
         p.set();
     }
     b.position(49, 49).reset(); b.position(49, 50).reset(); b.position(50, 49).reset(); b.position(50, 50).reset();
-    b.dumpFile();
     Bitmap s(100, 100);
     s.shift(b, 35, 35);
     BOOST_CHECK_MESSAGE(checkZeroArea(s, 0, 35, 0, 100), s.dumpInfo());

@@ -21,10 +21,25 @@
  */
 
 #include <ctime>
-#include <iostream>
+#include "../Log.hpp"
 
 template <typename Func> double measureTime(Func f) {
     std::clock_t start = std::clock();
     f();
     return (std::clock() - start) / (double) CLOCKS_PER_SEC;
 }
+
+class Timer {
+public:
+    Timer(const char * n) : name(n) {
+        start = std::clock();
+    }
+    ~Timer() {
+        double t = (std::clock() - start) / (double) CLOCKS_PER_SEC;
+        hdrmerge::Log::msg(hdrmerge::Log::DEBUG, name, " = ", t);
+    }
+
+private:
+    std::clock_t start;
+    const char * name;
+};

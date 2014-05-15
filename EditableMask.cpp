@@ -26,6 +26,7 @@
 #include "EditableMask.hpp"
 #include "ImageStack.hpp"
 #include "Log.hpp"
+#include "test/time.hpp"
 using namespace hdrmerge;
 
 void EditableMask::writeMaskImage(const std::string & maskFile) {
@@ -55,6 +56,7 @@ void EditableMask::generateFrom(const ImageStack & images) {
     nextAction = editActions.end();
     size_t size = width*height;
 
+    Timer t("Generate mask");
     mask.reset(new uint8_t[size]);
     std::unique_ptr<uint8_t[]> tmp(new uint8_t[size]);
     std::fill_n(mask.get(), size, 0);
@@ -66,7 +68,7 @@ void EditableMask::generateFrom(const ImageStack & images) {
                 if (tmp[pos] == i && img.isSaturated(col, row)) {
                     mask[pos] = i + 1;
                     if (isNotSaturatedAround(img, col, row)) {
-                        paintPixels(col, row, 6, i, i + 1);
+                        paintPixels(col, row, 6, i);
                     }
                 }
             }
@@ -126,7 +128,7 @@ void EditableMask::paintPixels(int x, int y, size_t radius) {
 }
 
 
-void EditableMask::paintPixels(int x, int y, size_t radius, int oldLayer, int newLayer) {
+void EditableMask::paintPixels(int x, int y, size_t radius, int oldLayer) {
     int r2 = radius * radius;
     int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
     int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
@@ -135,7 +137,7 @@ void EditableMask::paintPixels(int x, int y, size_t radius, int oldLayer, int ne
             if (row*row + col*col <= r2) {
                 size_t pos = rrow*width + rcol;
                 if (mask[pos] == oldLayer) {
-                    mask[pos] = newLayer;
+                    ++mask[pos];
                 }
             }
         }

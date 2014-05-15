@@ -56,12 +56,10 @@ public:
         return dy;
     }
     double exposureAt(size_t x, size_t y) const {
-        x -= dx; y -= dy;
-        return rawPixels[y*width + x] * relExp;
+        return alignedPixels[y*width + x] * relExp;
     }
     bool isSaturated(size_t x, size_t y) const {
-        x -= dx; y -= dy;
-        return rawPixels[y*width + x] >= max;
+        return alignedPixels[y*width + x] >= max;
     }
     double getRelativeExposure() const {
         return relExp;
@@ -74,6 +72,7 @@ public:
     void displace(int newDx, int newDy) {
         dx += newDx;
         dy += newDy;
+        alignedPixels = &rawPixels[-dy*width - dx];
     }
     void relativeExposure(const Image & nextImage);
 
@@ -84,6 +83,7 @@ public:
 private:
     std::unique_ptr<MetaData> metaData;
     std::unique_ptr<uint16_t[]> rawPixels;
+    uint16_t * alignedPixels;
     size_t width, height;
     std::unique_ptr<std::unique_ptr<uint16_t[]>[]> scaled;
     int dx, dy;

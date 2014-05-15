@@ -25,6 +25,7 @@
 #include "Bitmap.hpp"
 #include "Histogram.hpp"
 #include "Log.hpp"
+#include "test/time.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -42,6 +43,7 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     brightness = 0.0;
     uint16_t maxPerColor[4] = {0, 0, 0, 0};
     rawPixels.reset(new uint16_t[size]);
+    alignedPixels = rawPixels.get();
     for (size_t row = 0, rrow = md->topMargin; row < height; ++row, ++rrow) {
         for (size_t col = 0, rcol = md->leftMargin; col < width; ++col, ++rcol) {
             uint16_t v = rawImage[rrow*md->rawWidth + rcol];
@@ -105,22 +107,24 @@ bool Image::isSameFormat(const Image & ref) const {
 
 
 void Image::relativeExposure(const Image & r) {
+    Timer t("Relative exposure");
     int reldx = dx - std::max(dx, r.dx);
     int relrdx = r.dx - std::max(dx, r.dx);
     int w = width + reldx + relrdx;
     int reldy = dy - std::max(dy, r.dy);
     int relrdy = r.dy - std::max(dy, r.dy);
     int h = height + reldy + relrdy;
+    uint16_t * usePixels = &rawPixels[-reldy*width - reldx];
+    uint16_t * rusePixels = &r.rawPixels[-relrdy*width - relrdx];
     // Minimize square error between images:
     // min. C(n) = sum(n*f(x) - g(x))^2  ->  n = sum(f(x)*g(x)) / sum(f(x)^2)
     double numerator = 0, denom = 0, threshold = max * 0.9;
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
-            int pos = (y - reldy) * width - reldx + x;
-            double v = rawPixels[pos];
+            int pos = y * width + x;
+            double v = usePixels[pos];
             if (v > 0 && v < threshold) {
-                int rpos = (y - relrdy) * width - relrdx + x;
-                double nv = r.rawPixels[rpos];
+                double nv = rusePixels[pos];
                 numerator += v * nv;
                 denom += v * v;
             }
@@ -132,6 +136,7 @@ void Image::relativeExposure(const Image & r) {
 
 
 void Image::alignWith(const Image & r) {
+    Timer t("Align images");
     if (!good() || !r.good()) return;
     dx = dy = 0;
     const double tolerance = 1.0/64;
@@ -172,6 +177,7 @@ void Image::alignWith(const Image & r) {
     }
     dx += r.dx;
     dy += r.dy;
+    alignedPixels = &rawPixels[-dy*width - dx];
     Log::msg(Log::DEBUG, "Image ", metaData->fileName, " displaced to (", dx, ", ", dy, ")");
 }
 

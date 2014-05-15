@@ -93,7 +93,7 @@ private:
 
     bool isNotSaturatedAround(const Image & img, size_t col, size_t row) const;
     Area modifyLayer(const std::list<Point> & points, int oldayer);
-    void paintPixels(int x, int y, size_t radius, int oldLayer, int newLayer);
+    void paintPixels(int x, int y, size_t radius, int oldLayer);
 };
 
 } // namespace hdrmerge

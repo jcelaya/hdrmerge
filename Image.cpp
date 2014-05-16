@@ -43,13 +43,13 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     uint16_t maxPerColor[4] = {0, 0, 0, 0};
     rawPixels.reset(new uint16_t[size]);
     alignedPixels = rawPixels.get();
-    for (size_t row = 0, rrow = md->topMargin; row < height; ++row, ++rrow) {
-        for (size_t col = 0, rcol = md->leftMargin; col < width; ++col, ++rcol) {
-            uint16_t v = rawImage[rrow*md->rawWidth + rcol];
-            rawPixels[row*width + col] = v;
+    for (size_t y = 0, ry = md->topMargin; y < height; ++y, ++ry) {
+        for (size_t x = 0, rx = md->leftMargin; x < width; ++x, ++rx) {
+            uint16_t v = rawImage[ry*md->rawWidth + rx];
+            rawPixels[y*width + x] = v;
             brightness += v;
-            if (v > maxPerColor[md->FC(row, col)]) {
-                maxPerColor[md->FC(row, col)] = v;
+            if (v > maxPerColor[md->FC(x, y)]) {
+                maxPerColor[md->FC(x, y)] = v;
             }
         }
     }
@@ -86,12 +86,12 @@ Image::Image(const char * f) : rawPixels(nullptr) {
 
 void Image::subtractBlack() {
     if (metaData->hasBlack()) {
-        for (size_t row = 0; row < height; ++row) {
-            for (size_t col = 0; col < width; ++col) {
-                if (rawPixels[row*width + col] > metaData->blackAt(row, col)) {
-                    rawPixels[row*width + col] -= metaData->blackAt(row, col);
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {
+                if (rawPixels[y*width + x] > metaData->blackAt(x, y)) {
+                    rawPixels[y*width + x] -= metaData->blackAt(x, y);
                 } else {
-                    rawPixels[row*width + col] = 0;
+                    rawPixels[y*width + x] = 0;
                 }
             }
         }
@@ -106,7 +106,6 @@ bool Image::isSameFormat(const Image & ref) const {
 
 
 void Image::relativeExposure(const Image & r) {
-    Timer t("Relative exposure");
     int reldx = dx - std::max(dx, r.dx);
     int relrdx = r.dx - std::max(dx, r.dx);
     int w = width + reldx + relrdx;
@@ -135,7 +134,6 @@ void Image::relativeExposure(const Image & r) {
 
 
 void Image::alignWith(const Image & r) {
-    Timer t("Align images");
     if (!good() || !r.good()) return;
     dx = dy = 0;
     const double tolerance = 1.0/16;
@@ -207,4 +205,27 @@ void Image::preScale() {
         r2 = r;
         scaled[s].reset(r);
     }
+}
+
+
+bool Image::isSaturatedAround(size_t x, size_t y) const {
+    if (y > dy) {
+        if ((x > dx && !isSaturated(x - 1, y - 1)) ||
+            !isSaturated(x, y - 1) ||
+            (x < width + dx - 1 && !isSaturated(x + 1, y - 1))) {
+            return false;
+        }
+    }
+    if ((x > dx && !isSaturated(x - 1, y)) ||
+        (x < width + dx - 1 && !isSaturated(x + 1, y))) {
+        return false;
+    }
+    if (y < height + dy - 1) {
+        if ((x > dx && !isSaturated(x - 1, y + 1)) ||
+            !isSaturated(x, y + 1) ||
+            (x < width + dx - 1 && !isSaturated(x + 1, y + 1))) {
+            return false;
+        }
+    }
+    return true;
 }

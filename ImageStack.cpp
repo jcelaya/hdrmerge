@@ -56,7 +56,7 @@ int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) 
     int p = -step;
     for (auto & name : options.fileNames) {
         progress.advance(p += step, "Loading %1", name.c_str());
-        std::unique_ptr<Image> image(new Image(name.c_str()));
+        std::unique_ptr<Image> image(measureTime("Load raw", [&] () { return new Image(name.c_str()); }));
         if (image.get() == nullptr || !image->good()) {
             return 1;
         }
@@ -65,11 +65,12 @@ int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) 
         }
     }
     if (options.align) {
+        Timer t("Align");
         progress.advance(p += step, "Aligning");
         align();
-        //if (options.crop) {
+        if (options.crop) {
             crop();
-        //}
+        }
     }
     computeRelExposures();
     mask.generateFrom(*this);
@@ -133,27 +134,34 @@ double ImageStack::value(size_t x, size_t y) const {
 
 
 void ImageStack::compose(float * dst) const {
-    unique_ptr<float[]> map = mask.blur();
+    Timer t("Compose");
+    unique_ptr<float[]> map = measureTime("Blur", [&] () { return mask.blur(); });
     const MetaData & md = images.front()->getMetaData();
     int imageMax = images.size() - 1;
     float max = 0.0;
-    for (size_t row = 0; row < height; ++row) {
-        for (size_t col = 0; col < width; ++col) {
-            size_t pos = row*width + col;
+    for (size_t y = 0, pos = 0; y < height; ++y) {
+        for (size_t x = 0; x < width; ++x, ++pos) {
             int j = map[pos] > imageMax ? imageMax : ceil(map[pos]);
-            double v = images[j]->exposureAt(col, row);
-            // Adjust false highlights
-            if (j < imageMax && images[j]->isSaturated(col, row)) {
-                v /= md.whiteMultAt(row, col);
-            }
-            if (j > 0) {
-                double p = j - map[pos];
-                double vv = images[j - 1]->exposureAt(col, row);
-                if (images[j - 1]->isSaturated(col, row)) {
-                    vv /= md.whiteMultAt(row, col);
+            double v = 0.0, vv = 0.0, p;
+            if (images[j]->contains(x, y)) {
+                v = images[j]->exposureAt(x, y);
+                // Adjust false highlights
+                if (j < imageMax && images[j]->isSaturatedAround(x, y)) {
+                    v /= md.whiteMultAt(x, y);
                 }
-                v = v*(1.0 - p) + vv*p;
+                p = j - map[pos];
+            } else {
+                p = 1.0;
             }
+            if (j > 0 && images[j - 1]->contains(x, y)) {
+                vv = images[j - 1]->exposureAt(x, y);
+                if (images[j - 1]->isSaturatedAround(x, y)) {
+                    vv /= md.whiteMultAt(x, y);
+                }
+            } else {
+                p = 0.0;
+            }
+            v = v*(1.0 - p) + vv*p;
             dst[pos] = v;
             if (v > max) {
                 max = v;

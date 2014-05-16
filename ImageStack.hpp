@@ -72,8 +72,21 @@ public:
     uint8_t toneMap(double v) {
         return toneCurve[(int)std::floor(v)];
     }
-    EditableMask & getMask() {
-        return mask;
+
+    uint8_t getImageAt(size_t x, size_t y) const {
+        return mask.getImageAt(x, y);
+    }
+    void startEditAction(bool add, int layer) {
+        mask.startAction(add, layer);
+    }
+    void editPixels(size_t x, size_t y, size_t radius) {
+        mask.paintPixels(*this, x, y, radius);
+    }
+    EditableMask::Area undo() {
+        return mask.undo();
+    }
+    EditableMask::Area redo() {
+        return mask.redo();
     }
 
 private:

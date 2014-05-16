@@ -61,6 +61,10 @@ public:
     bool isSaturated(size_t x, size_t y) const {
         return alignedPixels[y*width + x] >= satThreshold;
     }
+    bool contains(int x, int y) const {
+        return x >= dx && x < width + dx && y >= dy && y < height + dy;
+    }
+    bool isSaturatedAround(size_t x, size_t y) const;
     double getRelativeExposure() const {
         return relExp;
     }

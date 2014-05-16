@@ -52,7 +52,7 @@ public:
         return mask[i];
     }
     void startAction(bool add, int layer);
-    void paintPixels(int x, int y, size_t radius);
+    void paintPixels(const ImageStack & images, int x, int y, size_t radius);
     Area undo();
     Area redo();
     std::unique_ptr<float[]> blur() const;
@@ -91,9 +91,19 @@ private:
     std::list<EditAction> editActions;
     std::list<EditAction>::iterator nextAction;
 
-    bool isSaturatedAround(const Image & img, size_t col, size_t row) const;
     Area modifyLayer(const std::list<Point> & points, int oldayer);
-    void paintPixels(int x, int y, size_t radius, int oldLayer);
+    template <typename T> void paintCircle(int x, int y, size_t radius, T function) {
+        int r2 = radius * radius;
+        int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
+        int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
+        for (int row = ymin, rrow = y + row; row < ymax; ++row, ++rrow) {
+            for (int col = xmin, rcol = x + col; col < xmax; ++col, ++rcol) {
+                if (row*row + col*col <= r2) {
+                    function(rcol, rrow);
+                }
+            }
+        }
+    }
 };
 
 } // namespace hdrmerge

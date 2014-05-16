@@ -36,9 +36,9 @@ void EditableMask::writeMaskImage(const std::string & maskFile) {
         maskImage.setColor(c, qRgb(gray, gray, gray));
     }
     maskImage.setColor(numColors, qRgb(255, 255, 255));
-    for (size_t row = 0, pos = 0; row < height; ++row) {
-        for (size_t col = 0; col < width; ++col, ++pos) {
-            maskImage.setPixel(col, row, mask[pos]);
+    for (size_t y = 0, pos = 0; y < height; ++y) {
+        for (size_t x = 0; x < width; ++x, ++pos) {
+            maskImage.setPixel(x, y, mask[pos]);
         }
     }
     if (!maskImage.save(QString(maskFile.c_str()))) {
@@ -58,43 +58,26 @@ void EditableMask::generateFrom(const ImageStack & images) {
     Timer t("Generate mask");
     mask.reset(new uint8_t[size]);
     std::fill_n(mask.get(), size, 0);
-    for (size_t row = 0, pos = 0; row < height; ++row) {
-        for (size_t col = 0; col < width; ++col, ++pos) {
+    for (size_t y = 0, pos = 0; y < height; ++y) {
+        for (size_t x = 0; x < width; ++x, ++pos) {
             int i = mask[pos];
             while (i < numLayers - 1 &&
-                (images.getImage(i).isSaturated(col, row) ||
-                isSaturatedAround(images.getImage(i), col, row))) ++i;
+                (!images.getImage(i).contains(x, y) ||
+                images.getImage(i).isSaturated(x, y) ||
+                images.getImage(i).isSaturatedAround(x, y))) ++i;
             if (mask[pos] < i) {
                 mask[pos] = i;
-                if (!isSaturatedAround(images.getImage(i - 1), col, row)) {
-                    paintPixels(col, row, 6, i);
-                }
+                //if (!images.getImage(i - 1).isSaturatedAround(x, y)) {
+                    paintCircle(x, y, 4, [&] (int col, int row) {
+                        size_t pos = row*width + col;
+                        if (mask[pos] < i && images.getImage(i).contains(col, row)) {
+                            mask[pos] = i;
+                        }
+                    });
+                //}
             }
         }
     }
-}
-
-
-bool EditableMask::isSaturatedAround(const Image & img, size_t col, size_t row) const {
-    if (row > 0) {
-        if ((col > 0 && !img.isSaturated(col - 1, row - 1)) ||
-            !img.isSaturated(col, row - 1) ||
-            (col < width - 1 && !img.isSaturated(col + 1, row - 1))) {
-            return false;
-        }
-    }
-    if ((col > 0 && !img.isSaturated(col - 1, row)) ||
-        (col < width - 1 && !img.isSaturated(col + 1, row))) {
-        return false;
-    }
-    if (row < height - 1) {
-        if ((col > 0 && !img.isSaturated(col - 1, row + 1)) ||
-            !img.isSaturated(col, row + 1) ||
-            (col < width - 1 && !img.isSaturated(col + 1, row + 1))) {
-            return false;
-        }
-    }
-    return true;
 }
 
 
@@ -107,39 +90,15 @@ void EditableMask::startAction(bool add, int layer) {
 }
 
 
-void EditableMask::paintPixels(int x, int y, size_t radius) {
+void EditableMask::paintPixels(const ImageStack & images, int x, int y, size_t radius) {
     EditAction & e = editActions.back();
-    int r2 = radius * radius;
-    int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
-    int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
-    for (int row = ymin, rrow = y + row; row < ymax; ++row, ++rrow) {
-        for (int col = xmin, rcol = x + col; col < xmax; ++col, ++rcol) {
-            if (row*row + col*col <= r2) {
-                size_t pos = rrow*width + rcol;
-                if (mask[pos] == e.oldLayer) {
-                    e.points.push_back({x + col, y + row});
-                    mask[pos] = e.newLayer;
-                }
-            }
+    paintCircle(x, y, radius, [&] (int col, int row) {
+        size_t pos = row*width + col;
+        if (mask[pos] == e.oldLayer && images.getImage(e.newLayer).contains(col, row)) {
+            e.points.push_back({col, row});
+            mask[pos] = e.newLayer;
         }
-    }
-}
-
-
-void EditableMask::paintPixels(int x, int y, size_t radius, int l) {
-    int r2 = radius * radius;
-    int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
-    int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
-    for (int row = ymin, rrow = y + row; row < ymax; ++row, ++rrow) {
-        for (int col = xmin, rcol = x + col; col < xmax; ++col, ++rcol) {
-            if (row*row + col*col <= r2) {
-                size_t pos = rrow*width + rcol;
-                if (mask[pos] < l) {
-                    mask[pos] = l;
-                }
-            }
-        }
-    }
+    });
 }
 
 
@@ -170,7 +129,6 @@ EditableMask::Area EditableMask::modifyLayer(const std::list<Point> & points, in
     a.maxx = -1;
     a.maxy = -1;
     for (auto p : points) {
-        int rcol = p.x, rrow = p.y;
         mask[p.y * width + p.x] = layer;
         if (p.x < a.minx) a.minx = p.x;
         if (p.x > a.maxx) a.maxx = p.x;

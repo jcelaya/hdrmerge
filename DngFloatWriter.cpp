@@ -256,7 +256,7 @@ void DngFloatWriter::createRawIFD() {
     uint16_t cfaPatternDim[] = { 2, 2 };
     rawIFD.addEntry(CFAPATTERNDIM, IFD::SHORT, 2, cfaPatternDim);
     const MetaData & md = stack.getImage(0).getMetaData();
-    uint8_t cfaPattern[] = { md.FC(0, 0), md.FC(0, 1), md.FC(1, 0), md.FC(1, 1) };
+    uint8_t cfaPattern[] = { md.FC(0, 0), md.FC(1, 0), md.FC(0, 1), md.FC(1, 1) };
     for (uint8_t & i : cfaPattern) {
         if (i == 3) i = 1;
     }

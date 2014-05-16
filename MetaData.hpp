@@ -37,19 +37,19 @@ public:
     bool isSameFormat(const MetaData & r) {
         return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc;
     }
-    uint8_t FC(int row, int col) const {
-        return (filters >> (((row << 1 & 14) | (col & 1)) << 1) & 3);
+    uint8_t FC(int x, int y) const {
+        return (filters >> (((y << 1 & 14) | (x & 1)) << 1) & 3);
     }
     double logExp() const;
     void dumpInfo() const;
-    uint16_t blackAt(int row, int col) const {
-        return cblack[FC(row, col)];
+    uint16_t blackAt(int x, int y) const {
+        return cblack[FC(x, y)];
     }
     bool hasBlack() const {
         return black || cblack[0] || cblack[1] || cblack[2] || cblack[3];
     }
-    float whiteMultAt(int row, int col) const {
-        return camMul[FC(row, col)];
+    float whiteMultAt(int x, int y) const {
+        return camMul[FC(x, y)];
     }
     void adjustBlack();
     void adjustWhite();

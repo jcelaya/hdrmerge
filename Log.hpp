@@ -94,9 +94,9 @@ private:
     const char * name;
 };
 
-template <typename Func> void measureTime(const char * name, Func f) {
+template <typename Func> auto measureTime(const char * name, Func f) -> decltype(f()) {
     Timer t(name);
-    f();
+    return f();
 }
 
 } // namespace hdrmerge

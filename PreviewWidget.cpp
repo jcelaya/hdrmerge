@@ -93,7 +93,7 @@ QRgb PreviewWidget::rgb(int col, int row) const {
     else if (d > 65535) d = 65535;
     int v = stack->toneMap(d);
     int v70 = v*7/10;
-    int color = stack->getMask().getImageAt(col, row);
+    int color = stack->getImageAt(col, row);
     QRgb pixel;
     switch (color) {
         case 0:
@@ -180,10 +180,10 @@ void PreviewWidget::toggleRmPixelsTool(bool toggled) {
 void PreviewWidget::mousePressEvent(QMouseEvent * event) {
     if (addPixels || rmPixels) {
         event->accept();
-        stack->getMask().startAction(addPixels, layer);
+        stack->startEditAction(addPixels, layer);
         int x = event->x(), y = event->y();
         rotate(x, y);
-        stack->getMask().paintPixels(x, y, radius);
+        stack->editPixels(x, y, radius);
         render(x - radius, y - radius, x + radius + 1, y + radius + 1);
     } else
         event->ignore();
@@ -193,7 +193,7 @@ void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
         event->accept();
         int x = event->x(), y = event->y();
         rotate(x, y);
-        stack->getMask().paintPixels(x, y, radius);
+        stack->editPixels(x, y, radius);
         render(x - radius, y - radius, x + radius + 1, y + radius + 1);
     } else
         event->ignore();
@@ -201,12 +201,12 @@ void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
 
 
 void PreviewWidget::undo() {
-    EditableMask::Area a = stack->getMask().undo();
+    EditableMask::Area a = stack->undo();
     render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
 }
 
 
 void PreviewWidget::redo() {
-    EditableMask::Area a = stack->getMask().redo();
+    EditableMask::Area a = stack->redo();
     render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
 }

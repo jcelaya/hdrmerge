@@ -73,12 +73,17 @@ int Launcher::automaticMerge() {
     auto tr = [&] (const char * text) { return QCoreApplication::translate("LoadSave", text); };
     CoutProgressIndicator progress;
     ImageStack stack;
-    if (stack.load(options, progress)) {
-        int i = progress.getPercent() * (options.fileNames.size() + 1) / 100;
-        if (i) {
-            cerr << tr("Error loading %1").arg(options.fileNames[i].c_str()) << endl;
-            return 1;
+    int numImages = options.fileNames.size();
+    int result = stack.load(options, progress);
+    if (result < numImages * 2) {
+        int format = result & 1;
+        int i = result >> 1;
+        if (format) {
+            cerr << tr("Error loading %1, it has a different format.").arg(options.fileNames[i].c_str()) << endl;
+        } else {
+            cerr << tr("Error loading %1, file not found.").arg(options.fileNames[i].c_str()) << endl;
         }
+        return 1;
     }
     if (!wOptions.fileName.empty()) {
         size_t extPos = wOptions.fileName.find_last_of('.');

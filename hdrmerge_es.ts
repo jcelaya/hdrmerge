@@ -75,8 +75,12 @@
 <context>
     <name>LoadSave</name>
     <message>
-        <source>Error loading %1</source>
-        <translation type="finished">Error cargando %1</translation>
+        <source>Error loading %1, it has a different format.</source>
+        <translation type="finished">Error cargando %1, tiene un formato diferente.</translation>
+    </message>
+    <message>
+        <source>Error loading %1, file not found.</source>
+        <translation type="finished">Error cargando %1, no se encontró el fichero.</translation>
     </message>
     <message>
         <source>Writing result to %1</source>

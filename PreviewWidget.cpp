@@ -121,6 +121,7 @@ void PreviewWidget::render(int minx, int miny, int maxx, int maxy) {
     if (area.isEmpty()) return;
     area.getCoords(&minx, &miny, &maxx, &maxy);
     QImage image(area.width() - 1, area.height() - 1, QImage::Format_RGB32);
+    #pragma omp parallel for schedule(dynamic)
     for (int row = miny; row < maxy; row++) {
         QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - miny));
         for (int col = minx; col < maxx; col++) {
@@ -188,6 +189,8 @@ void PreviewWidget::mousePressEvent(QMouseEvent * event) {
     } else
         event->ignore();
 }
+
+
 void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
     if (addPixels || rmPixels) {
         event->accept();

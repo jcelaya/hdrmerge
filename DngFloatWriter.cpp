@@ -494,12 +494,12 @@ void DngFloatWriter::writeRawData() {
     int bytesps = bps >> 3;
     uLongf dstLen = tileWidth * tileLength * bytesps;
 
-//     #pragma omp parallel
+    #pragma omp parallel
     {
         Bytef cBuffer[dstLen];
         Bytef uBuffer[dstLen];
 
-//         #pragma omp for collapse(2)
+        #pragma omp for collapse(2) schedule(dynamic)
         for (size_t y = 0; y < height; y += tileLength) {
             for (size_t x = 0; x < width; x += tileWidth) {
                 size_t t = (y / tileLength) * tilesAcross + (x / tileWidth);
@@ -520,7 +520,7 @@ void DngFloatWriter::writeRawData() {
                 if (err != Z_OK) {
                     std::cerr << "DNG Deflate: Failed compressing tile " << t << ", with error " << err << std::endl;
                 } else {
-//                     #pragma omp critical
+                    #pragma omp critical
                     {
                         tileOffsets[t] = file.tellp();
                         file.write((const char *)cBuffer, tileBytes[t]);

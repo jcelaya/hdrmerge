@@ -52,17 +52,34 @@ bool ImageStack::addImage(std::unique_ptr<Image> & i) {
 
 
 int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) {
-    int step = 100 / (options.fileNames.size() + 1);
+    int numImages = options.fileNames.size();
+    int step = 100 / (numImages + 1);
     int p = -step;
-    for (auto & name : options.fileNames) {
-        progress.advance(p += step, "Loading %1", name.c_str());
-        std::unique_ptr<Image> image(measureTime("Load raw", [&] () { return new Image(name.c_str()); }));
-        if (image.get() == nullptr || !image->good()) {
-            return 1;
+    int error = 0, failedImage = 0;
+    {
+        Timer t("Load files");
+        #pragma omp parallel for schedule(dynamic)
+        for (int i = 0; i < numImages; ++i) {
+            if (!error) { // We cannot break from the for loop if we are using OpenMP
+                string name = options.fileNames[i];
+                #pragma omp critical
+                progress.advance(p += step, "Loading %1", name.c_str());
+                std::unique_ptr<Image> image(new Image(name.c_str()));
+                #pragma omp critical
+                if (!error) { // Report on the first image that fails, ignore the rest
+                    if (image.get() == nullptr || !image->good()) {
+                        error = 1;
+                        failedImage = i;
+                    } else if (!addImage(image)) {
+                        error = 2;
+                        failedImage = i;
+                    }
+                }
+            }
         }
-        if (!addImage(image)) {
-            return 2;
-        }
+    }
+    if (error) {
+        return (failedImage << 1) + error - 1;
     }
     if (options.align) {
         Timer t("Align");
@@ -75,7 +92,7 @@ int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) 
     computeRelExposures();
     mask.generateFrom(*this);
     progress.advance(100, "Done loading!");
-    return 0;
+    return numImages << 1;
 }
 
 
@@ -93,8 +110,12 @@ int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) 
 
 void ImageStack::align() {
     if (images.size() > 1) {
-        for (auto cur = images.rbegin(), next = cur++; cur != images.rend(); next = cur++) {
-            (*cur)->alignWith(**next);
+        for (int i = images.size() - 2; i >= 0; --i) {
+            images[i]->alignWith(*images[i + 1]);
+        }
+        for (int i = images.size() - 2; i >= 0; --i) {
+            images[i]->displace(images[i + 1]->getDeltaX(), images[i + 1]->getDeltaY());
+            Log::msg(Log::DEBUG, "Image ", i, " displaced to (", images[i]->getDeltaX(), ", ", images[i]->getDeltaY(), ")");
         }
         for (auto & i : images) {
             i->releaseAlignData();
@@ -134,13 +155,14 @@ double ImageStack::value(size_t x, size_t y) const {
 
 
 void ImageStack::compose(float * dst) const {
-    Timer t("Compose");
     unique_ptr<float[]> map = measureTime("Blur", [&] () { return mask.blur(); });
+    Timer t("Compose");
     const MetaData & md = images.front()->getMetaData();
     int imageMax = images.size() - 1;
     float max = 0.0;
-    for (size_t y = 0, pos = 0; y < height; ++y) {
-        for (size_t x = 0; x < width; ++x, ++pos) {
+    #pragma omp parallel for schedule(dynamic)
+    for (size_t y = 0; y < height; ++y) {
+        for (size_t x = 0, pos = y*width; x < width; ++x, ++pos) {
             int j = map[pos] > imageMax ? imageMax : ceil(map[pos]);
             double v = 0.0, vv = 0.0, p;
             if (images[j]->contains(x, y)) {

@@ -273,11 +273,12 @@ void MainWindow::loadImages(const LoadOptions & options) {
         QFuture<int> error = QtConcurrent::run([&] () { return newImages->load(options, progress); });
         while (error.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
-        if (error.result()) {
-            int i = progress.getPercent() * (numImages + 1) / 100;
-            QString message = error.result() == 1 ?
-                tr("Unable to open file %1.").arg(options.fileNames[i].c_str()) :
-                tr("File %1 has not the same format as the previous ones.").arg(options.fileNames[i].c_str());
+        int result = error.result();
+        if (result < numImages * 2) {
+            int i = result >> 1;
+            QString message = result & 1 ?
+            tr("File %1 has not the same format as the previous ones.").arg(options.fileNames[i].c_str()) :
+            tr("Unable to open file %1.").arg(options.fileNames[i].c_str());
             QMessageBox::warning(this, tr("Error opening file"), message);
             delete newImages;
             return;

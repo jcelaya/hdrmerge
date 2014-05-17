@@ -175,10 +175,6 @@ void Image::alignWith(const Image & r) {
         dx <<= 1;
         dy <<= 1;
     }
-    dx += r.dx;
-    dy += r.dy;
-    alignedPixels = &rawPixels[-dy*width - dx];
-    Log::msg(Log::DEBUG, "Image ", metaData->fileName, " displaced to (", dx, ", ", dy, ")");
 }
 
 

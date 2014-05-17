@@ -174,6 +174,7 @@ void EditableMask::BoxBlur::boxBlur_4(size_t radius) {
 
 void EditableMask::BoxBlur::boxBlurH_4(size_t r) {
     float iarr = 1.0 / (r+r+1);
+    #pragma omp parallel for schedule(dynamic)
     for (size_t i = 0; i < m.height; ++i) {
         size_t ti = i * m.width, li = ti, ri = ti + r;
         float val = map[li] * (r + 1);
@@ -198,6 +199,7 @@ void EditableMask::BoxBlur::boxBlurH_4(size_t r) {
 
 void EditableMask::BoxBlur::boxBlurT_4(size_t r) {
     float iarr = 1.0 / (r+r+1);
+    #pragma omp parallel for schedule(dynamic)
     for (size_t i = 0; i < m.width; ++i) {
         size_t ti = i, li = ti, ri = ti + r*m.width;
         float val = map[li] * (r + 1);

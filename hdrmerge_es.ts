@@ -48,6 +48,10 @@
         <translation type="finished">No auto-alinear las imágenes de origen.</translation>
     </message>
     <message>
+        <source>Do not crop the output image to the optimum size.</source>
+        <translation type="finished">No recortar el resultado al tamaño óptimo.</translation>
+    </message>
+    <message>
         <source>Verbose mode.</source>
         <translation type="finished">Mostrar información de progreso.</translation>
     </message>

@@ -109,8 +109,10 @@ void Launcher::parseCommandLine() {
             Log::setMinimumPriority(1);
         } else if (string("-vv") == argv[i]) {
             Log::setMinimumPriority(0);
-        } else if (string("-n") == argv[i] || string("--no-align") == argv[i]) {
+        } else if (string("--no-align") == argv[i]) {
             options.align = false;
+        } else if (string("--no-crop") == argv[i]) {
+            options.crop = false;
         } else if (string("--help") == argv[i]) {
             help = true;
         } else if (string("-b") == argv[i]) {
@@ -147,19 +149,20 @@ void Launcher::showHelp() {
     cout << tr("Usage") << ": HDRMerge [--help] [OPTIONS ...] [RAW_FILES ...]" << endl;
     cout << tr("Merges RAW_FILES into an HDR DNG raw image.") << endl;
     cout << tr("If neither -a nor -o options are given, the GUI will be presented.") << endl;
+    cout << tr("If similar options are specified, only the last one prevails.") << endl;
     cout << endl;
     cout << tr("Options:") << endl;
     cout << "    " << "--help              " << tr("Shows this message.") << endl;
     cout << "    " << "-a                  " << tr("Calculates the output file name automatically.") << endl;
     cout << "    " << "-b BPS              " << tr("Bits per sample, can be 16, 24 or 32.") << endl;
     cout << "    " << "-m MASK_FILE        " << tr("Saves the mask to MASK_FILE as a PNG image.") << endl;
-    cout << "    " << "-n|--no-align       " << tr("Do not auto-align source images.") << endl;
+    cout << "    " << "--no-align          " << tr("Do not auto-align source images.") << endl;
+    cout << "    " << "--no-crop           " << tr("Do not crop the output image to the optimum size.") << endl;
     cout << "    " << "-o OUT_FILE         " << tr("Sets OUT_FILE as the output file name.") << endl;
     cout << "    " << "-p full|half|none   " << tr("Preview width.") << endl;
     cout << "    " << "-v                  " << tr("Verbose mode.") << endl;
     cout << "    " << "-vv                 " << tr("Debug mode.") << endl;
     cout << "    " << "RAW_FILES           " << tr("The input raw files.") << endl;
-    cout << tr("If similar options are specified, only the last one prevails.") << endl;
 }
 
 

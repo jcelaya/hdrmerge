@@ -82,15 +82,17 @@ inline std::ostream & operator<<(std::ostream & os, const QString & s) {
 class Timer {
 public:
     Timer(const char * n) : name(n) {
-        start = std::clock();
+        clock_gettime(CLOCK_MONOTONIC_COARSE, &start);
     }
     ~Timer() {
-        double t = (std::clock() - start) / (double) CLOCKS_PER_SEC;
+        timespec end;
+        clock_gettime(CLOCK_MONOTONIC_COARSE, &end);
+        double t = end.tv_sec - start.tv_sec + (end.tv_nsec - start.tv_nsec)/1000000000.0;
         Log::msg(Log::DEBUG, name, ": ", t, " seconds");
     }
 
 private:
-    std::clock_t start;
+    timespec start;
     const char * name;
 };
 

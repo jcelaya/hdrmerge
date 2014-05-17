@@ -121,8 +121,9 @@ void DngFloatWriter::write(const string & filename) {
     file.seekp(dataOffset);
 
     progress.advance(75, "Writing output");
+    Timer t("Write output");
     writePreviews();
-    writeRawData();
+    measureTime("Write raw", [&] () { writeRawData(); });
     file.seekp(0);
     TiffHeader().write(file);
     mainIFD.write(file, false);
@@ -490,8 +491,8 @@ void DngFloatWriter::writeRawData() {
     size_t tileCount = tilesAcross * tilesDown;
     uint32_t tileOffsets[tileCount];
     uint32_t tileBytes[tileCount];
-    uLongf dstLen = tileWidth * tileLength * 4;
     int bytesps = bps >> 3;
+    uLongf dstLen = tileWidth * tileLength * bytesps;
 
 //     #pragma omp parallel
     {
@@ -502,9 +503,11 @@ void DngFloatWriter::writeRawData() {
         for (size_t y = 0; y < height; y += tileLength) {
             for (size_t x = 0; x < width; x += tileWidth) {
                 size_t t = (y / tileLength) * tilesAcross + (x / tileWidth);
-                fill_n(uBuffer, dstLen, 0);
                 size_t thisTileLength = y + tileLength > height ? height - y : tileLength;
                 size_t thisTileWidth = x + tileWidth > width ? width - x : tileWidth;
+                if (thisTileLength != tileLength || thisTileWidth != tileWidth) {
+                    fill_n(uBuffer, dstLen, 0);
+                }
                 for (size_t row = 0; row < thisTileLength; ++row) {
                     Bytef * dst = uBuffer + row*tileWidth*bytesps;
                     Bytef * src = (Bytef *)&rawData[(y+row)*width + x];
@@ -516,7 +519,7 @@ void DngFloatWriter::writeRawData() {
                 tileBytes[t] = conpressedLength;
                 if (err != Z_OK) {
                     std::cerr << "DNG Deflate: Failed compressing tile " << t << ", with error " << err << std::endl;
-                } else {  // Floating point data
+                } else {
 //                     #pragma omp critical
                     {
                         tileOffsets[t] = file.tellp();

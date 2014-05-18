@@ -133,12 +133,12 @@ void Image::relativeExposure(const Image & r) {
 }
 
 
-void Image::alignWith(const Image & r) {
-    if (!good() || !r.good()) return;
+size_t Image::alignWith(const Image & r) {
     dx = dy = 0;
     const double tolerance = 1.0/16;
     Histogram histFull(rawPixels.get(), rawPixels.get() + width*height);
     double halfLightPercent = histFull.getFraction(max * 0.9) / 2.0;
+    size_t totalError = 0;
     for (int s = scaleSteps - 1; s >= 0; --s) {
         size_t curWidth = width >> (s + 1);
         size_t curHeight = height >> (s + 1);
@@ -174,7 +174,9 @@ void Image::alignWith(const Image & r) {
         }
         dx <<= 1;
         dy <<= 1;
+        totalError += minError;
     }
+    return totalError;
 }
 
 

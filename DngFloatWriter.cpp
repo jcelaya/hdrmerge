@@ -123,7 +123,7 @@ void DngFloatWriter::write(const string & filename) {
     progress.advance(75, "Writing output");
     Timer t("Write output");
     writePreviews();
-    measureTime("Write raw", [&] () { writeRawData(); });
+    writeRawData();
     file.seekp(0);
     TiffHeader().write(file);
     mainIFD.write(file, false);

@@ -69,7 +69,7 @@ public:
         return relExp;
     }
     bool isSameFormat(const Image & ref) const;
-    void alignWith(const Image & r);
+    size_t alignWith(const Image & r);
     void releaseAlignData() {
         scaled.reset();
     }

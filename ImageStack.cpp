@@ -97,6 +97,11 @@ int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) 
 
 
 int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) {
+    string cropped("");
+    if (width != images[0]->getWidth() || height != images[0]->getHeight()) {
+        cropped = " cropped";
+    }
+    Log::msg(2, "Writing ", options.fileName, ", ", options.bps, "bits, ", width, 'x', height, cropped);
     DngFloatWriter writer(*this, progress);
     writer.setBitsPerSample(options.bps);
     writer.setPreviewWidth((options.previewSize * width) / 2);
@@ -110,12 +115,14 @@ int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) 
 
 void ImageStack::align() {
     if (images.size() > 1) {
+        size_t errors[images.size()];
         for (int i = images.size() - 2; i >= 0; --i) {
-            images[i]->alignWith(*images[i + 1]);
+            errors[i] = images[i]->alignWith(*images[i + 1]);
         }
         for (int i = images.size() - 2; i >= 0; --i) {
             images[i]->displace(images[i + 1]->getDeltaX(), images[i + 1]->getDeltaY());
-            Log::msg(Log::DEBUG, "Image ", i, " displaced to (", images[i]->getDeltaX(), ", ", images[i]->getDeltaY(), ")");
+            Log::msg(Log::DEBUG, "Image ", i, " displaced to (", images[i]->getDeltaX(), ", ", images[i]->getDeltaY(),
+                     ") with error ", errors[i]);
         }
         for (auto & i : images) {
             i->releaseAlignData();

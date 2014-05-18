@@ -61,6 +61,14 @@ If you want to tone-map an image resulting from HDRMerge with a program like Lum
 
 # Feature List
 
+v0.4:
+
+* Great performance improvements with OpenMP.
+* Not depend anymore on DNG & XMP SDK! Windows and Mac version soon...
+* More robust MBT alignment.
+* More control on the logging output.
+* The user may disable alignment and/or cropping. This is most useful to obtain an image of the same size as the inputs. Some programs have this requirement to apply a flat-field image, for instance.
+
 v0.3: This is the first public version of HDRMerge
 
 * Supports any raw format supported by LibRaw.
@@ -82,7 +90,7 @@ Currently, HDRMerge is only supported in Linux. HDRMerge depends on:
 * Exiv2 (tested with version 0.23)
 * ZLib (tested with version 1.2.7)
 
-You will need the development files of these libraries, CMake version 2.8.8 or greater and gcc 4.8 or greater.
+You will need the development files of these libraries, CMake version 2.8.8 or greater and gcc 4.8 or greater. Optionally, HDRMerge can use OpenMP to increase its performance, and Boost::Test to compile the unit tests.
 
 ## Building HDRMerge
 

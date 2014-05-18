@@ -59,6 +59,20 @@ If you want to tone-map an image resulting from HDRMerge with a program like Lum
 [2]: http://theory.uchicago.edu/~ejm/pix/20d/tests/noise/index.html
 
 
+# Feature List
+
+v0.3: This is the first public version of HDRMerge
+
+* Supports any raw format supported by LibRaw.
+* Automatic alignment of small translations.
+* Automatic crop to the optimal size.
+* Automatic merge mask creation. The mask identifies the best source image for each pixel of the output.
+* Editable merge mask, to manually select pixels from specific source images.
+* Writes DNG files with 16, 24 and 32 bits per pixel.
+* Writes full, half or no preview to the output image.
+* Copies the EXIF data from the least exposed source image.
+
+
 # Installation:
 
 Currently, HDRMerge is only supported in Linux. HDRMerge depends on:

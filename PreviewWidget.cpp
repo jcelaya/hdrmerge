@@ -182,9 +182,9 @@ void PreviewWidget::mousePressEvent(QMouseEvent * event) {
     if (addPixels || rmPixels) {
         event->accept();
         stack->startEditAction(addPixels, layer);
-        int x = event->x(), y = event->y();
-        rotate(x, y);
-        stack->editPixels(x, y, radius);
+        int x = event->x(), y = event->y(), rx = x, ry = y;
+        rotate(rx, ry);
+        stack->editPixels(rx, ry, radius);
         render(x - radius, y - radius, x + radius + 1, y + radius + 1);
     } else
         event->ignore();
@@ -194,9 +194,9 @@ void PreviewWidget::mousePressEvent(QMouseEvent * event) {
 void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
     if (addPixels || rmPixels) {
         event->accept();
-        int x = event->x(), y = event->y();
-        rotate(x, y);
-        stack->editPixels(x, y, radius);
+        int x = event->x(), y = event->y(), rx = x, ry = y;
+        rotate(rx, ry);
+        stack->editPixels(rx, ry, radius);
         render(x - radius, y - radius, x + radius + 1, y + radius + 1);
     } else
         event->ignore();

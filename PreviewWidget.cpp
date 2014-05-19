@@ -34,6 +34,7 @@ using namespace hdrmerge;
 PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent), width(0), height(0), flip(0),
 addPixels(false), rmPixels(false), layer(0), radius(5) {
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    setMouseTracking(true);
 }
 
 
@@ -151,7 +152,11 @@ QPixmap PreviewWidget::createCursor(bool plus) {
     cursor.fill(Qt::white);
     {
         QPainter painter(&cursor);
-        painter.setPen(QPen(Qt::black, 1, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter.setPen(QPen(QColor(64, 64, 64), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        painter.drawEllipse(0, 0, radius*2, radius*2);
+        QPen dashed(QColor(128, 128, 128), 2, Qt::CustomDashLine, Qt::RoundCap, Qt::RoundJoin);
+        dashed.setDashPattern(QVector<qreal>({3, 4}));
+        painter.setPen(dashed);
         painter.drawEllipse(0, 0, radius*2, radius*2);
         painter.drawLine(radius - 2, radius, radius + 2, radius);
         if (plus)
@@ -179,7 +184,7 @@ void PreviewWidget::toggleRmPixelsTool(bool toggled) {
 
 
 void PreviewWidget::mousePressEvent(QMouseEvent * event) {
-    if (addPixels || rmPixels) {
+    if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
         event->accept();
         stack->startEditAction(addPixels, layer);
         int x = event->x(), y = event->y(), rx = x, ry = y;
@@ -192,12 +197,14 @@ void PreviewWidget::mousePressEvent(QMouseEvent * event) {
 
 
 void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
-    if (addPixels || rmPixels) {
+    int x = event->x(), y = event->y(), rx = x, ry = y;
+    if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
         event->accept();
-        int x = event->x(), y = event->y(), rx = x, ry = y;
         rotate(rx, ry);
         stack->editPixels(rx, ry, radius);
         render(x - radius, y - radius, x + radius + 1, y + radius + 1);
+    } else if (addPixels || rmPixels) {
+        update(x - radius, y - radius, 2*radius + 1, 2*radius + 1);
     } else
         event->ignore();
 }

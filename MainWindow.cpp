@@ -110,6 +110,7 @@ void MainWindow::createGui() {
     QHBoxLayout * toolLayout = new QHBoxLayout(toolArea);
 
     QToolBar * toolBar = new QToolBar(toolArea);
+    toolBar->setStyleSheet("QToolBar { border: 0px }");
     toolBar->setOrientation(Qt::Horizontal);
     toolBar->setFloatable(false);
     toolBar->setMovable(false);
@@ -148,6 +149,7 @@ void MainWindow::createGui() {
     toolLayout->addWidget(radiusSlider, 1);
 
     layerSelector = new QToolBar(toolArea);
+    layerSelector->setStyleSheet("QToolBar { border: 0px }");
     layerSelector->setOrientation(Qt::Horizontal);
     layerSelector->setFloatable(false);
     layerSelector->setMovable(false);

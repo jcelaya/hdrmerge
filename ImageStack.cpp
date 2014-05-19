@@ -101,7 +101,7 @@ int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) 
     if (width != images[0]->getWidth() || height != images[0]->getHeight()) {
         cropped = " cropped";
     }
-    Log::msg(2, "Writing ", options.fileName, ", ", options.bps, "bits, ", width, 'x', height, cropped);
+    Log::msg(2, "Writing ", options.fileName, ", ", options.bps, "-bit, ", width, 'x', height, cropped);
     DngFloatWriter writer(*this, progress);
     writer.setBitsPerSample(options.bps);
     writer.setPreviewWidth((options.previewSize * width) / 2);

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(hdrmerge)
 
-set (CMAKE_CXX_FLAGS -std=c++11)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Required and optional packages
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
@@ -15,6 +15,11 @@ find_package(Exiv2 REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Boost 1.46 COMPONENTS unit_test_framework)
 include_directories(${LibRaw_INCLUDE_DIR} ${EXIV2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS})
+if (WIN32)
+	set(QT_LIBRARIES ${QT_QTCORE_LIBRARY_RELEASE} ${QT_QTGUI_LIBRARY_RELEASE})
+else (WIN32)
+	set(WIN32_LIBS "")
+endif (WIN32)
 
 # OpenMP
 find_package(OpenMP)
@@ -52,7 +57,7 @@ set(hdrmerge_qobject_headers MainWindow.hpp PreviewWidget.hpp LoadOptionsDialog.
 set(hdrmerge_translations hdrmerge_es.ts)
 
 # Libs
-set(hdrmerge_libs ${QT_LIBRARIES} ${EXIV2_LIBRARY} ${LibRaw_LIBRARIES} ${ZLIB_LIBRARIES})
+set(hdrmerge_libs ${QT_LIBRARIES} ${EXIV2_LIBRARY} ${LibRaw_LIBRARIES} ${ZLIB_LIBRARIES} ${WIN32_LIBS})
 
 # Qt4 intermediate files
 QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})

@@ -79,6 +79,7 @@ inline std::ostream & operator<<(std::ostream & os, const QString & s) {
     return os << std::string(s.toUtf8().constData());
 }
 
+#ifndef _WIN32
 class Timer {
 public:
     Timer(const char * n) : name(n) {
@@ -95,6 +96,12 @@ private:
     timespec start;
     const char * name;
 };
+#else
+class Timer {
+public:
+    Timer(const char * n) {}
+};
+#endif
 
 template <typename Func> auto measureTime(const char * name, Func f) -> decltype(f()) {
     Timer t(name);

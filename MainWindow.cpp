@@ -130,13 +130,22 @@ void MainWindow::createGui() {
     }
     dragToolAction->setChecked(true);
     toolBar->addSeparator();
-    QSpinBox * radiusBox = new QSpinBox(toolBar);
-    radiusBox->setRange(0, 1000);
-    connect(radiusBox, SIGNAL(valueChanged(int)), preview, SLOT(setRadius(int)));
-    radiusBox->setValue(5);
-    toolBar->addWidget(new QLabel(" " + tr("Radius:"), toolBar));
-    toolBar->addWidget(radiusBox);
     toolLayout->addWidget(toolBar);
+
+    QSpinBox * radiusBox = new QSpinBox(toolBar);
+    radiusBox->setRange(0, 200);
+    radiusBox->findChild<QLineEdit*>()->setReadOnly(true);
+    QSlider * radiusSlider = new QSlider(Qt::Horizontal, toolBar);
+    radiusSlider->setRange(0, 200);
+    radiusSlider->setMaximumWidth(200);
+    connect(radiusBox, SIGNAL(valueChanged(int)), preview, SLOT(setRadius(int)));
+    connect(radiusSlider, SIGNAL(valueChanged(int)), preview, SLOT(setRadius(int)));
+    connect(radiusBox, SIGNAL(valueChanged(int)), radiusSlider, SLOT(setValue(int)));
+    connect(radiusSlider, SIGNAL(valueChanged(int)), radiusBox, SLOT(setValue(int)));
+    radiusBox->setValue(5);
+    toolLayout->addWidget(new QLabel(" " + tr("Radius:"), toolBar));
+    toolLayout->addWidget(radiusBox);
+    toolLayout->addWidget(radiusSlider, 1);
 
     layerSelector = new QToolBar(toolArea);
     layerSelector->setOrientation(Qt::Horizontal);
@@ -145,7 +154,7 @@ void MainWindow::createGui() {
     layerSelectorGroup = new QActionGroup(layerSelector);
     connect(layerSelectorGroup, SIGNAL(triggered(QAction *)), this, SLOT(layerSelected(QAction *)));
     toolLayout->addWidget(layerSelector);
-    toolLayout->addStretch();
+    toolLayout->addStretch(1);
 
     layout->addWidget(toolArea);
 

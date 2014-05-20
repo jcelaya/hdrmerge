@@ -83,6 +83,9 @@ void PreviewWidget::paintEvent(QPaintEvent * event) {
     if (pixmap.get()) {
         QPainter painter(this);
         painter.drawPixmap(0, 0, *pixmap);
+        if ((addPixels || rmPixels) && underMouse()) {
+            painter.drawPixmap(mouseX - radius, mouseY - radius, brush);
+        }
     }
 }
 
@@ -148,14 +151,14 @@ void PreviewWidget::paintImage(int x, int y, const QImage & image) {
 }
 
 
-QPixmap PreviewWidget::createCursor(bool plus) {
-    QPixmap cursor(radius*2 + 1, radius*2 + 1);
-    cursor.fill(Qt::white);
+void PreviewWidget::createBrush(bool plus) {
+    brush = QPixmap(radius*2 + 1, radius*2 + 1);
+    brush.fill(Qt::white);
     {
-        QPainter painter(&cursor);
-        painter.setPen(QPen(QColor(64, 64, 64), 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+        QPainter painter(&brush);
+        painter.setPen(QPen(QColor(64, 64, 64), 2, Qt::SolidLine));
         painter.drawEllipse(0, 0, radius*2, radius*2);
-        QPen dashed(QColor(128, 128, 128), 2, Qt::CustomDashLine, Qt::RoundCap, Qt::RoundJoin);
+        QPen dashed(QColor(128, 128, 128), 2, Qt::CustomDashLine);
         dashed.setDashPattern(QVector<qreal>({3, 4}));
         painter.setPen(dashed);
         painter.drawEllipse(0, 0, radius*2, radius*2);
@@ -163,51 +166,33 @@ QPixmap PreviewWidget::createCursor(bool plus) {
         if (plus)
             painter.drawLine(radius, radius - 2, radius, radius + 2);
     }
-    cursor.setMask(cursor.createMaskFromColor(Qt::white));
-    return cursor;
+    brush.setMask(brush.createMaskFromColor(Qt::white));
 }
 
 
-void PreviewWidget::toggleAddPixelsTool(bool toggled) {
-    addPixels = toggled;
-    if (toggled) {
-        setCursor(QCursor(createCursor(true), radius, radius));
+void PreviewWidget::setShowBrush() {
+    if (addPixels || rmPixels) {
+        createBrush(addPixels);
+        setCursor(QCursor(Qt::BlankCursor));
     }
+    update();
 }
 
 
-void PreviewWidget::toggleRmPixelsTool(bool toggled) {
-    rmPixels = toggled;
-    if (toggled) {
-        setCursor(QCursor(createCursor(false), radius, radius));
-    }
-}
-
-
-void PreviewWidget::mousePressEvent(QMouseEvent * event) {
+void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
+    int rx = mouseX = event->x(), ry = mouseY = event->y();
     if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
         event->accept();
-        stack->startEditAction(addPixels, layer);
-        int x = event->x(), y = event->y(), rx = x, ry = y;
+        if (pressed) {
+            stack->startEditAction(addPixels, layer);
+        }
         rotate(rx, ry);
         stack->editPixels(rx, ry, radius);
-        render(x - radius, y - radius, x + radius + 1, y + radius + 1);
-    } else
+        render(mouseX - radius, mouseY - radius, mouseX + radius + 1, mouseY + radius + 1);
+    } else {
         event->ignore();
-}
-
-
-void PreviewWidget::mouseMoveEvent(QMouseEvent * event) {
-    int x = event->x(), y = event->y(), rx = x, ry = y;
-    if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
-        event->accept();
-        rotate(rx, ry);
-        stack->editPixels(rx, ry, radius);
-        render(x - radius, y - radius, x + radius + 1, y + radius + 1);
-    } else if (addPixels || rmPixels) {
-        update(x - radius, y - radius, 2*radius + 1, 2*radius + 1);
-    } else
-        event->ignore();
+    }
+    update();
 }
 
 

@@ -40,8 +40,8 @@ public:
 
 public slots:
     void setImageStack(ImageStack * s);
-    void toggleAddPixelsTool(bool toggled);
-    void toggleRmPixelsTool(bool toggled);
+    void toggleAddPixelsTool(bool toggled) { addPixels = toggled; setShowBrush(); }
+    void toggleRmPixelsTool(bool toggled) { rmPixels = toggled; setShowBrush(); }
     void selectLayer(int i) { layer = i; }
     void setRadius(int r) { radius = r; }
     void undo();
@@ -49,8 +49,11 @@ public slots:
 
 protected:
     void paintEvent(QPaintEvent * event);
-    void mousePressEvent(QMouseEvent * event);
-    void mouseMoveEvent(QMouseEvent * event);
+    void mousePressEvent(QMouseEvent * event) { mouseEvent(event, true); }
+    void mouseMoveEvent(QMouseEvent * event) { mouseEvent(event, false); }
+    void mouseEvent(QMouseEvent * event, bool pressed);
+    void enterEvent(QEvent * event) { update(); }
+    void leaveEvent(QEvent * event) { update(); }
 
 private slots:
     void paintImage(int x, int y, const QImage & image);
@@ -65,11 +68,14 @@ private:
     bool addPixels, rmPixels;
     int layer;
     int radius;
+    int mouseX, mouseY;
+    QPixmap brush;
 
     void render(int minx, int miny, int maxx, int maxy);
     QRgb rgb(int col, int row) const;
-    QPixmap createCursor(bool plus);
     void rotate(int & x, int & y) const;
+    void createBrush(bool plus);
+    void setShowBrush();
 };
 
 } // namespace hdrmerge

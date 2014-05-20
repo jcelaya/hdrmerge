@@ -45,8 +45,6 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow();
 
-    void changeEvent(QEvent * e);
-
     /// Triggered when the window is first shown
     void showEvent(QShowEvent * event);
     /// Triggered when the window is closed, exit the application
@@ -71,6 +69,7 @@ private:
     void createGui();
     void createActions();
     void createMenus();
+    void createLayerSelector();
 
     Q_OBJECT
 
@@ -94,6 +93,7 @@ private:
     PreviewWidget * preview;
     QToolBar * layerSelector;
     QActionGroup * layerSelectorGroup;
+    QWidget * lastLayer;
 
     ImageStack * images;
     const LoadOptions * preloadOptions;

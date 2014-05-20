@@ -151,14 +151,21 @@ void MainWindow::createGui() {
     layerSelector->setOrientation(Qt::Horizontal);
     layerSelector->setFloatable(false);
     layerSelector->setMovable(false);
+    layerSelector->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     layerSelectorGroup = new QActionGroup(layerSelector);
     connect(layerSelectorGroup, SIGNAL(triggered(QAction *)), this, SLOT(layerSelected(QAction *)));
     toolLayout->addWidget(layerSelector);
+
+    lastLayer = new QWidget(toolArea);
+    lastLayer->setLayout(new QHBoxLayout());
+    lastLayer->layout()->setContentsMargins(0, 0, 0, 0);
+    lastLayer->layout()->addWidget(new QLabel());
+    lastLayer->layout()->addWidget(new QLabel());
+    toolLayout->addWidget(lastLayer, 0, Qt::AlignVCenter);
     toolLayout->addStretch(1);
 
     layout->addWidget(toolArea);
 
-    //retranslateUi(HdrMergeMainWindow);
     setWindowTitle(tr("HDRMerge v%1.%2 - Raw image fusion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
     setWindowIcon(QIcon(":/images/logo.png"));
 }
@@ -219,36 +226,6 @@ void MainWindow::closeEvent(QCloseEvent * event) {
 }
 
 
-
-/*
-    void retranslateUi(QMainWindow *HdrMergeMainWindow)
-    {
-        HdrMergeMainWindow->setWindowTitle(QApplication::translate("HdrMergeMainWindow", "HDRMerge - Fusi\303\263n de im\303\241genes para alto rango din\303\241mico", 0, QApplication::UnicodeUTF8));
-        loadImagesAction->setText(QApplication::translate("HdrMergeMainWindow", "Cargar im\303\241genes", 0, QApplication::UnicodeUTF8));
-        quitAction->setText(QApplication::translate("HdrMergeMainWindow", "Salir", 0, QApplication::UnicodeUTF8));
-        quitAction->setShortcut(QApplication::translate("HdrMergeMainWindow", "Ctrl+Q", 0, QApplication::UnicodeUTF8));
-        aboutAction->setText(QApplication::translate("HdrMergeMainWindow", "Acerca de...", 0, QApplication::UnicodeUTF8));
-        mergeAction->setText(QApplication::translate("HdrMergeMainWindow", "Fusionar", 0, QApplication::UnicodeUTF8));
-        previewLabel->setText(QString());
-        fileMenu->setTitle(QApplication::translate("HdrMergeMainWindow", "Archivo", 0, QApplication::UnicodeUTF8));
-        helpMenu->setTitle(QApplication::translate("HdrMergeMainWindow", "Ayuda", 0, QApplication::UnicodeUTF8));
-    } // retranslateUi
-*/
-
-
-
-void MainWindow::changeEvent(QEvent * e) {
-    QMainWindow::changeEvent(e);
-    switch (e->type()) {
-    case QEvent::LanguageChange:
-        //retranslateUi(this);
-        break;
-    default:
-        break;
-    }
-}
-
-
 void MainWindow::about() {
     AboutDialog dialog(this);
     dialog.exec();
@@ -297,30 +274,57 @@ void MainWindow::loadImages(const LoadOptions & options) {
 
         // Create GUI
         mergeAction->setEnabled(true);
-        layerSelector->clear();
-        for (auto action : layerSelectorGroup->actions()) {
-            layerSelectorGroup->removeAction(action);
-            delete action;
+        addGhostAction->setEnabled(numImages > 1);
+        rmGhostAction->setEnabled(numImages > 1);
+        createLayerSelector();
+    }
+}
+
+
+static QPixmap getColorIcon(int i) {
+    QImage colorBlock(20, 20, QImage::Format_ARGB32);
+    QColor color(PreviewWidget::getColor(i - 1, 255));
+    colorBlock.fill(color);
+    color.setAlpha(0);
+    int x[] = { 0, 1, 18, 19, 0, 19, 0, 19, 0, 1, 18, 19 };
+    int y[] = { 0, 0, 0, 0, 1, 1, 18, 18, 19, 19, 19, 19 };
+    for (int i = 0; i < 12; ++i) {
+        colorBlock.setPixel(x[i], y[i], color.rgba());
+    }
+    return QPixmap::fromImage(colorBlock);
+}
+
+
+void MainWindow::createLayerSelector() {
+    unsigned int numImages = images->size();
+    layerSelector->clear();
+    for (auto action : layerSelectorGroup->actions()) {
+        layerSelectorGroup->removeAction(action);
+        delete action;
+    }
+    layerSelector->addSeparator();
+    if (numImages > 1) {
+        for (unsigned int i = 1; i < numImages; i++) {
+            QAction * action = new QAction(QIcon(getColorIcon(i)), std::to_string(i).c_str(), layerSelectorGroup);
+            action->setCheckable(true);
+            if (i < 10)
+                action->setShortcut(Qt::Key_0 + i);
+            else if (i == 10)
+                action->setShortcut(Qt::Key_0);
+            layerSelector->addAction(action);
         }
-        if (numImages > 1) {
-            addGhostAction->setEnabled(true);
-            rmGhostAction->setEnabled(true);
-            layerSelector->addSeparator();
-            for (unsigned int i = 1; i < numImages; i++) {
-                QAction * action = new QAction(std::to_string(i).c_str(), layerSelectorGroup);
-                action->setCheckable(true);
-                if (i < 10)
-                    action->setShortcut(Qt::Key_0 + i);
-                else if (i == 10)
-                    action->setShortcut(Qt::Key_0);
-                layerSelector->addAction(action);
-            }
-            layerSelectorGroup->actions().first()->setChecked(true);
-            preview->selectLayer(0);
-        } else {
-            addGhostAction->setEnabled(false);
-            rmGhostAction->setEnabled(false);
-        }
+        QAction * firstAction = layerSelectorGroup->actions().first();
+        firstAction->setChecked(true);
+        preview->selectLayer(0);
+        QLabel * lastIcon = (QLabel *)lastLayer->layout()->itemAt(0)->widget();
+        QLabel * lastText = (QLabel *)lastLayer->layout()->itemAt(1)->widget();
+        lastIcon->setPixmap(getColorIcon(numImages));
+        lastText->setText(std::to_string(numImages).c_str());
+    } else {
+        QLabel * lastIcon = (QLabel *)lastLayer->layout()->itemAt(0)->widget();
+        QLabel * lastText = (QLabel *)lastLayer->layout()->itemAt(1)->widget();
+        lastIcon->setText("");
+        lastText->setText("");
     }
 }
 

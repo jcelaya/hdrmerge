@@ -87,32 +87,33 @@ void PreviewWidget::paintEvent(QPaintEvent * event) {
 }
 
 
+QRgb PreviewWidget::getColor(int layer, int v) {
+    int v70 = v*7/10;
+    switch (layer) {
+        case 0:
+            return qRgb(v70, v, v70); break;
+        case 1:
+            return qRgb(v70, v70, v); break;
+        case 2:
+            return qRgb(v, v70, v70); break;
+        case 3:
+            return qRgb(v, v, v70); break;
+        case 4:
+            return qRgb(v, v70, v); break;
+        case 5:
+            return qRgb(v70, v, v); break;
+        default:
+            return qRgb(v, v, v); break;
+    }
+}
+
+
 QRgb PreviewWidget::rgb(int col, int row) const {
     rotate(col, row);
-    double d = stack->value(col, row);
-    if (d < 0) d = 0;
-    else if (d > 65535) d = 65535;
-    int v = stack->toneMap(d);
-    int v70 = v*7/10;
-    int color = stack->getImageAt(col, row);
-    QRgb pixel;
-    switch (color) {
-        case 0:
-            pixel = qRgb(v70, v, v70); break;
-        case 1:
-            pixel = qRgb(v70, v70, v); break;
-        case 2:
-            pixel = qRgb(v, v70, v70); break;
-        case 3:
-            pixel = qRgb(v, v, v70); break;
-        case 4:
-            pixel = qRgb(v, v70, v); break;
-        case 5:
-            pixel = qRgb(v70, v, v); break;
-        default:
-            pixel = qRgb(v, v, v); break;
-    }
-    return pixel;
+    double v = stack->value(col, row);
+    if (v < 0) v = 0;
+    else if (v > 65535) v = 65535;
+    return getColor(stack->getImageAt(col, row), stack->toneMap(v));
 }
 
 

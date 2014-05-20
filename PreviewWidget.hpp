@@ -36,6 +36,8 @@ public:
     PreviewWidget(QWidget * parent);
     QSize sizeHint() const;
 
+    static QRgb getColor(int layer, int v);
+
 public slots:
     void setImageStack(ImageStack * s);
     void toggleAddPixelsTool(bool toggled);

@@ -295,6 +295,10 @@
         <translation type="finished">Guardar fichero DNG</translation>
     </message>
     <message>
+        <source>Open raw images</source>
+        <translation type="finished">Abrir imágenes raw</translation>
+    </message>
+    <message>
         <source>Digital Negatives (*.dng)</source>
         <translation type="finished">Negativos Digitales (*.dng)</translation>
     </message>

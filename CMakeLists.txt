@@ -8,7 +8,7 @@ set (PLATFORM "")
 # Required and optional packages
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 # Qt4
-find_package(Qt4 REQUIRED)
+find_package(Qt4 REQUIRED QtCore QtGui)
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 find_package(LibRaw REQUIRED)
@@ -17,11 +17,10 @@ find_package(ZLIB REQUIRED)
 find_package(Boost 1.46 COMPONENTS unit_test_framework)
 include_directories(${LibRaw_INCLUDE_DIR} ${EXIV2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS})
 if (WIN32)
-	# This is required for libraw.h
+	# This is required by libraw.h
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32")
 	# TODO: right now, we prefer a console application
 	#set(PLATFORM WIN32)
-	set(QT_LIBRARIES ${QT_QTCORE_LIBRARY_RELEASE} ${QT_QTGUI_LIBRARY_RELEASE})
 endif (WIN32)
 
 # OpenMP
@@ -85,3 +84,4 @@ install(TARGETS hdrmerge RUNTIME DESTINATION bin)
 if (Boost_FOUND)
     add_subdirectory(test)
 endif (Boost_FOUND)
+

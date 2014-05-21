@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(hdrmerge)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set (PLATFORM "")
 
 # Required and optional packages
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
@@ -16,15 +17,16 @@ find_package(ZLIB REQUIRED)
 find_package(Boost 1.46 COMPONENTS unit_test_framework)
 include_directories(${LibRaw_INCLUDE_DIR} ${EXIV2_INCLUDE_DIR} ${ZLIB_INCLUDE_DIRS})
 if (WIN32)
+	# This is required for libraw.h
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32")
+	# TODO: right now, we prefer a console application
+	#set(PLATFORM WIN32)
 	set(QT_LIBRARIES ${QT_QTCORE_LIBRARY_RELEASE} ${QT_QTGUI_LIBRARY_RELEASE})
-else (WIN32)
-	set(WIN32_LIBS "")
 endif (WIN32)
 
 # OpenMP
 find_package(OpenMP)
 if(OPENMP_FOUND)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
@@ -57,7 +59,7 @@ set(hdrmerge_qobject_headers MainWindow.hpp PreviewWidget.hpp LoadOptionsDialog.
 set(hdrmerge_translations hdrmerge_es.ts)
 
 # Libs
-set(hdrmerge_libs ${QT_LIBRARIES} ${EXIV2_LIBRARY} ${LibRaw_LIBRARIES} ${ZLIB_LIBRARIES} ${WIN32_LIBS})
+set(hdrmerge_libs ${QT_LIBRARIES} ${EXIV2_LIBRARY} ${LibRaw_LIBRARIES} ${ZLIB_LIBRARIES})
 
 # Qt4 intermediate files
 QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})
@@ -75,7 +77,7 @@ configure_file (
 QT4_ADD_RESOURCES(hdrmerge_rsrc ${PROJECT_BINARY_DIR}/translations.qrc resources.qrc)
 
 add_library(hdrmerge-objects OBJECT ${hdrmerge_sources} ${hdrmerge_moc} ${hdrmerge_rsrc})
-add_executable(hdrmerge main.cpp $<TARGET_OBJECTS:hdrmerge-objects>)
+add_executable(hdrmerge ${PLATFORM} main.cpp $<TARGET_OBJECTS:hdrmerge-objects>)
 target_link_libraries(hdrmerge ${hdrmerge_libs})
 
 install(TARGETS hdrmerge RUNTIME DESTINATION bin)

@@ -30,8 +30,9 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QEvent>
-#include <QMutex>
 #include <QToolBar>
+#include <QSpinBox>
+#include <QSlider>
 
 
 namespace hdrmerge {
@@ -66,14 +67,13 @@ private slots:
     void layerSelected(QAction * action);
 
 private:
-    void createGui();
+    void createWidgets();
     void createActions();
     void createMenus();
+    void createToolbars();
     void createLayerSelector();
 
     Q_OBJECT
-
-    QMutex mutex;
 
     QAction * loadImagesAction;
     QAction * quitAction;
@@ -91,9 +91,11 @@ private:
 
     DraggableScrollArea * previewArea;
     PreviewWidget * preview;
-    QToolBar * layerSelector;
+    QSpinBox * radiusBox;
+    QSlider * radiusSlider;
     QActionGroup * layerSelectorGroup;
-    QWidget * lastLayer;
+    QToolBar * layerSelector;
+    QSlider * exposureSlider;
 
     ImageStack * images;
     const LoadOptions * preloadOptions;

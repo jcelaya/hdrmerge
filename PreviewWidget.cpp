@@ -28,17 +28,20 @@
 #include <QApplication>
 #include <QBitmap>
 #include <QAction>
+#include "Log.hpp"
 using namespace hdrmerge;
 
 
 PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent), width(0), height(0), flip(0),
-addPixels(false), rmPixels(false), layer(0), radius(5) {
+addPixels(false), rmPixels(false), layer(0), radius(5), expMult(1.0) {
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     setMouseTracking(true);
 }
 
 
 void PreviewWidget::setImageStack(ImageStack * s) {
+    layer = 0;
+    expMult = 1.0;
     stack.reset(s);
     flip = stack->getImage(0).getMetaData().flip;
     if (flip == 5 || flip == 6) {
@@ -49,7 +52,14 @@ void PreviewWidget::setImageStack(ImageStack * s) {
         height = stack->getHeight();
     }
     pixmap.reset();
-    QtConcurrent::run(this, &PreviewWidget::render, 0, 0, width, height);
+    repaintAsync();
+}
+
+
+void PreviewWidget::repaintAsync() {
+    cancelRender = true;
+    currentRender.waitForFinished();
+    currentRender = QtConcurrent::run(this, &PreviewWidget::render, 0, 0, width, height);
 }
 
 
@@ -92,7 +102,7 @@ void PreviewWidget::paintEvent(QPaintEvent * event) {
 
 QRgb PreviewWidget::getColor(int layer, int v) {
     int v70 = v*7/10;
-    switch (layer) {
+    switch (layer % 7) {
         case 0:
             return qRgb(v70, v, v70); break;
         case 1:
@@ -113,9 +123,9 @@ QRgb PreviewWidget::getColor(int layer, int v) {
 
 QRgb PreviewWidget::rgb(int col, int row) const {
     rotate(col, row);
-    double v = stack->value(col, row);
-    if (v < 0) v = 0;
-    else if (v > 65535) v = 65535;
+    double v = stack->value(col, row) * expMult;
+    if (v < 0.0) v = 0.0;
+    else if (v > 65535.0) v = 65535.0;
     return getColor(stack->getImageAt(col, row), stack->toneMap(v));
 }
 
@@ -124,17 +134,20 @@ void PreviewWidget::render(int minx, int miny, int maxx, int maxy) {
     if (!stack.get()) return;
     QRect area = QRect(0, 0, width, height).intersected(QRect(minx, miny, maxx - minx, maxy - miny));
     if (area.isEmpty()) return;
+    cancelRender = false;
     area.getCoords(&minx, &miny, &maxx, &maxy);
     QImage image(area.width() - 1, area.height() - 1, QImage::Format_RGB32);
     #pragma omp parallel for schedule(dynamic)
     for (int row = miny; row < maxy; row++) {
         QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - miny));
-        for (int col = minx; col < maxx; col++) {
+        for (int col = minx; !cancelRender && col < maxx; col++) {
             *scanLine++ = rgb(col, row);
         }
     }
-    QMetaObject::invokeMethod(this, "paintImage", Qt::AutoConnection,
-                              Q_ARG(int, minx), Q_ARG(int, miny), Q_ARG(const QImage &, image));
+    if (!cancelRender) {
+        QMetaObject::invokeMethod(this, "paintImage", Qt::AutoConnection,
+                                Q_ARG(int, minx), Q_ARG(int, miny), Q_ARG(const QImage &, image));
+    }
 }
 
 

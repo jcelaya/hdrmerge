@@ -26,19 +26,12 @@
 #include <QApplication>
 #include <QFuture>
 #include <QtConcurrentRun>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QMenuBar>
 #include <QProgressDialog>
 #include <QSettings>
-#include <QCursor>
-#include <QPainter>
-#include <QPen>
-#include <QBitmap>
-#include <QKeyEvent>
-#include <QSpinBox>
 #include "config.h"
 #include "AboutDialog.hpp"
 #include "DngFloatWriter.hpp"
@@ -81,9 +74,13 @@ private:
 
 MainWindow::MainWindow()
     : QMainWindow(), images(NULL), shiftPressed(false), controlPressed(false) {
-    createGui();
+    createWidgets();
     createActions();
+    createToolbars();
     createMenus();
+
+    setWindowTitle(tr("HDRMerge v%1.%2 - Raw image fusion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
+    setWindowIcon(QIcon(":/images/logo.png"));
 
     QSettings settings;
     restoreGeometry(settings.value("windowGeometry").toByteArray());
@@ -91,86 +88,31 @@ MainWindow::MainWindow()
 }
 
 
-void MainWindow::createGui() {
-    QIcon moveIcon = QIcon(":/images/transform-move.png");
-    QIcon brushIcon = QIcon(":/images/draw-brush.png");
-    QIcon eraserIcon = QIcon(":/images/draw-eraser.png");
-
-    QWidget * centralwidget = new QWidget(this);
-    setCentralWidget(centralwidget);
-    QVBoxLayout * layout = new QVBoxLayout(centralwidget);
-    layout->setContentsMargins(0, 0, 0, 0);
-
-    previewArea = new DraggableScrollArea(centralwidget);
+void MainWindow::createWidgets() {
+    previewArea = new DraggableScrollArea(this);
+    setCentralWidget(previewArea);
     preview = new PreviewWidget(previewArea);
     previewArea->setWidget(preview);
 
-    QWidget * toolArea = new QWidget(centralwidget);
-    QHBoxLayout * toolLayout = new QHBoxLayout(toolArea);
-    toolLayout->setContentsMargins(5, 5, 0, 0);
-
-    QToolBar * toolBar = new QToolBar(toolArea);
-    toolBar->setStyleSheet("QToolBar { border: 0px }");
-    toolBar->setOrientation(Qt::Horizontal);
-    toolBar->setFloatable(false);
-    toolBar->setMovable(false);
-    // Add tools
-    // TODO: load default icons from KDE
-    QActionGroup * toolActionGroup = new QActionGroup(toolBar);
-    dragToolAction = new QAction(moveIcon, tr("Pan"), toolActionGroup);
-    connect(dragToolAction, SIGNAL(toggled(bool)), previewArea, SLOT(toggleMoveViewport(bool)));
-    addGhostAction = new QAction(brushIcon, tr("Add pixels to the current image"), toolActionGroup);
-    addGhostAction->setDisabled(true);
-    connect(addGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleAddPixelsTool(bool)));
-    rmGhostAction = new QAction(eraserIcon, tr("Remove pixels from the current image"), toolActionGroup);
-    rmGhostAction->setDisabled(true);
-    connect(rmGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleRmPixelsTool(bool)));
-    for (auto action : toolActionGroup->actions()) {
-        action->setCheckable(true);
-        toolBar->addAction(action);
-    }
-    dragToolAction->setChecked(true);
-    toolBar->addSeparator();
-    toolLayout->addWidget(toolBar);
-
-    QSpinBox * radiusBox = new QSpinBox(toolBar);
+    radiusBox = new QSpinBox();
     radiusBox->setRange(0, 200);
     radiusBox->findChild<QLineEdit*>()->setReadOnly(true);
-    QSlider * radiusSlider = new QSlider(Qt::Horizontal, toolBar);
+    radiusBox->setToolTip(tr("Brush radius of the add/remove tool."));
+    radiusSlider = new QSlider(Qt::Horizontal);
     radiusSlider->setRange(0, 200);
     radiusSlider->setMaximumWidth(200);
+    radiusSlider->setToolTip(tr("Brush radius of the add/remove tool."));
     connect(radiusBox, SIGNAL(valueChanged(int)), preview, SLOT(setRadius(int)));
     connect(radiusSlider, SIGNAL(valueChanged(int)), preview, SLOT(setRadius(int)));
     connect(radiusBox, SIGNAL(valueChanged(int)), radiusSlider, SLOT(setValue(int)));
     connect(radiusSlider, SIGNAL(valueChanged(int)), radiusBox, SLOT(setValue(int)));
     radiusBox->setValue(5);
-    toolLayout->addWidget(new QLabel(" " + tr("Radius:"), toolBar));
-    toolLayout->addWidget(radiusBox);
-    toolLayout->addWidget(radiusSlider, 1);
 
-    layerSelector = new QToolBar(toolArea);
-    layerSelector->setStyleSheet("QToolBar { border: 0px }");
-    layerSelector->setOrientation(Qt::Horizontal);
-    layerSelector->setFloatable(false);
-    layerSelector->setMovable(false);
-    layerSelector->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    layerSelectorGroup = new QActionGroup(layerSelector);
-    connect(layerSelectorGroup, SIGNAL(triggered(QAction *)), this, SLOT(layerSelected(QAction *)));
-    toolLayout->addWidget(layerSelector);
-
-    lastLayer = new QWidget(toolArea);
-    lastLayer->setLayout(new QHBoxLayout());
-    lastLayer->layout()->setContentsMargins(0, 0, 0, 0);
-    lastLayer->layout()->addWidget(new QLabel());
-    lastLayer->layout()->addWidget(new QLabel());
-    toolLayout->addWidget(lastLayer, 0, Qt::AlignVCenter);
-    toolLayout->addStretch(1);
-
-    layout->addWidget(toolArea);
-    layout->addWidget(previewArea);
-
-    setWindowTitle(tr("HDRMerge v%1.%2 - Raw image fusion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
-    setWindowIcon(QIcon(":/images/logo.png"));
+    exposureSlider = new QSlider(Qt::Horizontal);
+    exposureSlider->setRange(0, 1000);
+    exposureSlider->setMaximumWidth(200);
+    exposureSlider->setToolTip(tr("Preview brightness. It does NOT affect the HDR result."));
+    connect(exposureSlider, SIGNAL(valueChanged(int)), preview, SLOT(setExposureMultiplier(int)));
 }
 
 
@@ -198,6 +140,20 @@ void MainWindow::createActions() {
     mergeAction->setShortcut(tr("Ctrl+S"));
     mergeAction->setEnabled(false);
     connect(mergeAction, SIGNAL(triggered()), this, SLOT(saveResult()));
+
+    dragToolAction = new QAction(QIcon(":/images/transform-move.png"), tr("Pan"), nullptr);
+    dragToolAction->setCheckable(true);
+    connect(dragToolAction, SIGNAL(toggled(bool)), previewArea, SLOT(toggleMoveViewport(bool)));
+
+    addGhostAction = new QAction(QIcon(":/images/draw-brush.png"), tr("Add pixels to the current image"), nullptr);
+    addGhostAction->setCheckable(true);
+    addGhostAction->setDisabled(true);
+    connect(addGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleAddPixelsTool(bool)));
+
+    rmGhostAction = new QAction(QIcon(":/images/draw-eraser.png"), tr("Remove pixels from the current image"), nullptr);
+    rmGhostAction->setCheckable(true);
+    rmGhostAction->setDisabled(true);
+    connect(rmGhostAction, SIGNAL(toggled(bool)), preview, SLOT(toggleRmPixelsTool(bool)));
 }
 
 
@@ -218,6 +174,38 @@ void MainWindow::createMenus() {
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(editMenu);
     menuBar()->addMenu(helpMenu);
+}
+
+
+void MainWindow::createToolbars() {
+    QToolBar * toolBar = addToolBar("Tools");
+    toolBar->setObjectName("Tools");
+    toolBar->setOrientation(Qt::Horizontal);
+    toolBar->setFloatable(false);
+    toolBar->setMovable(true);
+    toolBar->setAllowedAreas(Qt::TopToolBarArea | Qt::BottomToolBarArea);
+
+    QActionGroup * toolActionGroup = new QActionGroup(toolBar);
+    toolBar->addAction(toolActionGroup->addAction(dragToolAction));
+    toolBar->addAction(toolActionGroup->addAction(addGhostAction));
+    toolBar->addAction(toolActionGroup->addAction(rmGhostAction));
+    dragToolAction->setChecked(true);
+    toolBar->addSeparator();
+    toolBar->addWidget(new QLabel(" " + tr("Radius:"), toolBar));
+    toolBar->addWidget(radiusBox);
+    toolBar->addWidget(radiusSlider);
+    toolBar->addSeparator();
+    toolBar->addWidget(new QLabel(" " + tr("Brightness:"), toolBar));
+    toolBar->addWidget(exposureSlider);
+
+    layerSelector = addToolBar("Layers");
+    layerSelector->setObjectName("Layers");
+    layerSelector->setFloatable(false);
+    layerSelector->setMovable(true);
+    toolBar->setAllowedAreas(Qt::AllToolBarAreas);
+    layerSelector->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    layerSelectorGroup = new QActionGroup(layerSelector);
+    connect(layerSelectorGroup, SIGNAL(triggered(QAction *)), this, SLOT(layerSelected(QAction *)));
 }
 
 
@@ -279,6 +267,8 @@ void MainWindow::loadImages(const LoadOptions & options) {
         mergeAction->setEnabled(true);
         addGhostAction->setEnabled(numImages > 1);
         rmGhostAction->setEnabled(numImages > 1);
+        radiusSlider->setValue(5);
+        exposureSlider->setValue(0);
         createLayerSelector();
     }
 }
@@ -305,7 +295,6 @@ void MainWindow::createLayerSelector() {
         layerSelectorGroup->removeAction(action);
         delete action;
     }
-    layerSelector->addSeparator();
     if (numImages > 1) {
         double logLeastExp = std::log2(images->getImage(numImages - 1).getRelativeExposure());
         for (unsigned int i = 1; i < numImages; i++) {
@@ -322,15 +311,16 @@ void MainWindow::createLayerSelector() {
         QAction * firstAction = layerSelectorGroup->actions().first();
         firstAction->setChecked(true);
         preview->selectLayer(0);
-        QLabel * lastIcon = (QLabel *)lastLayer->layout()->itemAt(0)->widget();
-        QLabel * lastText = (QLabel *)lastLayer->layout()->itemAt(1)->widget();
+
+        QWidget * lastLayer = new QWidget();
+        lastLayer->setContentsMargins(0, 1, 0, 0);
+        lastLayer->setLayout(new QHBoxLayout());
+        QLabel * lastIcon = new QLabel(lastLayer);
         lastIcon->setPixmap(getColorIcon(numImages));
-        lastText->setText(std::to_string(numImages).c_str());
-    } else {
-        QLabel * lastIcon = (QLabel *)lastLayer->layout()->itemAt(0)->widget();
-        QLabel * lastText = (QLabel *)lastLayer->layout()->itemAt(1)->widget();
-        lastIcon->setText("");
-        lastText->setText("");
+        lastLayer->layout()->addWidget(lastIcon);
+        lastLayer->layout()->addWidget(new QLabel(std::to_string(numImages).c_str()));
+        lastLayer->setMinimumHeight(layerSelector->widgetForAction(firstAction)->height());
+        layerSelector->addWidget(lastLayer);
     }
 }
 

@@ -27,6 +27,7 @@
 #include <list>
 #include <QWidget>
 #include <QPaintEvent>
+#include <QFuture>
 #include "ImageStack.hpp"
 
 namespace hdrmerge {
@@ -40,10 +41,20 @@ public:
 
 public slots:
     void setImageStack(ImageStack * s);
-    void toggleAddPixelsTool(bool toggled) { addPixels = toggled; setShowBrush(); }
-    void toggleRmPixelsTool(bool toggled) { rmPixels = toggled; setShowBrush(); }
+    void toggleAddPixelsTool(bool toggled) {
+        addPixels = toggled;
+        setShowBrush();
+    }
+    void toggleRmPixelsTool(bool toggled) {
+        rmPixels = toggled;
+        setShowBrush();
+    }
     void selectLayer(int i) { layer = i; }
     void setRadius(int r) { radius = r; }
+    void setExposureMultiplier(int e) {
+        expMult = 1.0 + (e / 500.0) / stack->getImage(0).getRelativeExposure();
+        repaintAsync();
+    }
     void undo();
     void redo();
 
@@ -70,12 +81,16 @@ private:
     int radius;
     int mouseX, mouseY;
     QPixmap brush;
+    double expMult;
+    QFuture<void> currentRender;
+    bool cancelRender;
 
     void render(int minx, int miny, int maxx, int maxy);
     QRgb rgb(int col, int row) const;
     void rotate(int & x, int & y) const;
     void createBrush(bool plus);
     void setShowBrush();
+    void repaintAsync();
 };
 
 } // namespace hdrmerge

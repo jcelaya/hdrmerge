@@ -227,6 +227,10 @@
         <translation type="finished">Radio:</translation>
     </message>
     <message>
+        <source>Brightness:</source>
+        <translation type="finished">Brillo:</translation>
+    </message>
+    <message>
         <source>HDRMerge v%1.%2 - Raw image fusion</source>
         <translation type="finished">HDRMerge v%1.%2 - Fusión de imágenes raw</translation>
     </message>
@@ -301,6 +305,14 @@
     <message>
         <source>Digital Negatives (*.dng)</source>
         <translation type="finished">Negativos Digitales (*.dng)</translation>
+    </message>
+    <message>
+        <source>Brush radius of the add/remove tool.</source>
+        <translation type="finished">Radio de brocha de la herramienta de edición.</translation>
+    </message>
+    <message>
+        <source>Preview brightness. It does NOT affect the HDR result.</source>
+        <translation type="finished">Brillo de la vista previa. NO afecta al resultado HDR.</translation>
     </message>
 </context>
 </TS>

@@ -197,6 +197,7 @@ int Launcher::run() {
     QApplication app(argc, argv, useGUI);
 
     // Settings
+    QCoreApplication::setOrganizationName("J.Celaya");
     QCoreApplication::setApplicationName("HdrMerge");
 
     // Translation

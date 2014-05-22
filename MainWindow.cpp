@@ -21,6 +21,7 @@
  */
 
 #include <list>
+#include <cmath>
 #include "MainWindow.hpp"
 #include <QApplication>
 #include <QFuture>
@@ -91,23 +92,22 @@ MainWindow::MainWindow()
 
 
 void MainWindow::createGui() {
-    QIcon moveIcon = QIcon::fromTheme("transform-move", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png"));
-    QIcon brushIcon = QIcon::fromTheme("draw-brush", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-brush.png"));
-    QIcon eraserIcon = QIcon::fromTheme("draw-eraser", QIcon("/usr/share/icons/oxygen/32x32/actions/draw-eraser.png"));
+    QIcon moveIcon = QIcon(":/images/transform-move.png");
+    QIcon brushIcon = QIcon(":/images/draw-brush.png");
+    QIcon eraserIcon = QIcon(":/images/draw-eraser.png");
 
     QWidget * centralwidget = new QWidget(this);
     setCentralWidget(centralwidget);
     QVBoxLayout * layout = new QVBoxLayout(centralwidget);
+    layout->setContentsMargins(0, 0, 0, 0);
 
     previewArea = new DraggableScrollArea(centralwidget);
-    previewArea->setAlignment(Qt::AlignCenter);
-    layout->addWidget(previewArea);
-
     preview = new PreviewWidget(previewArea);
     previewArea->setWidget(preview);
 
     QWidget * toolArea = new QWidget(centralwidget);
     QHBoxLayout * toolLayout = new QHBoxLayout(toolArea);
+    toolLayout->setContentsMargins(5, 5, 0, 0);
 
     QToolBar * toolBar = new QToolBar(toolArea);
     toolBar->setStyleSheet("QToolBar { border: 0px }");
@@ -167,6 +167,7 @@ void MainWindow::createGui() {
     toolLayout->addStretch(1);
 
     layout->addWidget(toolArea);
+    layout->addWidget(previewArea);
 
     setWindowTitle(tr("HDRMerge v%1.%2 - Raw image fusion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
     setWindowIcon(QIcon(":/images/logo.png"));
@@ -306,9 +307,12 @@ void MainWindow::createLayerSelector() {
     }
     layerSelector->addSeparator();
     if (numImages > 1) {
+        double logLeastExp = std::log2(images->getImage(numImages - 1).getRelativeExposure());
         for (unsigned int i = 1; i < numImages; i++) {
             QAction * action = new QAction(QIcon(getColorIcon(i)), std::to_string(i).c_str(), layerSelectorGroup);
             action->setCheckable(true);
+            double logExp = logLeastExp - std::log2(images->getImage(i - 1).getRelativeExposure());
+            action->setToolTip(QString("+%1 EV").arg(logExp, 0, 'f', 2));
             if (i < 10)
                 action->setShortcut(Qt::Key_0 + i);
             else if (i == 10)

@@ -1,4 +1,5 @@
 HDRMerge - Raw exposures merging software.
+<http://jcelaya.github.io/hdrmerge/>
 Copyright 2012 Javier Celaya
 jcelaya@gmail.com
 
@@ -94,8 +95,7 @@ Currently, HDRMerge is only supported in Linux. HDRMerge depends on:
 You will need the development files of these libraries, CMake version 2.8.8 or greater and gcc 4.8 or greater. Optionally, HDRMerge can use OpenMP to increase its performance, and Boost::Test to compile the unit tests.
 
 ## Building HDRMerge
-
-The steps to compile and install HDRMerge are:
+First, download HDRMerge from <http://jcelaya.github.io/hdrmerge/>. The steps to compile and install HDRMerge are:
 
     $ mkdir build; cd build
     $ cmake ..

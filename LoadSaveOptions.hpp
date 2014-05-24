@@ -40,8 +40,9 @@ struct SaveOptions {
     int bps;
     int previewSize;
     std::string fileName;
+    bool saveMask;
     std::string maskFileName;
-    SaveOptions() : bps(16), previewSize(0) {}
+    SaveOptions() : bps(16), previewSize(0), saveMask(false) {}
 };
 
 } // namespace hdrmerge

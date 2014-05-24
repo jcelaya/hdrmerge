@@ -106,9 +106,10 @@ int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) 
     writer.setBitsPerSample(options.bps);
     writer.setPreviewWidth((options.previewSize * width) / 2);
     writer.write(options.fileName);
-    if (!options.maskFileName.empty()) {
-        Log::msg(Log::DEBUG, "Saving mask to ", options.maskFileName);
-        mask.writeMaskImage(options.maskFileName);
+    if (options.saveMask) {
+        string name = replaceArguments(options.maskFileName, options.fileName);
+        Log::msg(Log::DEBUG, "Saving mask to ", name);
+        mask.writeMaskImage(name);
     }
 }
 
@@ -221,4 +222,38 @@ string ImageStack::buildOutputFileName() const {
         name = names.front();
     }
     return name;
+}
+
+
+string ImageStack::replaceArguments(const string & maskFileName, const string & outFileName) {
+    string result = maskFileName;
+    const char * specs[4] = {
+        "%if",
+        "%id",
+        "%of",
+        "%od"
+    };
+    string names[4];
+    string inFileName = images.back()->getMetaData().fileName;
+    size_t index = inFileName.find_last_of('/');
+    if (index != string::npos) {
+        names[1] = inFileName.substr(0, index);
+        names[0] = inFileName.substr(index + 1);
+    } else {
+        names[0] = inFileName;
+    }
+    index = outFileName.find_last_of('/');
+    if (index != string::npos) {
+        names[3] = outFileName.substr(0, index);
+        names[2] = outFileName.substr(index + 1);
+    } else {
+        names[2] = outFileName;
+    }
+    // Replace specifiers
+    for (int i = 0; i < 4; ++i) {
+        while ((index = result.find(specs[i])) != string::npos) {
+            result.replace(index, 3, names[i]);
+        }
+    }
+    return result;
 }

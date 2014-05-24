@@ -95,6 +95,8 @@ private:
     size_t width;
     size_t height;
     uint8_t toneCurve[65536];
+
+    std::string replaceArguments(const std::string & maskFileName, const std::string & outFileName);
 };
 
 } // namespace hdrmerge

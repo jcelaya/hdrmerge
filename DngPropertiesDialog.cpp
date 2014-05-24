@@ -26,13 +26,15 @@
 #include <QButtonGroup>
 #include <QPushButton>
 #include <QFileDialog>
-#include <QCheckBox>
+#include <QSettings>
 #include "DngPropertiesDialog.hpp"
 
 namespace hdrmerge {
 
 DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
         : QDialog(parent, f), SaveOptions() {
+    loadDefaultOptions();
+
     QVBoxLayout * layout = new QVBoxLayout(this);
 
     QWidget * bpsSelector = new QWidget(this);
@@ -40,14 +42,14 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     bpsSelectorLayout->setMargin(0);
     QButtonGroup * bpsGroup = new QButtonGroup(this);
     const char * buttonLabels[] = { "16", "24", "32" };
+    int bpsIndex = (bps - 16) / 8;;
     for (int i = 0; i < 3; ++i) {
         QRadioButton * button = new QRadioButton(buttonLabels[i], this);
-        button->setChecked(i == 0);
+        button->setChecked(i == bpsIndex);
         bpsGroup->addButton(button, i);
         bpsSelectorLayout->addWidget(button);
     }
-    connect(bpsGroup, SIGNAL(buttonClicked( int)), this, SLOT(setBps(int)));
-    bps = 16;
+    connect(bpsGroup, SIGNAL(buttonClicked(int)), this, SLOT(setBps(int)));
 
     QWidget * previewSelector = new QWidget(this);
     QHBoxLayout * previewSelectorLayout = new QHBoxLayout(previewSelector);
@@ -56,12 +58,11 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     const char * previewLabels[] = { "Full", "Half", "None" };
     for (int i = 0; i < 3; ++i) {
         QRadioButton * button = new QRadioButton(tr(previewLabels[i]), this);
-        button->setChecked(i == 0);
+        button->setChecked(i == (2 - previewSize));
         previewGroup->addButton(button, 2 - i);
         previewSelectorLayout->addWidget(button);
     }
     connect(previewGroup, SIGNAL(buttonClicked( int)), this, SLOT(setPreviewSize(int)));
-    previewSize = 2;
 
     QCheckBox * saveMaskFile = new QCheckBox(tr("Save"), this);
 
@@ -70,12 +71,19 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     maskFileSelectorLayout->setMargin(0);
     maskFileEditor = new QLineEdit(maskFileSelector);
     maskFileEditor->setMinimumWidth(200);
+    maskFileEditor->setToolTip(tr("You can use the following tokens:") + "\n" +
+        "- %if " + tr("for the file name of the least exposed image.") + "\n" +
+        "- %id " + tr("for the directory name of the least exposed image.") + "\n" +
+        "- %of " + tr("for the file name of the result image.") + "\n" +
+        "- %od " + tr("for the directory name of the result image."));
+    maskFileEditor->setText(maskFileName.c_str());
     QPushButton * showFileDialog = new QPushButton("...", maskFileSelector);
     connect(showFileDialog, SIGNAL(clicked(bool)), this, SLOT(setMaskFileName()));
     maskFileSelectorLayout->addWidget(maskFileEditor);
     maskFileSelectorLayout->addWidget(showFileDialog);
     connect(saveMaskFile, SIGNAL(stateChanged(int)), this, SLOT(setMaskFileSelectorEnabled(int)));
-    maskFileSelector->setEnabled(false);
+    saveMaskFile->setChecked(saveMask);
+    maskFileSelector->setEnabled(saveMask);
 
     QWidget * formWidget = new QWidget(this);
     QFormLayout * formLayout = new QFormLayout(formWidget);
@@ -85,6 +93,9 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     formLayout->addRow("", maskFileSelector);
     formWidget->setLayout(formLayout);
     layout->addWidget(formWidget, 1);
+
+    saveOptions = new QCheckBox(tr("Save these options as the default values."));
+    layout->addWidget(saveOptions, 0, Qt::AlignLeft);
 
     QWidget * buttons = new QWidget(this);
     QHBoxLayout * buttonsLayout = new QHBoxLayout(buttons);
@@ -103,9 +114,25 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
 
 
 void DngPropertiesDialog::accept() {
-    maskFileName = maskFileSelector->isEnabled() ?
-        QDir::toNativeSeparators(maskFileEditor->text()).toUtf8().constData() : "";
+    saveMask = maskFileSelector->isEnabled();
+    maskFileName = QDir::toNativeSeparators(maskFileEditor->text()).toUtf8().constData();
+    if (saveOptions->isChecked()) {
+        QSettings settings;
+        settings.setValue("bps", bps);
+        settings.setValue("previewSize", previewSize);
+        settings.setValue("saveMask", saveMask);
+        settings.setValue("maskFileName", maskFileName.c_str());
+    }
     QDialog::accept();
+}
+
+
+void DngPropertiesDialog::loadDefaultOptions() {
+    QSettings settings;
+    bps = settings.value("bps", 16).toInt();
+    previewSize = settings.value("previewSize", 2).toInt();
+    saveMask = settings.value("saveMask", false).toBool();
+    maskFileName = settings.value("maskFileName", "%od/%of_mask.png").toString().toUtf8().constData();
 }
 
 

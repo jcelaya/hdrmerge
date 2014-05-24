@@ -25,6 +25,7 @@
 
 #include <QDialog>
 #include <QLineEdit>
+#include <QCheckBox>
 #include "LoadSaveOptions.hpp"
 
 namespace hdrmerge {
@@ -50,9 +51,12 @@ private slots:
 
 private:
     Q_OBJECT
+    
+    void loadDefaultOptions();
 
     QLineEdit * maskFileEditor;
     QWidget * maskFileSelector;
+    QCheckBox * saveOptions;
 };
 
 } // namespace hdrmerge

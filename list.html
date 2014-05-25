@@ -1,0 +1,14 @@
+---
+layout: default
+title: Articles
+---
+<div class="container">
+    <div id="article">
+        <h1>Articles</h1>
+        <ul class="posts">
+            {% for post in site.posts %}
+            <li><span><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a><time class="pull-right post-list">{{ post.date | date_to_string | date: "%b %-d, %Y"  }}</time></span></li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>

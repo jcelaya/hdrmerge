@@ -1,0 +1,42 @@
+<!-- Navbar -->
+<div class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <p class="navbar-brand">{{ site.name }}</p>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="{{ site.baseurl }}/download.html">Downloads</a></li>
+                <li><a href="{{ site.baseurl }}/doc.html">Documentation</a></li>
+                <li><a href="{{ site.baseurl }}/list.html">Articles</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<!-- Sidebar -->
+<div id="sidebar-wrapper">
+    <ul class="sidebar-nav">
+        <li class="sidebar-brand">
+            <a href="{{ site.baseurl }}/"><h1 class="brand">{{ site.name }}</h1></a><h3>{{ site.description }}</h3>
+        </li>
+        <hr />
+        <li><a href="{{ site.baseurl }}/download.html">Downloads</a></li>
+        <li><a href="{{ site.baseurl }}/doc.html">Documentation</a></li>
+        <li><a href="{{ site.baseurl }}/list.html">Articles</a></li>
+        <hr />
+        <div id="social-wrapper">
+            <li> <a href="{{ site.github }}"><i class="fa fa-github-square"></i> &nbsp; Get it on github</a> </li>
+{% comment %}
+            <li> <a href="{{ site.twitter }}"><i class="fa fa-twitter-square"></i> @twitter</a></li>
+            <li> <a href="{{ site.linkedin }}"><i class="fa fa-linkedin-square"></i> linkedin</a> </li>
+            <li> <a href="{{ site.facebook }}"><i class="fa fa-facebook-square"></i> facebook</a></li>
+{% endcomment %}
+        </div>
+    </ul>
+</div>

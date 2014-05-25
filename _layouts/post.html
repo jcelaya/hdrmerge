@@ -1,0 +1,22 @@
+---
+layout: default
+---
+<div id="article">
+    <div class="article-title">{{ page.title }}</div>
+    <p class="meta"><small>&nbsp;<i class="fa fa-calendar-o"></i> {{ page.date | date_to_string}}</small></p> <hr/>
+    <div class="post">
+        {{ content }}
+    </div>
+
+    <a href="https://twitter.com/share" class="twitter-share-button " data-size="small" data-count="none">Tweet</a>
+    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+    <ul class="pager">
+        {% if page.previous %}
+        <li class="previous"><a href="{{ page.previous.url }}">&larr; Older</a></li>
+        {% endif %}
+        {% if page.next %}
+        <li class="next"><a href="{{ page.next.url }}">Newer &rarr;</a></li>
+        {% endif %}
+    </ul>
+</div>

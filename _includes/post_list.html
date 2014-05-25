@@ -1,0 +1,6 @@
+---
+---
+{% for post in site.posts limit: 3 %}
+<li><span><h4><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a><time class="pull-right post-list">{{ post.date | date_to_string | date: "%b %-d, %Y"  }}</time></h4></span></li>
+{% endfor %}
+<a href="{{ site.baseurl }}/list.html">View More...</a>

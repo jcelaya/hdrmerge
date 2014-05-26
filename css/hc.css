@@ -253,7 +253,7 @@ pre
   -webkit-box-shadow:inset 0 -10px 5px -2px rgba(119,119,119,0.35);
   border-bottom:solid 1px #fff;
   background-size: cover;
-  background-position: right top;
+  background-position: right bottom;
   z-index:-4
 }
 
@@ -262,7 +262,7 @@ pre
   font-size:3em;
   font-family:"Helvetica Neue", helvetica, "Open Sans", sans-serif;
   font-weight:bolder;
-  color:#6c7077;
+  color:#404040;
   text-align:left;
   padding-top:5%;
   padding-left:10%;

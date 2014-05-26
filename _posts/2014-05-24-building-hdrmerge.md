@@ -1,6 +1,5 @@
 ---
 layout: post
-image: building-hdrmerge.jpg
 title: Building HDRMerge
 categories: internals
 ---

@@ -3,7 +3,7 @@ author: Javier Celaya
 markdown: redcarpet
 pygments: true
 baseurl: /hdrmerge
-description: HDR exposure merging
+description: HDR raw exposure merging
 github: http://www.github.com/jcelaya/hdrmerge
 twitter: http://www.twitter.com/
 facebook: http://www.facebook.com

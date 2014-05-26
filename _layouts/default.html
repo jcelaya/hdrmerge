@@ -5,7 +5,17 @@
     <!--<div class="nav-toggle"><i class="fa fa-bars fa-2x"></i> Herring Cove </div>-->
     <div id="wrapper">
 {% include navbars.html %}
+    {% if page.image %}<style>.showcase-wrapper {background-image: url("{{ site.baseurl }}/images/{{ page.image }}");}</style>
+    {% else %}<style>.showcase-wrapper {background-image: url("{{ site.baseurl }}/images/index.jpg");}</style>{% endif %}
+    <div class="showcase-wrapper sticky">
+        <div class="showcase-text">
+            {{ page.title }}{% if page.subtitle %}<br />
+            <smaller>{{ page.subtitle }}</smaller>{% endif %}
+        </div>
+    </div>
+    <div class="container">
 {{ content }}
+    </div>
 {% include foot.html %}
     </div>
 </body>

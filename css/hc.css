@@ -16,13 +16,7 @@ h1,h2,h3,h4,h5,h6
   color:#d90006
 }
 
-h1
-{
-  font-weight:700;
-  color:#6d7680
-}
-
-h2,h3
+h1,h2,h3
 {
   font-weight:700
 }
@@ -59,7 +53,7 @@ p
 
 .container
 {
-  width:80%;
+  width:90%;
   padding-right:0;
   padding-top:30px
 }
@@ -252,14 +246,14 @@ pre
 .showcase-wrapper
 {
   width:100%;
-  height:80vh;
-  min-height:500px;
-  margin-top:-50px;
+  height:50vh;
+  min-height:250px;
   box-shadow:inset 0 -10px 5px -2px rgba(119,119,119,0.35);
   -moz-box-shadow:inset 0 -10px 5px -2px rgba(119,119,119,0.35);
   -webkit-box-shadow:inset 0 -10px 5px -2px rgba(119,119,119,0.35);
   border-bottom:solid 1px #fff;
   background-size: cover;
+  background-position: right top;
   z-index:-4
 }
 
@@ -268,9 +262,11 @@ pre
   font-size:3em;
   font-family:"Helvetica Neue", helvetica, "Open Sans", sans-serif;
   font-weight:bolder;
-  color:#fff;
-  text-align:center;
-  padding-top:20%
+  color:#6c7077;
+  text-align:left;
+  padding-top:5%;
+  padding-left:10%;
+  text-shadow:1px 1px #fff
 }
 
 .wide
@@ -279,43 +275,6 @@ pre
   background-color:#fff;
   margin:0;
   padding:0 10% 30px
-}
-
-#welcome-greeting
-{
-  width:100%;
-  padding-top:5px
-}
-
-#welcome-greeting > h1
-{
-  font-size:3em;
-  font-weight:700;
-  color:#d90006;
-  line-height:130%
-}
-
-#welcome-greeting h1:hover
-{
-  font-size:3em;
-  font-weight:700;
-  color:#2d4440;
-  transition:all .5s ease 0
-}
-
-#welcome-greeting > h2
-{
-  font-size:2em;
-  font-weight:100;
-  color:#2e2e2e;
-  padding-top:0;
-  line-height:140%
-}
-
-#welcome-greeting h2 a
-{
-  font-weight:100;
-  color:#d90006
 }
 
 .credit
@@ -388,7 +347,7 @@ img
 #article
 {
   margin-bottom:30px;
-  /*background-color:#f9f9f9;*/
+  background-color:#f9f9f9;
   box-shadow:1px 1px 0 1px #e8e8e8;
   padding:10px 40px 0
 }
@@ -680,11 +639,6 @@ time
   display:none
 }
 
-#article h1,#article h2,#article h3
-{
-  color:#3a3a3a
-}
-
 @media (max-width:767px) {
 
 #wrapper {
@@ -725,13 +679,6 @@ time
 }
 
 @media screen and (max-width: 500px) {
-  #welcome-greeting h2 {
-   font-size: 15px;
-   transition: all 0.2s ease 0s;
-   font-weight: 200;
-   line-height: 30px;
-
-  }
   .container {
     width: 100%;
     margin: 0 0 0 0;

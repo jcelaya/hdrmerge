@@ -20,8 +20,9 @@
  *
  */
 
-#include <ctime>
 #include <QBuffer>
+#include <QDateTime>
+#include <QImageWriter>
 #include <zlib.h>
 #include <exiv2/exiv2.hpp>
 #include "config.h"
@@ -117,7 +118,7 @@ void DngFloatWriter::write(const string & filename) {
         subIFDoffsets[1] = subIFDoffsets[0] + rawIFD.length();
         dataOffset += previewIFD.length();
     }
-    mainIFD.setValue(SUBIFDS, (const  void *)subIFDoffsets);
+    mainIFD.setValue(SUBIFDS, (const void *)subIFDoffsets);
     file.seekp(dataOffset);
 
     progress.advance(75, "Writing output");
@@ -156,13 +157,9 @@ void DngFloatWriter::createMainIFD() {
     char empty[] = { 0 };
     mainIFD.addEntry(COPYRIGHT, IFD::ASCII, 1, empty);
     mainIFD.addEntry(IMAGEDESCRIPTION, IFD::ASCII, md.description.length() + 1, md.description.c_str());
-    char dateTime[20] = { 0 };
-    time_t rawtime;
-    struct tm * timeinfo;
-    time (&rawtime);
-    timeinfo = localtime (&rawtime);
-    int chars = strftime(dateTime, 20, "%Y:%m:%d %T", timeinfo);
-    mainIFD.addEntry(DATETIME, IFD::ASCII, chars + 1, dateTime);
+    QDateTime currentTime = QDateTime::currentDateTime();
+    QString currentTimeText = currentTime.toString("yyyy:MM:dd hh:mm:ss");
+    mainIFD.addEntry(DATETIME, IFD::ASCII, 20, currentTimeText.toAscii().constData());
     mainIFD.addEntry(DATETIMEORIGINAL, IFD::ASCII, md.dateTime.length() + 1, md.dateTime.c_str());
 
     // Profile
@@ -295,8 +292,17 @@ void DngFloatWriter::renderPreviews() {
     Renderer r(rawData.get(), width, height, stack.getImage(0).getMetaData());
     r.process();
     thumbnail = r.getScaledVersion(256).convertToFormat(QImage::Format_RGB888);
-    if (previewWidth > 0)
+    if (previewWidth > 0) {
         preview = r.getScaledVersion(previewWidth);
+        QBuffer buffer(&jpegPreviewData);
+        buffer.open(QIODevice::WriteOnly);
+        QImageWriter writer(&buffer, "JPEG");
+        writer.setQuality(90);
+        if (!writer.write(preview)) {
+            cerr << "Error converting the preview to JPEG: " << writer.errorString();
+            previewWidth = 0;
+        }
+    }
 }
 
 
@@ -371,13 +377,9 @@ void DngFloatWriter::writePreviews() {
     mainIFD.setValue(STRIPOFFSETS, file.tellp());
     file.write((const char *)thumbnail.bits(), thumbsize);
     if (previewWidth > 0) {
-        QByteArray ba;
-        QBuffer buffer(&ba);
-        buffer.open(QIODevice::WriteOnly);
-        preview.save(&buffer, "JPEG", 90);
-        previewIFD.setValue(STRIPBYTES, ba.size());
+        previewIFD.setValue(STRIPBYTES, jpegPreviewData.size());
         previewIFD.setValue(STRIPOFFSETS, file.tellp());
-        file.write(ba.constData(), ba.size());
+        file.write(jpegPreviewData.constData(), jpegPreviewData.size());
     }
 }
 

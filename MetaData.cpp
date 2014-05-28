@@ -22,8 +22,8 @@
 
 #include <iostream>
 #include <cmath>
-#include <ctime>
 #include <algorithm>
+#include <QDateTime>
 #include <libraw/libraw.h>
 #include "Log.hpp"
 #include "MetaData.hpp"
@@ -61,11 +61,9 @@ MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
     maker = r.idata.make;
     model = r.idata.model;
     description = r.other.desc;
-    char dateTimeTmp[20] = { 0 };
-    struct tm * timeinfo;
-    timeinfo = localtime (&r.other.timestamp);
-    strftime(dateTimeTmp, 20, "%Y:%m:%d %T", timeinfo);
-    dateTime = dateTimeTmp;
+    QDateTime dateTimeTmp = QDateTime::fromTime_t(r.other.timestamp);
+    QString dateTimeTmpText = dateTimeTmp.toString("yyyy:MM:dd hh:mm:ss");
+    dateTime = dateTimeTmpText.toAscii().constData();
     colors = r.idata.colors;
     flip = r.sizes.flip;
     switch (flip) {

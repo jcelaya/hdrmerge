@@ -327,8 +327,13 @@ void MainWindow::createLayerSelector() {
 
 void MainWindow::saveResult() {
     if (images) {
+        QSettings settings;
+        QVariant lastDirSetting = settings.value("lastSaveDirectory");
         // Take the prefix and add the first and last suffix
         QString name = (images->buildOutputFileName() + ".dng").c_str();
+        if (!lastDirSetting.isNull()) {
+            name = QDir(lastDirSetting.toString()).absolutePath() + name.right(name.size() - name.lastIndexOf('/'));
+        }
         QString file = QFileDialog::getSaveFileName(this, tr("Save DNG file"), name,
             tr("Digital Negatives (*.dng)"), NULL, QFileDialog::DontUseNativeDialog);
         if (!file.isEmpty()) {
@@ -339,6 +344,9 @@ void MainWindow::saveResult() {
             }
             DngPropertiesDialog dpd(this);
             if (dpd.exec()) {
+                QString lastDir = QDir(file).absolutePath();
+                lastDir.truncate(lastDir.lastIndexOf('/'));
+                settings.setValue("lastSaveDirectory", lastDir);
                 dpd.fileName = fileName;
                 ProgressDialog pd(this);
                 pd.setWindowTitle(tr("Save DNG file"));

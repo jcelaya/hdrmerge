@@ -63,6 +63,21 @@ If you want to tone-map an image resulting from HDRMerge with a program like Lum
 
 # Feature List
 
+v0.4.2:
+
+* Improved GUI:
+  * A slider to control the brush radius.
+  * A slider to control the preview exposure.
+  * Movable toolbars.
+  * Layer selector with color codes.
+  * Improved brush visibility on different backgrounds.
+  * Posibility of saving the output options.
+* First release with a Windows version, both 32- and 64-bit.
+
+v0.4.1:
+
+* Bugfixes release
+
 v0.4:
 
 * Great performance improvements with OpenMP.
@@ -85,7 +100,7 @@ v0.3: This is the first public version of HDRMerge
 
 # Installation:
 
-Currently, HDRMerge is only supported in Linux. HDRMerge depends on:
+Currently, HDRMerge is only _officially_ supported in Linux. A short guide on how to cross-compile it for Windows is included in the *INSTALL_mingw.md* file. HDRMerge depends on:
 
 * Qt (tested with version 4.8)
 * LibRaw (tested with version 0.16.0)
@@ -105,6 +120,7 @@ You will probably need root access to install HDRMerge to its default location, 
 
     $ cmake -DCMAKE_INSTALL_PREFIX=$HOME/bin ..
 
+
 # Usage:
 
 Source images can be loaded from the Open option in the File menu, or passed as arguments in the command line. They must be made with the same camera. After loading them, HDRMerge will correct small misalignments by translation. So, if your camera allows it, you can take the shots with bracketing in burst mode. I have successfully done this just holding the camera with my hands, but using a tripod is highly recommended to obtain the best results.
@@ -116,6 +132,7 @@ When some objects were moving while you took the shots, there will appear "ghost
 Once the preview is satisfactory, the Save HDR option of the File menu generates the output DNG file. You can select the number of bits per sample (16, 24 or 32), the size of the embedded preview (full, half or no preview) and whether to save an image with the mask that was used to merge the input files. The number of bits per sample has an important impact in the output file size. As a rule of thumb, the default value of 16 bits will be enough most of the time. Empirical tests (thanks to DrSlony) show no apparent difference between 16- and 32-bit images, after merging 5 exposures with 2EV steps, despite strong manipulation of shadows/mid-tones/highlights. Nevertheless, if you see some unexpected noise in the shadows of the output image, you can try a 24-bit output. 32 bits will almost never be necessary, but it can be selected anyway.
 
 The program can also be run without GUI, in batch mode. This is accomplished either by providing an output file name with the "-o" switch, or by generating an automatic one with the "-a" switch. Other switches control the output parameters, refer to the output of the "--help" switch.
+
 
 # Acknowledgments
 

@@ -26,7 +26,7 @@
 #include <ostream>
 #include <string>
 #include <QString>
-#include <ctime>
+#include <QDateTime>
 
 namespace hdrmerge {
 
@@ -79,29 +79,23 @@ inline std::ostream & operator<<(std::ostream & os, const QString & s) {
     return os << std::string(s.toUtf8().constData());
 }
 
-#ifndef _WIN32
+
 class Timer {
 public:
     Timer(const char * n) : name(n) {
-        clock_gettime(CLOCK_MONOTONIC_COARSE, &start);
+        start = QDateTime::currentMSecsSinceEpoch();
     }
     ~Timer() {
-        timespec end;
-        clock_gettime(CLOCK_MONOTONIC_COARSE, &end);
-        double t = end.tv_sec - start.tv_sec + (end.tv_nsec - start.tv_nsec)/1000000000.0;
+        qint64 end = QDateTime::currentMSecsSinceEpoch();
+        double t = (end - start) / 1000.0;
         Log::msg(Log::DEBUG, name, ": ", t, " seconds");
     }
 
 private:
-    timespec start;
+    qint64 start;
     const char * name;
 };
-#else
-class Timer {
-public:
-    Timer(const char * n) {}
-};
-#endif
+
 
 template <typename Func> auto measureTime(const char * name, Func f) -> decltype(f()) {
     Timer t(name);

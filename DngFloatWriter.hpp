@@ -60,6 +60,7 @@ private:
     int bps;
     QImage thumbnail;
     QImage preview;
+    QByteArray jpegPreviewData;
     uint32_t subIFDoffsets[2];
 
     void createMainIFD();

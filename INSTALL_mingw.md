@@ -87,3 +87,7 @@ The list of libraries with their paths is:
 * $HOME/usr/x86_64-w64-mingw32/bin/libraw.dll
 * $HOME/usr/x86_64-w64-mingw32/Qt64-4.8.4/bin/QtCore4.dll
 * $HOME/usr/x86_64-w64-mingw32/Qt64-4.8.4/bin/QtGui4.dll
+* $HOME/usr/x86_64-w64-mingw32/Qt64-4.8.4/plugins/imageformats/qjpeg4.dll
+
+Note that `qjpeg4.dll` must not be in the same directory as `hdrmerge.exe`, but in a subdirectory named `imageformats`. Otherwise, Qt will not detect it as an image format plugin.
+

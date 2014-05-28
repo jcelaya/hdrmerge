@@ -129,6 +129,10 @@
         <source>About HDRMerge...</source>
         <translation type="finished">Acerca de HDRMerge...</translation>
     </message>
+    <message>
+        <source>Accept</source>
+        <translation type="finished">Aceptar</translation>
+    </message>
 </context>
 <context>
     <name>hdrmerge::LoadOptionsDialog</name>

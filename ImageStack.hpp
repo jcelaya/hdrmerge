@@ -72,6 +72,16 @@ public:
     uint8_t toneMap(double v) {
         return toneCurve[(int)std::floor(v)];
     }
+    int getBestLayerAt(size_t x, size_t y, int i) const {
+        while (i < images.size() - 1 &&
+            (!images[i]->contains(x, y) ||
+            images[i]->isSaturated(x, y) ||
+            images[i]->isSaturatedAround(x, y))) ++i;
+        return i;
+    }
+    bool isValidAt(int layer, size_t x, size_t y) const {
+        return images[layer]->contains(x, y);
+    }
 
     uint8_t getImageAt(size_t x, size_t y) const {
         return mask.getImageAt(x, y);

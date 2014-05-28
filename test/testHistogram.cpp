@@ -25,13 +25,32 @@
 using namespace hdrmerge;
 using namespace std;
 
-BOOST_AUTO_TEST_CASE(testHistogram) {
+namespace hdrmerge {
+
+struct HistogramFixture {
     Histogram h;
-    for (uint16_t i : {8, 3, 6, 4, 5, 2, 1, 7, 9, 3, 2, 7, 9, 9}) {
+    uint16_t values[14];
+
+    HistogramFixture() : values{8, 3, 6, 4, 5, 2, 1, 7, 9, 3, 2, 7, 9, 9} {}
+    ~HistogramFixture() {
+        BOOST_CHECK_EQUAL(h.getNumSamples(), 14);
+        BOOST_CHECK_EQUAL(h.getPercentile(0.5), 5);
+        BOOST_CHECK_EQUAL(h.getPercentile(0.75), 7);
+        BOOST_CHECK_EQUAL(h.getPercentile(0.2), 2);
+        BOOST_CHECK_EQUAL(h.getFraction(2), 3.0/14.0);
+    }
+};
+
+
+BOOST_FIXTURE_TEST_CASE(Histogram_addValue, HistogramFixture) {
+    for (uint16_t i : values) {
         h.addValue(i);
     }
-    BOOST_CHECK_EQUAL(h.getPercentile(0.5), 5);
-    BOOST_CHECK_EQUAL(h.getPercentile(0.75), 7);
-    BOOST_CHECK_EQUAL(h.getPercentile(0.2), 2);
-    BOOST_CHECK_EQUAL(h.getFraction(2), 3.0/14.0);
 }
+
+
+BOOST_FIXTURE_TEST_CASE(Histogram_ctr, HistogramFixture) {
+    h = Histogram(values, values + 14);
+}
+
+} // namespace hdrmerge

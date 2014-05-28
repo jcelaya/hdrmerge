@@ -28,6 +28,7 @@
 #include "Log.hpp"
 using namespace hdrmerge;
 
+
 void EditableMask::writeMaskImage(const std::string & maskFile) {
     QImage maskImage(width, height, QImage::Format_Indexed8);
     int numColors = numLayers - 1;
@@ -50,7 +51,6 @@ void EditableMask::writeMaskImage(const std::string & maskFile) {
 void EditableMask::generateFrom(const ImageStack & images) {
     width = images.getWidth();
     height = images.getHeight();
-    numLayers = images.size();
     editActions.clear();
     nextAction = editActions.end();
     size_t size = width*height;
@@ -60,21 +60,15 @@ void EditableMask::generateFrom(const ImageStack & images) {
     std::fill_n(mask.get(), size, 0);
     for (size_t y = 0, pos = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x, ++pos) {
-            int i = mask[pos];
-            while (i < numLayers - 1 &&
-                (!images.getImage(i).contains(x, y) ||
-                images.getImage(i).isSaturated(x, y) ||
-                images.getImage(i).isSaturatedAround(x, y))) ++i;
+            int i = images.getBestLayerAt(x, y, mask[pos]);
             if (mask[pos] < i) {
                 mask[pos] = i;
-                //if (!images.getImage(i - 1).isSaturatedAround(x, y)) {
-                    paintCircle(x, y, 4, [&] (int col, int row) {
-                        size_t pos = row*width + col;
-                        if (mask[pos] < i && images.getImage(i).contains(col, row)) {
-                            mask[pos] = i;
-                        }
-                    });
-                //}
+                paintCircle(x, y, 4, [&] (int col, int row) {
+                    size_t pos = row*width + col;
+                    if (mask[pos] < i && images.isValidAt(i, col, row)) {
+                        mask[pos] = i;
+                    }
+                });
             }
         }
     }

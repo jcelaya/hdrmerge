@@ -31,7 +31,6 @@
 namespace hdrmerge {
 
 class ImageStack;
-class Image;
 
 class EditableMask {
 public:

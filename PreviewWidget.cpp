@@ -43,6 +43,7 @@ void PreviewWidget::setImageStack(ImageStack * s) {
     layer = 0;
     expMult = 1.0;
     stack.reset(s);
+    mask.reset(new EditableMask(stack->getMask()));
     flip = stack->getImage(0).getMetaData().flip;
     if (flip == 5 || flip == 6) {
         width = stack->getHeight();
@@ -197,10 +198,10 @@ void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
     if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
         event->accept();
         if (pressed) {
-            stack->startEditAction(addPixels, layer);
+            mask->startAction(addPixels, layer);
         }
         rotate(rx, ry);
-        stack->editPixels(rx, ry, radius);
+        mask->editPixels(*stack, rx, ry, radius);
         render(mouseX - radius, mouseY - radius, mouseX + radius + 1, mouseY + radius + 1);
     } else {
         event->ignore();
@@ -210,12 +211,16 @@ void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
 
 
 void PreviewWidget::undo() {
-    EditableMask::Area a = stack->undo();
-    render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
+    if (mask.get() && mask->canUndo()) {
+        EditableMask::Area a = mask->undo();
+        render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
+    }
 }
 
 
 void PreviewWidget::redo() {
-    EditableMask::Area a = stack->redo();
-    render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
+    if (mask.get() && mask->canRedo()) {
+        EditableMask::Area a = mask->redo();
+        render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
+    }
 }

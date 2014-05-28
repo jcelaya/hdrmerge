@@ -22,28 +22,27 @@
 
 #include <iostream>
 #include <sstream>
-#include "../EditableMask.hpp"
+#include "../BoxBlur.hpp"
 #include "SampleImage.hpp"
 #include "../Log.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;
 
-BOOST_AUTO_TEST_CASE(testEditableMask) {
+BOOST_AUTO_TEST_CASE(testBoxBlur) {
     SampleImage image("test/testMap.png");
     size_t size = image.md.width * image.md.height;
     uint16_t * src = image.pixelData;
     image.pixelData = new uint16_t[size];
-    EditableMask map(image.md.width, image.md.height);
+    BoxBlur map(image.md.width, image.md.height);
     for (int radius = 1; radius < 25; radius += 3) {
         for (size_t i = 0; i < size; ++i) {
             map[i] = src[i];
         }
-        unique_ptr<float[]> blurred;
         string title = string("Blur with radius ") + to_string(radius);
-        measureTime(title.c_str(), [&] () {blurred = map.blur(radius);});
+        measureTime(title.c_str(), [&] () {map.blur(radius);});
         for (size_t i = 0; i < size; ++i) {
-            image.pixelData[i] = std::round(blurred[i]);
+            image.pixelData[i] = std::round(map[i]);
         }
         ostringstream fileName;
         fileName << "test/testMapblur_" << radius << ".png";

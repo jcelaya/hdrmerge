@@ -29,7 +29,7 @@
 #include <cmath>
 #include "Image.hpp"
 #include "ProgressIndicator.hpp"
-#include "EditableMask.hpp"
+#include "Array2D.hpp"
 #include "LoadSaveOptions.hpp"
 
 namespace hdrmerge {
@@ -40,12 +40,11 @@ public:
 
     int load(const LoadOptions & options, ProgressIndicator & progress);
     int save(const SaveOptions & options, ProgressIndicator & progress);
+    void writeMaskImage(const std::string & maskFile);
     void align();
     void crop();
     void computeRelExposures();
-    void generateMask() {
-        mask.generateFrom(*this);
-    }
+    void generateMask();
 
     size_t size() const { return images.size(); }
 
@@ -63,6 +62,9 @@ public:
     const Image & getImage(unsigned int i) const {
         return *images[i];
     }
+    Array2D<uint8_t> & getMask() {
+        return mask;
+    }
 
     bool addImage(std::unique_ptr<Image> & i);
     std::string buildOutputFileName() const;
@@ -72,36 +74,13 @@ public:
     uint8_t toneMap(double v) {
         return toneCurve[(int)std::floor(v)];
     }
-    int getBestLayerAt(size_t x, size_t y, int i) const {
-        while (i < images.size() - 1 &&
-            (!images[i]->contains(x, y) ||
-            images[i]->isSaturated(x, y) ||
-            images[i]->isSaturatedAround(x, y))) ++i;
-        return i;
-    }
-    bool isValidAt(int layer, size_t x, size_t y) const {
-        return images[layer]->contains(x, y);
-    }
-
     uint8_t getImageAt(size_t x, size_t y) const {
-        return mask.getImageAt(x, y);
-    }
-    void startEditAction(bool add, int layer) {
-        mask.startAction(add, layer);
-    }
-    void editPixels(size_t x, size_t y, size_t radius) {
-        mask.paintPixels(*this, x, y, radius);
-    }
-    EditableMask::Area undo() {
-        return mask.undo();
-    }
-    EditableMask::Area redo() {
-        return mask.redo();
+        return mask(x, y);
     }
 
 private:
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
-    EditableMask mask;
+    Array2D<uint8_t> mask;
     size_t width;
     size_t height;
     uint8_t toneCurve[65536];

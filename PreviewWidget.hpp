@@ -29,6 +29,7 @@
 #include <QPaintEvent>
 #include <QFuture>
 #include "ImageStack.hpp"
+#include "EditableMask.hpp"
 
 namespace hdrmerge {
 
@@ -74,6 +75,7 @@ private:
 
     std::unique_ptr<QPixmap> pixmap;
     std::unique_ptr<ImageStack> stack;
+    std::unique_ptr<EditableMask> mask;
     size_t width, height;
     int flip;
     bool addPixels, rmPixels;

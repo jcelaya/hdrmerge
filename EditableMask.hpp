@@ -23,10 +23,9 @@
 #ifndef _EDITABLEMASK_HPP_
 #define _EDITABLEMASK_HPP_
 
-#include <memory>
 #include <cstdint>
-#include <string>
 #include <list>
+#include "Array2D.hpp"
 
 namespace hdrmerge {
 
@@ -34,48 +33,31 @@ class ImageStack;
 
 class EditableMask {
 public:
-    EditableMask() : numLayers(1), nextAction(editActions.end()) {}
-    EditableMask(size_t w, size_t h) : numLayers(1), nextAction(editActions.end()),
-        width(w), height(h), mask(new uint8_t[w*h])  {}
+    EditableMask(Array2D<uint8_t> & m) : mask(m), nextAction(editActions.end()) {}
 
     struct Area {
         int minx, miny, maxx, maxy;
         Area() : minx(0), miny(0), maxx(0), maxy(0) {}
     };
 
-    void generateFrom(const ImageStack & images);
     uint8_t getImageAt(size_t col, size_t row) const {
-        return mask[row*width + col];
+        return mask(col, row);
     }
     uint8_t & operator[](size_t i) {
         return mask[i];
     }
     void startAction(bool add, int layer);
-    void paintPixels(const ImageStack & images, int x, int y, size_t radius);
+    void editPixels(const ImageStack & images, int x, int y, size_t radius);
+    bool canUndo() const {
+        return nextAction != editActions.begin();
+    }
+    bool canRedo() const {
+        return nextAction != editActions.end();
+    }
     Area undo();
     Area redo();
-    std::unique_ptr<float[]> blur() const;
-    std::unique_ptr<float[]> blur(size_t radius) const;
-
-    void writeMaskImage(const std::string & maskFile);
 
 private:
-    class BoxBlur {
-    public:
-        BoxBlur(const EditableMask & src, size_t radius);
-        std::unique_ptr<float[]> && getResult() {
-            return std::move(map);
-        }
-
-    private:
-        const EditableMask & m;
-        void boxBlur_4(size_t radius);
-        void boxBlurH_4(size_t radius);
-        void boxBlurT_4(size_t radius);
-        std::unique_ptr<float[]> map, tmp;
-    };
-    friend class BoxBlur;
-
     struct Point {
         int x, y;
     };
@@ -84,25 +66,11 @@ private:
         std::list<Point> points;
     };
 
-    size_t width, height;
-    std::unique_ptr<uint8_t[]> mask;
-    int numLayers;
+    Array2D<uint8_t> & mask;
     std::list<EditAction> editActions;
     std::list<EditAction>::iterator nextAction;
 
     Area modifyLayer(const std::list<Point> & points, int oldayer);
-    template <typename T> void paintCircle(int x, int y, size_t radius, T function) {
-        int r2 = radius * radius;
-        int ymin = y < radius ? -y : -radius, ymax = y >= height - radius ? height - y : radius + 1;
-        int xmin = x < radius ? -x : -radius, xmax = x >= width - radius ? width - x : radius + 1;
-        for (int row = ymin, rrow = y + row; row < ymax; ++row, ++rrow) {
-            for (int col = xmin, rcol = x + col; col < xmax; ++col, ++rcol) {
-                if (row*row + col*col <= r2) {
-                    function(rcol, rrow);
-                }
-            }
-        }
-    }
 };
 
 } // namespace hdrmerge

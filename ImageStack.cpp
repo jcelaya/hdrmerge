@@ -21,9 +21,11 @@
  */
 
 #include <algorithm>
+#include <QImage>
 #include "ImageStack.hpp"
 #include "DngFloatWriter.hpp"
 #include "Log.hpp"
+#include "BoxBlur.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -90,7 +92,7 @@ int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) 
         }
     }
     computeRelExposures();
-    mask.generateFrom(*this);
+    generateMask();
     progress.advance(100, "Done loading!");
     return numImages << 1;
 }
@@ -108,8 +110,27 @@ int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) 
     writer.write(options.fileName);
     if (options.saveMask) {
         string name = replaceArguments(options.maskFileName, options.fileName);
-        Log::msg(Log::DEBUG, "Saving mask to ", name);
-        mask.writeMaskImage(name);
+        writeMaskImage(name);
+    }
+}
+
+
+void ImageStack::writeMaskImage(const std::string & maskFile) {
+    Log::msg(Log::DEBUG, "Saving mask to ", maskFile);
+    QImage maskImage(width, height, QImage::Format_Indexed8);
+    int numColors = images.size() - 1;
+    for (int c = 0; c < numColors; ++c) {
+        int gray = (256 * c) / numColors;
+        maskImage.setColor(c, qRgb(gray, gray, gray));
+    }
+    maskImage.setColor(numColors, qRgb(255, 255, 255));
+    for (size_t y = 0, pos = 0; y < height; ++y) {
+        for (size_t x = 0; x < width; ++x, ++pos) {
+            maskImage.setPixel(x, y, mask[pos]);
+        }
+    }
+    if (!maskImage.save(QString(maskFile.c_str()))) {
+        Log::msg(Log::PROGRESS, "Cannot save mask image to ", maskFile);
     }
 }
 
@@ -156,14 +177,39 @@ void ImageStack::computeRelExposures() {
 }
 
 
+void ImageStack::generateMask() {
+    Timer t("Generate mask");
+    mask.resize(width, height);
+    std::fill_n(&mask[0], width*height, 0);
+    for (size_t y = 0, pos = 0; y < height; ++y) {
+        for (size_t x = 0; x < width; ++x, ++pos) {
+            int i = mask[pos];
+            while (i < images.size() - 1 &&
+                (!images[i]->contains(x, y) ||
+                images[i]->isSaturated(x, y) ||
+                images[i]->isSaturatedAround(x, y))) ++i;
+            if (mask[pos] < i) {
+                mask[pos] = i;
+                mask.traceCircle(x, y, 4, [&] (int col, int row, uint8_t & layer) {
+                    if (layer < i && images[i]->contains(col, row)) {
+                        layer = i;
+                    }
+                });
+            }
+        }
+    }
+}
+
+
 double ImageStack::value(size_t x, size_t y) const {
-    Image & img = *images[mask.getImageAt(x, y)];
+    Image & img = *images[mask(x, y)];
     return img.exposureAt(x, y);
 }
 
 
 void ImageStack::compose(float * dst) const {
-    unique_ptr<float[]> map = measureTime("Blur", [&] () { return mask.blur(); });
+    BoxBlur map(mask);
+    measureTime("Blur", [&] () { map.blur(3); });
     Timer t("Compose");
     const MetaData & md = images.front()->getMetaData();
     int imageMax = images.size() - 1;

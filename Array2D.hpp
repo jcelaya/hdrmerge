@@ -84,8 +84,8 @@ public:
     }
     template <typename F> void traceCircle(int x, int y, int radius, F function) {
         int r2 = radius * radius;
-        int ymin = std::max(-y, -radius), ymax = std::min((int)height - y, radius + 1);
-        int xmin = std::max(-x, -radius), xmax = std::min((int)width - x, radius + 1);
+        int ymin = std::max(-y, -radius), ymax = std::min(height - y, radius + 1);
+        int xmin = std::max(-x, -radius), xmax = std::min(width - x, radius + 1);
         for (int row = ymin, rrow = y + row; row < ymax; ++row, ++rrow) {
             for (int col = xmin, rcol = x + col; col < xmax; ++col, ++rcol) {
                 if (row*row + col*col <= r2) {
@@ -98,7 +98,7 @@ public:
 protected:
     std::unique_ptr<T[]> data;
     T * alignedData;
-    size_t width, height;
+    int width, height;
     int dx, dy;
 };
 

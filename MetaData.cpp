@@ -38,7 +38,8 @@ MetaData::MetaData() : width(0), height(0), rawWidth(0), topMargin(0), leftMargi
 max(0), black(0), cblack{}, camMul{}, camXyz{}, rgbCam{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
-MetaData::MetaData(const char * f, const LibRaw & rawData) : fileName(f) {
+void MetaData::fromLibRaw(const char * f, const LibRaw & rawData) {
+    fileName = f;
     auto & r = rawData.imgdata;
     width = r.sizes.width;
     height = r.sizes.height;

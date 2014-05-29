@@ -100,6 +100,14 @@ public:
         dy += newDy;
         alignedData = &data[-dy*width - dx];
     }
+
+    typedef T * iterator;
+    typedef const T * const_iterator;
+    iterator begin() { return data.get(); }
+    iterator end() { return data.get() + width*height; }
+    const_iterator cbegin() const { return data.get(); }
+    const_iterator cend() const { return data.get() + width*height; }
+
     template <typename F> void traceCircle(int x, int y, int radius, F function) {
         int r2 = radius * radius;
         int ymin = std::max(-y, -radius), ymax = std::min(height - y, radius + 1);

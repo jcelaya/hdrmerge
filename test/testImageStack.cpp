@@ -51,29 +51,15 @@ BOOST_AUTO_TEST_CASE(image_load) {
 }
 
 
-// BOOST_AUTO_TEST_CASE(image_scale) {
-//     SampleImage si1(sample1);
-//     Image im(si1.pixelData, si1.md);
-//     BOOST_REQUIRE(im.good());
-//     char filename[] = "scaledx.png";
-//     size_t w = im.getWidth(), h = im.getHeight();
-//     for (int i = 0; i < Image::scaleSteps; ++i) {
-//         filename[6] = '0' + i;
-//         save(filename, im.getPixels(i), w, h);
-//         w >>= 1;
-//         h >>= 1;
-//     }
-// }
-
 BOOST_AUTO_TEST_CASE(image_align) {
     SampleImage si1(sample1);
     SampleImage si2(sample2);
     SampleImage si3(sample3);
     SampleImage si4(sample4);
-    Image e1(si1.pixelData, si1.md);
-    Image e2(si2.pixelData, si2.md);
-    Image e3(si3.pixelData, si3.md);
-    Image e4(si4.pixelData, si4.md);
+    Image e1(si1);
+    Image e2(si2);
+    Image e3(si3);
+    Image e4(si4);
     BOOST_REQUIRE(e1.good());
     BOOST_REQUIRE(e2.good());
     BOOST_REQUIRE(e3.good());
@@ -120,10 +106,10 @@ BOOST_AUTO_TEST_CASE(stack_align) {
     SampleImage si2(sample2);
     SampleImage si3(sample3);
     SampleImage si4(sample4);
-    unique_ptr<Image> e1(new Image(si1.pixelData, si1.md)),
-        e2(new Image(si2.pixelData, si2.md)),
-        e3(new Image(si3.pixelData, si3.md)),
-        e4(new Image(si4.pixelData, si4.md));
+    unique_ptr<Image> e1(new Image(si1)),
+        e2(new Image(si2)),
+        e3(new Image(si3)),
+        e4(new Image(si4));
     Image & e1ref = *e1, & e2ref = *e2, & e3ref = *e3, & e4ref = *e4;
     BOOST_REQUIRE(e1->good());
     BOOST_REQUIRE(e2->good());

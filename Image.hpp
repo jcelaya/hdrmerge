@@ -24,42 +24,31 @@
 #define _IMAGE_H_
 
 #include <memory>
+#include "Array2D.hpp"
 #include "MetaData.hpp"
 #include "Bitmap.hpp"
 
 
 namespace hdrmerge {
 
-class Image {
+class Image : public Array2D<uint16_t> {
 public:
     static const int scaleSteps = 6;
 
-    Image(uint16_t * rawImage, const MetaData & md);
+    Image(Array2D<uint16_t> & rawImage);
     Image(const char * f);
 
     bool good() const {
-        return rawPixels != nullptr;
+        return width > 0;
     }
     const MetaData & getMetaData() const {
-        return *metaData;
-    }
-    size_t getWidth() const {
-        return width;
-    }
-    size_t getHeight() const {
-        return height;
-    }
-    int getDeltaX() const {
-        return dx;
-    }
-    int getDeltaY() const {
-        return dy;
+        return metaData;
     }
     double exposureAt(size_t x, size_t y) const {
-        return alignedPixels[y*width + x] * relExp;
+        return (*this)(x, y) * relExp;
     }
     bool isSaturated(size_t x, size_t y) const {
-        return alignedPixels[y*width + x] >= satThreshold;
+        return (*this)(x, y) >= satThreshold;
     }
     bool contains(int x, int y) const {
         return x >= dx && x < width + dx && y >= dy && y < height + dy;
@@ -73,11 +62,6 @@ public:
     void releaseAlignData() {
         scaled.reset();
     }
-    void displace(int newDx, int newDy) {
-        dx += newDx;
-        dy += newDy;
-        alignedPixels = &rawPixels[-dy*width - dx];
-    }
     void relativeExposure(const Image & nextImage);
 
     static bool comparePointers(const std::unique_ptr<Image> & l, const std::unique_ptr<Image> & r) {
@@ -85,12 +69,8 @@ public:
     }
 
 private:
-    std::unique_ptr<MetaData> metaData;
-    std::unique_ptr<uint16_t[]> rawPixels;
-    uint16_t * alignedPixels;
-    size_t width, height;
-    std::unique_ptr<std::unique_ptr<uint16_t[]>[]> scaled;
-    int dx, dy;
+    MetaData metaData;
+    std::unique_ptr<Array2D<uint16_t>[]> scaled;
     uint16_t max;
     uint16_t satThreshold;
     double brightness;
@@ -98,7 +78,7 @@ private:
     double halfLightPercent;
 
     void subtractBlack();
-    void buildImage(uint16_t * rawImage, MetaData * md);
+    void buildImage(uint16_t * rawImage);
     void preScale();
 };
 

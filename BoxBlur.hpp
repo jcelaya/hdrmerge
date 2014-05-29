@@ -30,7 +30,6 @@ namespace hdrmerge {
 
 class BoxBlur : public Array2D<float>{
 public:
-    BoxBlur(size_t w, size_t h) : Array2D<float>(w, h) {}
     template <typename T> BoxBlur(const Array2D<T> & src) : Array2D<float>(src) {}
     void blur(size_t radius);
 

@@ -29,31 +29,31 @@ using namespace std;
 using namespace hdrmerge;
 
 
-Image::Image(uint16_t * rawImage, const MetaData & md) {
-    buildImage(rawImage, new MetaData(md));
+Image::Image(Array2D<uint16_t> & rawImage) {
+    // For testing purposes
+    metaData.width = metaData.rawWidth = rawImage.getWidth();
+    metaData.height = rawImage.getHeight();
+    metaData.max = 255;
+    metaData.filters = 0x4b4b4b4b;
+    buildImage(&rawImage[0]);
 }
 
-void Image::buildImage(uint16_t * rawImage, MetaData * md) {
-    metaData.reset(md);
-    dx = dy = 0;
-    width = metaData->width;
-    height = metaData->height;
+void Image::buildImage(uint16_t * rawImage) {
+    resize(metaData.width, metaData.height);
     size_t size = width*height;
     brightness = 0.0;
     uint16_t maxPerColor[4] = {0, 0, 0, 0};
-    rawPixels.reset(new uint16_t[size]);
-    alignedPixels = rawPixels.get();
-    for (size_t y = 0, ry = md->topMargin; y < height; ++y, ++ry) {
-        for (size_t x = 0, rx = md->leftMargin; x < width; ++x, ++rx) {
-            uint16_t v = rawImage[ry*md->rawWidth + rx];
-            rawPixels[y*width + x] = v;
+    for (size_t y = 0, ry = metaData.topMargin; y < height; ++y, ++ry) {
+        for (size_t x = 0, rx = metaData.leftMargin; x < width; ++x, ++rx) {
+            uint16_t v = rawImage[ry*metaData.rawWidth + rx];
+            (*this)(x, y) = v;
             brightness += v;
-            if (v > maxPerColor[md->FC(x, y)]) {
-                maxPerColor[md->FC(x, y)] = v;
+            if (v > maxPerColor[metaData.FC(x, y)]) {
+                maxPerColor[metaData.FC(x, y)] = v;
             }
         }
     }
-    max = metaData->max;
+    max = metaData.max;
     for (int c = 0; c < 4; ++c) {
         if (maxPerColor[c] < max) {
             max = maxPerColor[c];
@@ -62,14 +62,14 @@ void Image::buildImage(uint16_t * rawImage, MetaData * md) {
     relExp = 65535.0 / max;
     brightness /= size;
     subtractBlack();
-    metaData->max = max;
+    metaData.max = max;
     satThreshold = 0.99*max;
     preScale();
-    metaData->dumpInfo();
+    metaData.dumpInfo();
 }
 
 
-Image::Image(const char * f) : rawPixels(nullptr) {
+Image::Image(const char * f) {
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
     if (rawProcessor.open_file(f) == LIBRAW_SUCCESS) {
@@ -78,30 +78,31 @@ Image::Image(const char * f) : rawPixels(nullptr) {
         if(decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD
                 && d.idata.colors == 3 && d.idata.filters > 1000
                 && rawProcessor.unpack() == LIBRAW_SUCCESS) {
-            buildImage(d.rawdata.raw_image, new MetaData(f, rawProcessor));
+            metaData.fromLibRaw(f, rawProcessor);
+            buildImage(d.rawdata.raw_image);
         }
     }
 }
 
 
 void Image::subtractBlack() {
-    if (metaData->hasBlack()) {
-        for (size_t y = 0; y < height; ++y) {
-            for (size_t x = 0; x < width; ++x) {
-                if (rawPixels[y*width + x] > metaData->blackAt(x, y)) {
-                    rawPixels[y*width + x] -= metaData->blackAt(x, y);
+    if (metaData.hasBlack()) {
+        for (size_t y = 0, pos = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x, ++pos) {
+                if ((*this)[pos] > metaData.blackAt(x, y)) {
+                    (*this)[pos] -= metaData.blackAt(x, y);
                 } else {
-                    rawPixels[y*width + x] = 0;
+                    (*this)[pos] = 0;
                 }
             }
         }
-        max -= metaData->black;
+        max -= metaData.black;
     }
 }
 
 
 bool Image::isSameFormat(const Image & ref) const {
-    return metaData.get() && ref.metaData.get() && metaData->isSameFormat(*ref.metaData);
+    return metaData.isSameFormat(ref.metaData);
 }
 
 
@@ -112,8 +113,8 @@ void Image::relativeExposure(const Image & r) {
     int reldy = dy - std::max(dy, r.dy);
     int relrdy = r.dy - std::max(dy, r.dy);
     int h = height + reldy + relrdy;
-    uint16_t * usePixels = &rawPixels[-reldy*width - reldx];
-    uint16_t * rusePixels = &r.rawPixels[-relrdy*width - relrdx];
+    uint16_t * usePixels = &data[-reldy*width - reldx];
+    const uint16_t * rusePixels = &r.data[-relrdy*width - relrdx];
     // Minimize square error between images:
     // min. C(n) = sum(n*f(x) - g(x))^2  ->  n = sum(f(x)*g(x)) / sum(f(x)^2)
     double numerator = 0, denom = 0, threshold = max * 0.9;
@@ -136,25 +137,25 @@ void Image::relativeExposure(const Image & r) {
 size_t Image::alignWith(const Image & r) {
     dx = dy = 0;
     const double tolerance = 1.0/16;
-    Histogram histFull(rawPixels.get(), rawPixels.get() + width*height);
+    Histogram histFull(begin(), end());
     double halfLightPercent = histFull.getFraction(max * 0.9) / 2.0;
     size_t totalError = 0;
     for (int s = scaleSteps - 1; s >= 0; --s) {
         size_t curWidth = width >> (s + 1);
         size_t curHeight = height >> (s + 1);
         size_t minError = curWidth*curHeight;
-        Histogram hist1(r.scaled[s].get(), r.scaled[s].get() + curWidth*curHeight);
-        Histogram hist2(scaled[s].get(), scaled[s].get() + curWidth*curHeight);
+        Histogram hist1(r.scaled[s].begin(), r.scaled[s].end());
+        Histogram hist2(scaled[s].begin(), scaled[s].end());
         uint16_t mth1 = hist1.getPercentile(halfLightPercent);
         uint16_t mth2 = hist2.getPercentile(halfLightPercent);
         uint16_t tolPixels1 = (uint16_t)std::floor(mth1*tolerance);
         uint16_t tolPixels2 = (uint16_t)std::floor(mth2*tolerance);
         Bitmap mtb1(curWidth, curHeight), mtb2(curWidth, curHeight),
         excl1(curWidth, curHeight), excl2(curWidth, curHeight);
-        mtb1.mtb(r.scaled[s].get(), mth1);
-        mtb2.mtb(scaled[s].get(), mth2);
-        excl1.exclusion(r.scaled[s].get(), mth1, tolPixels1);
-        excl2.exclusion(scaled[s].get(), mth2, tolPixels2);
+        mtb1.mtb(r.scaled[s].begin(), mth1);
+        mtb2.mtb(scaled[s].begin(), mth2);
+        excl1.exclusion(r.scaled[s].begin(), mth1, tolPixels1);
+        excl2.exclusion(scaled[s].begin(), mth2, tolPixels2);
         Bitmap shiftMtb(curWidth, curHeight), shiftExcl(curWidth, curHeight);
         int curDx = dx, curDy = dy;
         for (int i = -1; i <= 1; ++i) {
@@ -183,25 +184,21 @@ size_t Image::alignWith(const Image & r) {
 void Image::preScale() {
     size_t curWidth = width;
     size_t curHeight = height;
-    uint16_t * r2 = rawPixels.get();
+    Array2D<uint16_t> * r2 = this;
 
-    scaled.reset(new unique_ptr<uint16_t[]>[scaleSteps]);
+    scaled.reset(new Array2D<uint16_t>[scaleSteps]);
     for (int s = 0; s < scaleSteps; ++s) {
-        size_t prevWidth = curWidth;
-        curWidth >>= 1;
-        curHeight >>= 1;
-        uint16_t * r = new uint16_t[curWidth * curHeight];
+        scaled[s].resize(curWidth >>= 1, curHeight >>= 1);
         for (size_t y = 0, prevY = 0; y < curHeight; ++y, prevY += 2) {
             for (size_t x = 0, prevX = 0; x < curWidth; ++x, prevX += 2) {
-                uint32_t value1 = r2[prevY*prevWidth + prevX],
-                    value2 = r2[prevY*prevWidth + prevX + 1],
-                    value3 = r2[(prevY + 1)*prevWidth + prevX],
-                    value4 = r2[(prevY + 1)*prevWidth + prevX + 1];
-                r[y*curWidth + x] = (value1 + value2 + value3 + value4) >> 2;
+                uint32_t value1 = (*r2)(prevX, prevY),
+                    value2 = (*r2)(prevX + 1, prevY),
+                    value3 = (*r2)(prevX, prevY + 1),
+                    value4 = (*r2)(prevX + 1, prevY + 1);
+                scaled[s](x, y) = (value1 + value2 + value3 + value4) >> 2;
             }
         }
-        r2 = r;
-        scaled[s].reset(r);
+        r2 = &scaled[s];
     }
 }
 

@@ -31,22 +31,13 @@ using namespace hdrmerge;
 using namespace std;
 
 BOOST_AUTO_TEST_CASE(testBoxBlur) {
-    SampleImage image("test/testMap.png");
-    size_t size = image.md.width * image.md.height;
-    uint16_t * src = image.pixelData;
-    image.pixelData = new uint16_t[size];
-    BoxBlur map(image.md.width, image.md.height);
+    SampleImage image("test/testMap.png"), result;
     for (int radius = 1; radius < 25; radius += 3) {
-        for (size_t i = 0; i < size; ++i) {
-            map[i] = src[i];
-        }
+        BoxBlur map = image;
         string title = string("Blur with radius ") + to_string(radius);
         measureTime(title.c_str(), [&] () {map.blur(radius);});
-        for (size_t i = 0; i < size; ++i) {
-            image.pixelData[i] = round(map[i]);
-        }
+        (Array2D<uint16_t> &)result = (Array2D<float> &)map;
         string fileName = QDir::tempPath().toStdString() + "/testMapblur_" + to_string(radius) + ".png";
-        image.save(fileName);
+        result.save(fileName);
     }
-    delete[] src;
 }

@@ -43,7 +43,6 @@ void PreviewWidget::setImageStack(ImageStack * s) {
     layer = 0;
     expMult = 1.0;
     stack.reset(s);
-    mask.reset(new EditableMask(stack->getMask()));
     flip = stack->getImage(0).getMetaData().flip;
     if (flip == 5 || flip == 6) {
         width = stack->getHeight();
@@ -60,7 +59,7 @@ void PreviewWidget::setImageStack(ImageStack * s) {
 void PreviewWidget::repaintAsync() {
     cancelRender = true;
     currentRender.waitForFinished();
-    currentRender = QtConcurrent::run(this, &PreviewWidget::render, 0, 0, width, height);
+    currentRender = QtConcurrent::run(this, &PreviewWidget::render, QRect(0, 0, width, height));
 }
 
 
@@ -131,37 +130,36 @@ QRgb PreviewWidget::rgb(int col, int row) const {
 }
 
 
-void PreviewWidget::render(int minx, int miny, int maxx, int maxy) {
+void PreviewWidget::render(QRect zone) {
     if (!stack.get()) return;
-    QRect area = QRect(0, 0, width, height).intersected(QRect(minx, miny, maxx - minx, maxy - miny));
-    if (area.isEmpty()) return;
+    zone = zone.intersect(QRect(0, 0, width, height));
+    if (zone.isEmpty()) return;
     cancelRender = false;
-    area.getCoords(&minx, &miny, &maxx, &maxy);
-    QImage image(area.width() - 1, area.height() - 1, QImage::Format_RGB32);
+    QImage image(zone.width() - 1, zone.height() - 1, QImage::Format_RGB32);
     #pragma omp parallel for schedule(dynamic)
-    for (int row = miny; row < maxy; row++) {
-        QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - miny));
-        for (int col = minx; !cancelRender && col < maxx; col++) {
+    for (int row = zone.top(); row < zone.bottom(); row++) {
+        QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - zone.top()));
+        for (int col = zone.left(); !cancelRender && col < zone.right(); col++) {
             *scanLine++ = rgb(col, row);
         }
     }
     if (!cancelRender) {
         QMetaObject::invokeMethod(this, "paintImage", Qt::AutoConnection,
-                                Q_ARG(int, minx), Q_ARG(int, miny), Q_ARG(const QImage &, image));
+                                Q_ARG(QPoint, zone.topLeft()), Q_ARG(const QImage &, image));
     }
 }
 
 
-void PreviewWidget::paintImage(int x, int y, const QImage & image) {
+void PreviewWidget::paintImage(QPoint where, const QImage & image) {
     if (!pixmap.get()) {
         pixmap.reset(new QPixmap);
         *pixmap = QPixmap::fromImage(image);
         resize(pixmap->size());
     } else {
         QPainter painter(pixmap.get());
-        painter.drawImage(x, y, image);
+        painter.drawImage(where, image);
     }
-    update(x, y, image.width(), image.height());
+    update(where.x(), where.y(), image.width(), image.height());
 }
 
 
@@ -198,11 +196,11 @@ void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
     if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
         event->accept();
         if (pressed) {
-            mask->startAction(addPixels, layer);
+            stack->getMask().startAction(addPixels, layer);
         }
         rotate(rx, ry);
-        mask->editPixels(*stack, rx, ry, radius);
-        render(mouseX - radius, mouseY - radius, mouseX + radius + 1, mouseY + radius + 1);
+        stack->getMask().editPixels(rx, ry, radius);
+        render(QRect(mouseX - radius, mouseY - radius, 2*radius + 1, 2*radius + 1));
     } else {
         event->ignore();
     }
@@ -211,16 +209,14 @@ void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
 
 
 void PreviewWidget::undo() {
-    if (mask.get() && mask->canUndo()) {
-        EditableMask::Area a = mask->undo();
-        render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
+    if (stack.get() && stack->getMask().canUndo()) {
+        render(stack->getMask().undo());
     }
 }
 
 
 void PreviewWidget::redo() {
-    if (mask.get() && mask->canRedo()) {
-        EditableMask::Area a = mask->redo();
-        render(a.minx, a.miny, a.maxx + 1, a.maxy + 1);
+    if (stack.get() && stack->getMask().canRedo()) {
+        render(stack->getMask().redo());
     }
 }

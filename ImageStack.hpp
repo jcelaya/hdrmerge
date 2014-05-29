@@ -30,13 +30,14 @@
 #include "Image.hpp"
 #include "ProgressIndicator.hpp"
 #include "Array2D.hpp"
+#include "EditableMask.hpp"
 #include "LoadSaveOptions.hpp"
 
 namespace hdrmerge {
 
 class ImageStack {
 public:
-    ImageStack() : width(0), height(0) { setGamma(2.2f); }
+    ImageStack() : mask(this), width(0), height(0) { setGamma(2.2f); }
 
     int load(const LoadOptions & options, ProgressIndicator & progress);
     int save(const SaveOptions & options, ProgressIndicator & progress);
@@ -62,7 +63,7 @@ public:
     const Image & getImage(unsigned int i) const {
         return *images[i];
     }
-    Array2D<uint8_t> & getMask() {
+    EditableMask & getMask() {
         return mask;
     }
 
@@ -77,10 +78,23 @@ public:
     uint8_t getImageAt(size_t x, size_t y) const {
         return mask(x, y);
     }
+    bool isLayerValidAt(int layer, size_t x, size_t y) const {
+        return images[layer]->contains(x, y);
+    }
 
 private:
+    class EditableMaskImpl : public EditableMask {
+    public:
+        EditableMaskImpl(const ImageStack * s) : EditableMask(), stack(s) {}
+    private:
+        const ImageStack * stack;
+        virtual bool isLayerValidAt(int layer, int x, int y) const {
+            return stack->isLayerValidAt(layer, x, y);
+        }
+    };
+
     std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
-    Array2D<uint8_t> mask;
+    EditableMaskImpl mask;
     size_t width;
     size_t height;
     uint8_t toneCurve[65536];

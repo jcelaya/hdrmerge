@@ -21,7 +21,6 @@
  */
 
 #include "EditableMask.hpp"
-#include "ImageStack.hpp"
 using namespace hdrmerge;
 
 
@@ -34,10 +33,10 @@ void EditableMask::startAction(bool add, int layer) {
 }
 
 
-void EditableMask::editPixels(const ImageStack & images, int x, int y, size_t radius) {
+void EditableMask::editPixels(int x, int y, size_t radius) {
     EditAction & e = editActions.back();
-    mask.traceCircle(x, y, radius, [&] (int col, int row, uint8_t & layer) {
-        if (layer == e.oldLayer && images.getImage(e.newLayer).contains(col, row)) {
+    traceCircle(x, y, radius, [&] (int col, int row, uint8_t & layer) {
+        if (layer == e.oldLayer && isLayerValidAt(e.newLayer, col, row)) {
             e.points.push_back({col, row});
             layer = e.newLayer;
         }
@@ -45,8 +44,8 @@ void EditableMask::editPixels(const ImageStack & images, int x, int y, size_t ra
 }
 
 
-EditableMask::Area EditableMask::undo() {
-    Area result;
+QRect EditableMask::undo() {
+    QRect result;
     if (nextAction != editActions.begin()) {
         --nextAction;
         result = modifyLayer(nextAction->points, nextAction->oldLayer);
@@ -55,8 +54,8 @@ EditableMask::Area EditableMask::undo() {
 }
 
 
-EditableMask::Area EditableMask::redo() {
-    Area result;
+QRect EditableMask::redo() {
+    QRect result;
     if (nextAction != editActions.end()) {
         result = modifyLayer(nextAction->points, nextAction->newLayer);
         ++nextAction;
@@ -65,18 +64,15 @@ EditableMask::Area EditableMask::redo() {
 }
 
 
-EditableMask::Area EditableMask::modifyLayer(const std::list<Point> & points, int layer) {
-    Area a;
-    a.minx = mask.getWidth() + 1;
-    a.miny = mask.getHeight() + 1;
-    a.maxx = -1;
-    a.maxy = -1;
-    for (auto p : points) {
-        mask(p.x, p.y) = layer;
-        if (p.x < a.minx) a.minx = p.x;
-        if (p.x > a.maxx) a.maxx = p.x;
-        if (p.y < a.miny) a.miny = p.y;
-        if (p.y > a.maxy) a.maxy = p.y;
+QRect EditableMask::modifyLayer(const std::list<QPoint> & points, int layer) {
+    if (points.empty()) {
+        return QRect(0, 0, 0, 0);
+    } else {
+        QRect a(points.front(), points.front());
+        for (auto p : points) {
+            operator()(p.x(), p.y()) = layer;
+            a = a.unite(QRect(p, p));
+        }
+        return a;
     }
-    return a;
 }

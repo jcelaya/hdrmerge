@@ -25,52 +25,37 @@
 
 #include <cstdint>
 #include <list>
+#include <QRect>
 #include "Array2D.hpp"
 
 namespace hdrmerge {
 
-class ImageStack;
-
-class EditableMask {
+class EditableMask : public Array2D<uint8_t> {
 public:
-    EditableMask(Array2D<uint8_t> & m) : mask(m), nextAction(editActions.end()) {}
+    EditableMask() : nextAction(editActions.end()) {}
 
-    struct Area {
-        int minx, miny, maxx, maxy;
-        Area() : minx(0), miny(0), maxx(0), maxy(0) {}
-    };
-
-    uint8_t getImageAt(size_t col, size_t row) const {
-        return mask(col, row);
-    }
-    uint8_t & operator[](size_t i) {
-        return mask[i];
-    }
     void startAction(bool add, int layer);
-    void editPixels(const ImageStack & images, int x, int y, size_t radius);
+    void editPixels(int x, int y, size_t radius);
     bool canUndo() const {
         return nextAction != editActions.begin();
     }
     bool canRedo() const {
         return nextAction != editActions.end();
     }
-    Area undo();
-    Area redo();
+    QRect undo();
+    QRect redo();
 
 private:
-    struct Point {
-        int x, y;
-    };
     struct EditAction {
         int oldLayer, newLayer;
-        std::list<Point> points;
+        std::list<QPoint> points;
     };
 
-    Array2D<uint8_t> & mask;
     std::list<EditAction> editActions;
     std::list<EditAction>::iterator nextAction;
 
-    Area modifyLayer(const std::list<Point> & points, int oldayer);
+    QRect modifyLayer(const std::list<QPoint> & points, int oldayer);
+    virtual bool isLayerValidAt(int layer, int x, int y) const = 0;
 };
 
 } // namespace hdrmerge

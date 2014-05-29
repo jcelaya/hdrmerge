@@ -29,7 +29,6 @@
 #include <QPaintEvent>
 #include <QFuture>
 #include "ImageStack.hpp"
-#include "EditableMask.hpp"
 
 namespace hdrmerge {
 
@@ -68,14 +67,13 @@ protected:
     void leaveEvent(QEvent * event) { update(); }
 
 private slots:
-    void paintImage(int x, int y, const QImage & image);
+    void paintImage(QPoint where, const QImage & image);
 
 private:
     Q_OBJECT
 
     std::unique_ptr<QPixmap> pixmap;
     std::unique_ptr<ImageStack> stack;
-    std::unique_ptr<EditableMask> mask;
     size_t width, height;
     int flip;
     bool addPixels, rmPixels;
@@ -87,7 +85,7 @@ private:
     QFuture<void> currentRender;
     bool cancelRender;
 
-    void render(int minx, int miny, int maxx, int maxy);
+    void render(QRect zone);
     QRgb rgb(int col, int row) const;
     void rotate(int & x, int & y) const;
     void createBrush(bool plus);

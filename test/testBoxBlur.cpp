@@ -20,8 +20,9 @@
  *
  */
 
-#include <iostream>
-#include <sstream>
+#include <string>
+#include <cmath>
+#include <QDir>
 #include "../BoxBlur.hpp"
 #include "SampleImage.hpp"
 #include "../Log.hpp"
@@ -42,11 +43,10 @@ BOOST_AUTO_TEST_CASE(testBoxBlur) {
         string title = string("Blur with radius ") + to_string(radius);
         measureTime(title.c_str(), [&] () {map.blur(radius);});
         for (size_t i = 0; i < size; ++i) {
-            image.pixelData[i] = std::round(map[i]);
+            image.pixelData[i] = round(map[i]);
         }
-        ostringstream fileName;
-        fileName << "test/testMapblur_" << radius << ".png";
-        image.save(fileName.str());
+        string fileName = QDir::tempPath().toStdString() + "/testMapblur_" + to_string(radius) + ".png";
+        image.save(fileName);
     }
     delete[] src;
 }

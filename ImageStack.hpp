@@ -69,7 +69,7 @@ public:
     bool addImage(std::unique_ptr<Image> & i);
     std::string buildOutputFileName() const;
     double value(size_t x, size_t y) const;
-    void compose(float * dst) const;
+    Array2D<float> compose() const;
     void setGamma(float g);
     uint8_t toneMap(double v) {
         return toneCurve[(int)std::floor(v)];

@@ -104,10 +104,11 @@ int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) 
         cropped = " cropped";
     }
     Log::msg(2, "Writing ", options.fileName, ", ", options.bps, "-bit, ", width, 'x', height, cropped);
-    DngFloatWriter writer(*this, progress);
+    DngFloatWriter writer(progress);
+    progress.advance(0, "Rendering image");
     writer.setBitsPerSample(options.bps);
     writer.setPreviewWidth((options.previewSize * width) / 2);
-    writer.write(options.fileName);
+    writer.write(compose(), images.back()->getMetaData(), options.fileName);
     if (options.saveMask) {
         string name = replaceArguments(options.maskFileName, options.fileName);
         writeMaskImage(name);
@@ -207,10 +208,11 @@ double ImageStack::value(size_t x, size_t y) const {
 }
 
 
-void ImageStack::compose(float * dst) const {
+Array2D<float> ImageStack::compose() const {
     BoxBlur map(mask);
     measureTime("Blur", [&] () { map.blur(3); });
     Timer t("Compose");
+    Array2D<float> dst(width, height);
     const MetaData & md = images.front()->getMetaData();
     int imageMax = images.size() - 1;
     float max = 0.0;
@@ -248,6 +250,7 @@ void ImageStack::compose(float * dst) const {
     for (size_t pos = 0; pos < width * height; ++pos) {
         dst[pos] /= max;
     }
+    return dst;
 }
 
 

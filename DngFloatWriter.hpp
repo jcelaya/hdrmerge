@@ -23,13 +23,12 @@
 #ifndef _DNGFLOATWRITER_HPP_
 #define _DNGFLOATWRITER_HPP_
 
-#include <memory>
 #include <fstream>
 #include <string>
-#include <QString>
 #include <QImage>
 #include "config.h"
-#include "ImageStack.hpp"
+#include "Array2D.hpp"
+#include "MetaData.hpp"
 #include "ProgressIndicator.hpp"
 #include "TiffDirectory.hpp"
 
@@ -37,7 +36,7 @@ namespace hdrmerge {
 
 class DngFloatWriter {
 public:
-    DngFloatWriter(const ImageStack & s, ProgressIndicator & pi);
+    DngFloatWriter(ProgressIndicator & pi);
 
     void setPreviewWidth(size_t w) {
         previewWidth = w;
@@ -45,19 +44,19 @@ public:
     void setBitsPerSample(int b) {
         bps = b;
     }
-    void write(const std::string & filename);
+    void write(Array2D<float> && rawPixels, const MetaData & md, const std::string & filename);
 
 private:
     ProgressIndicator & progress;
+    uint32_t previewWidth;
+    int bps;
+    const MetaData * metaData;
+    Array2D<float> rawData;
     std::ofstream file;
-    const ImageStack & stack;
     IFD mainIFD, rawIFD, previewIFD;
     uint32_t width, height;
     uint32_t tileWidth, tileLength;
     uint32_t tilesAcross, tilesDown;
-    std::unique_ptr<float[]> rawData;
-    uint32_t previewWidth;
-    int bps;
     QImage thumbnail;
     QImage preview;
     QByteArray jpegPreviewData;
@@ -67,7 +66,7 @@ private:
     void createRawIFD();
     void calculateTiles();
     void writeRawData();
-    void copyMetadata(const std::string & filename);
+    void copyMetadata(const std::string & srcFile, const std::string & dstFile);
     void renderPreviews();
     void writePreviews();
     void createPreviewIFD();

@@ -34,13 +34,31 @@ public:
     Array2D(size_t w, size_t h) { resize(w, h); }
     Array2D() : Array2D(0, 0) {}
     template <typename Y> Array2D(const Array2D<Y> & copy) {
+        (*this) = copy;
+    }
+    Array2D(Array2D<T> && move) noexcept {
+        (*this) = std::move(move);
+    }
+    virtual ~Array2D() {}
+
+    Array2D<T> & operator=(Array2D<T> && move) noexcept {
+        data = std::move(move.data);
+        alignedData = move.alignedData;
+        width = move.width;
+        height = move.height;
+        dx = move.dx;
+        dy = move.dy;
+        move.resize(0, 0);
+        return *this;
+    }
+    template <typename Y> Array2D<T> & operator=(const Array2D<Y> & copy) {
         resize(copy.getWidth(), copy.getHeight());
         for (size_t i = 0; i < width*height; ++i) {
             data[i] = copy[i];
         }
         displace(copy.getDeltaX(), copy.getDeltaY());
+        return *this;
     }
-    virtual ~Array2D() {}
 
     void resize(size_t w, size_t h) {
         width = w;

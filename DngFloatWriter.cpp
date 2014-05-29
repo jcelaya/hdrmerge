@@ -34,9 +34,8 @@ using namespace std;
 
 namespace hdrmerge {
 
-DngFloatWriter::DngFloatWriter(const ImageStack & s, ProgressIndicator & pi)
-    : progress(pi), stack(s),
-    width(stack.getWidth()), height(stack.getHeight()), previewWidth(width), bps(16) {}
+DngFloatWriter::DngFloatWriter(ProgressIndicator & pi)
+    : progress(pi), previewWidth(0), bps(16) {}
 
 
 enum {
@@ -99,10 +98,11 @@ enum {
 } Tag;
 
 
-void DngFloatWriter::write(const string & filename) {
-    progress.advance(0, "Rendering image");
-    rawData.reset(new float[width * height]);
-    stack.compose(rawData.get());
+void DngFloatWriter::write(Array2D<float> && rawPixels, const MetaData & md, const string & filename) {
+    metaData = &md;
+    rawData = std::move(rawPixels);
+    width = rawData.getWidth();
+    height = rawData.getHeight();
 
     progress.advance(25, "Rendering preview");
     renderPreviews();
@@ -134,20 +134,19 @@ void DngFloatWriter::write(const string & filename) {
     }
     file.close();
 
-    copyMetadata(filename);
+    copyMetadata(metaData->fileName, filename);
     progress.advance(100, "Done writing!");
 }
 
 
 void DngFloatWriter::createMainIFD() {
-    const MetaData & md = stack.getImage(0).getMetaData();
     uint8_t dngVersion[] = { 1, 4, 0, 0 };
     mainIFD.addEntry(DNGVERSION, IFD::BYTE, 4, dngVersion);
     mainIFD.addEntry(DNGBACKVERSION, IFD::BYTE, 4, dngVersion);
     uint8_t tiffep[] = { 1, 0, 0, 0 };
     mainIFD.addEntry(TIFFEPSTD, IFD::BYTE, 4, tiffep);
-    mainIFD.addEntry(MAKE, IFD::ASCII, md.maker.length() + 1, md.maker.c_str());
-    mainIFD.addEntry(MODEL, IFD::ASCII, md.model.length() + 1, md.model.c_str());
+    mainIFD.addEntry(MAKE, IFD::ASCII, metaData->maker.length() + 1, metaData->maker.c_str());
+    mainIFD.addEntry(MODEL, IFD::ASCII, metaData->model.length() + 1, metaData->model.c_str());
     std::string appVersion("HDRMerge " HDRMERGE_VERSION_STRING);
     mainIFD.addEntry(SOFTWARE, IFD::ASCII, appVersion.length() + 1, appVersion.c_str());
     mainIFD.addEntry(RESOLUTIONUNIT, IFD::SHORT, 3); // Cm
@@ -156,20 +155,20 @@ void DngFloatWriter::createMainIFD() {
     mainIFD.addEntry(YRESOLUTION, IFD::RATIONAL, 1, resolution);
     char empty[] = { 0 };
     mainIFD.addEntry(COPYRIGHT, IFD::ASCII, 1, empty);
-    mainIFD.addEntry(IMAGEDESCRIPTION, IFD::ASCII, md.description.length() + 1, md.description.c_str());
+    mainIFD.addEntry(IMAGEDESCRIPTION, IFD::ASCII, metaData->description.length() + 1, metaData->description.c_str());
     QDateTime currentTime = QDateTime::currentDateTime();
     QString currentTimeText = currentTime.toString("yyyy:MM:dd hh:mm:ss");
     mainIFD.addEntry(DATETIME, IFD::ASCII, 20, currentTimeText.toAscii().constData());
-    mainIFD.addEntry(DATETIMEORIGINAL, IFD::ASCII, md.dateTime.length() + 1, md.dateTime.c_str());
+    mainIFD.addEntry(DATETIMEORIGINAL, IFD::ASCII, metaData->dateTime.length() + 1, metaData->dateTime.c_str());
 
     // Profile
     mainIFD.addEntry(CALIBRATIONILLUMINANT, IFD::SHORT, 21); // D65
-    string profName(md.maker + " " + md.model);
+    string profName(metaData->maker + " " + metaData->model);
     mainIFD.addEntry(PROFILENAME, IFD::ASCII, profName.length() + 1, profName.c_str());
     int32_t colorMatrix[18];
     for (int row = 0, i = 0; row < 3; ++row) {
         for (int col = 0; col < 3; ++col) {
-            colorMatrix[i++] = std::round(md.camXyz[row][col] * 10000.0f);
+            colorMatrix[i++] = std::round(metaData->camXyz[row][col] * 10000.0f);
             colorMatrix[i++] = 10000;
         }
     }
@@ -178,16 +177,16 @@ void DngFloatWriter::createMainIFD() {
     // Color
     uint32_t analogBalance[] = { 1, 1, 1, 1, 1, 1 };
     mainIFD.addEntry(ANALOGBALANCE, IFD::RATIONAL, 3, analogBalance);
-    double minWb = std::min(md.camMul[0], std::min(md.camMul[1], md.camMul[2]));
-    double wb[] = { minWb/md.camMul[0], minWb/md.camMul[1], minWb/md.camMul[2] };
+    double minWb = std::min(metaData->camMul[0], std::min(metaData->camMul[1], metaData->camMul[2]));
+    double wb[] = { minWb/metaData->camMul[0], minWb/metaData->camMul[1], minWb/metaData->camMul[2] };
     uint32_t cameraNeutral[] = {
         (uint32_t)std::round(1000000.0 * wb[0]), 1000000,
         (uint32_t)std::round(1000000.0 * wb[1]), 1000000,
         (uint32_t)std::round(1000000.0 * wb[2]), 1000000};
     mainIFD.addEntry(CAMERANEUTRAL, IFD::RATIONAL, 3, cameraNeutral);
 
-    mainIFD.addEntry(ORIENTATION, IFD::SHORT, md.tiffOrientation);
-    string cameraName(md.maker + " " + md.model);
+    mainIFD.addEntry(ORIENTATION, IFD::SHORT, metaData->tiffOrientation);
+    string cameraName(metaData->maker + " " + metaData->model);
     mainIFD.addEntry(UNIQUENAME, IFD::ASCII, cameraName.length() + 1, &cameraName[0]);
     // TODO: Add Digest and Unique ID
     mainIFD.addEntry(SUBIFDS, IFD::LONG, previewWidth > 0 ? 2 : 1, subIFDoffsets);
@@ -253,8 +252,7 @@ void DngFloatWriter::createRawIFD() {
     rawIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, 32803); // CFA
     uint16_t cfaPatternDim[] = { 2, 2 };
     rawIFD.addEntry(CFAPATTERNDIM, IFD::SHORT, 2, cfaPatternDim);
-    const MetaData & md = stack.getImage(0).getMetaData();
-    uint8_t cfaPattern[] = { md.FC(0, 0), md.FC(1, 0), md.FC(0, 1), md.FC(1, 1) };
+    uint8_t cfaPattern[] = { metaData->FC(0, 0), metaData->FC(1, 0), metaData->FC(0, 1), metaData->FC(1, 1) };
     for (uint8_t & i : cfaPattern) {
         if (i == 3) i = 1;
     }
@@ -289,7 +287,7 @@ void DngFloatWriter::createPreviewIFD() {
 
 
 void DngFloatWriter::renderPreviews() {
-    Renderer r(rawData.get(), width, height, stack.getImage(0).getMetaData());
+    Renderer r(rawData, *metaData);
     r.process();
     thumbnail = r.getScaledVersion(256).convertToFormat(QImage::Format_RGB888);
     if (previewWidth > 0) {
@@ -306,11 +304,11 @@ void DngFloatWriter::renderPreviews() {
 }
 
 
-void DngFloatWriter::copyMetadata(const string & filename) {
+void DngFloatWriter::copyMetadata(const std::string & srcFile, const std::string & dstFile) {
     try {
-        Exiv2::Image::AutoPtr src = Exiv2::ImageFactory::open(stack.getImage(stack.size() - 1).getMetaData().fileName);
+        Exiv2::Image::AutoPtr src = Exiv2::ImageFactory::open(srcFile);
         src->readMetadata();
-        Exiv2::Image::AutoPtr result = Exiv2::ImageFactory::open(filename);
+        Exiv2::Image::AutoPtr result = Exiv2::ImageFactory::open(dstFile);
         result->readMetadata();
 
         const Exiv2::XmpData & srcXmp = src->xmpData();
@@ -512,7 +510,7 @@ void DngFloatWriter::writeRawData() {
                 }
                 for (size_t row = 0; row < thisTileLength; ++row) {
                     Bytef * dst = uBuffer + row*tileWidth*bytesps;
-                    Bytef * src = (Bytef *)&rawData[(y+row)*width + x];
+                    Bytef * src = (Bytef *)&rawData(x, y+row);
                     compressFloats(src, thisTileWidth, bytesps);
                     encodeFPDeltaRow(src, dst, thisTileWidth, tileWidth, bytesps, 2);
                 }

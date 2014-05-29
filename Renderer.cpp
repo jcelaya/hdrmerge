@@ -30,18 +30,17 @@
 #include "Renderer.hpp"
 using namespace hdrmerge;
 
-Renderer::Renderer(float * rawData, size_t w, size_t h, const MetaData & md)
-: md(md), width(w/2), height(h/2) {
+Renderer::Renderer(const Array2D<float> & rawData, const MetaData & md)
+: md(md), width(rawData.getWidth()/2), height(rawData.getHeight()/2) {
     image.reset(new float[width*height][4]);
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
             size_t posDst = y*width + x;
             size_t y2 = y << 1, x2 = x << 1;
-            size_t posSrc = y2*w + x2;
-            image[posDst][md.FC(x2, y2)] = rawData[posSrc] * 65535.0;
-            image[posDst][md.FC(x2 + 1, y2)] = rawData[posSrc + 1] * 65535.0;
-            image[posDst][md.FC(x2, y2 + 1)] = rawData[posSrc + w] * 65535.0;
-            image[posDst][md.FC(x2 + 1, y2 + 1)] = rawData[posSrc + w + 1] * 65535.0;
+            image[posDst][md.FC(x2, y2)] = rawData(x2, y2) * 65535.0;
+            image[posDst][md.FC(x2 + 1, y2)] = rawData(x2 + 1, y2) * 65535.0;
+            image[posDst][md.FC(x2, y2 + 1)] = rawData(x2, y2 + 1) * 65535.0;
+            image[posDst][md.FC(x2 + 1, y2 + 1)] = rawData(x2 + 1, y2 + 1) * 65535.0;
         }
     }
 }

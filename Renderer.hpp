@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <QImage>
+#include "Array2D.hpp"
 #include "MetaData.hpp"
 
 namespace hdrmerge {
@@ -32,7 +33,7 @@ namespace hdrmerge {
 
 class Renderer {
 public:
-    Renderer(float * rawData, size_t width, size_t height, const MetaData & md);
+    Renderer(const Array2D<float> & rawData, const MetaData & md);
 
     void process();
     QImage getScaledVersion(size_t width);

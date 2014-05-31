@@ -66,7 +66,6 @@ private:
     void createRawIFD();
     void calculateTiles();
     void writeRawData();
-    void copyMetadata(const std::string & srcFile, const std::string & dstFile);
     void renderPreviews();
     void writePreviews();
     void createPreviewIFD();

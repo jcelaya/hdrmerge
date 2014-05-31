@@ -24,8 +24,8 @@
 #include <QDateTime>
 #include <QImageWriter>
 #include <zlib.h>
-#include <exiv2/exiv2.hpp>
 #include "config.h"
+#include "ExifTransfer.hpp"
 #include "DngFloatWriter.hpp"
 #include "Renderer.hpp"
 #include "Log.hpp"
@@ -134,7 +134,8 @@ void DngFloatWriter::write(Array2D<float> && rawPixels, const MetaData & md, con
     }
     file.close();
 
-    copyMetadata(metaData->fileName, filename);
+    ExifTransfer exif(metaData->fileName, filename);
+    exif.copyMetadata();
     progress.advance(100, "Done writing!");
 }
 
@@ -300,71 +301,6 @@ void DngFloatWriter::renderPreviews() {
             cerr << "Error converting the preview to JPEG: " << writer.errorString();
             previewWidth = 0;
         }
-    }
-}
-
-
-void DngFloatWriter::copyMetadata(const std::string & srcFile, const std::string & dstFile) {
-    try {
-        Exiv2::Image::AutoPtr src = Exiv2::ImageFactory::open(srcFile);
-        src->readMetadata();
-        Exiv2::Image::AutoPtr result = Exiv2::ImageFactory::open(dstFile);
-        result->readMetadata();
-
-        const Exiv2::XmpData & srcXmp = src->xmpData();
-        Exiv2::XmpData & dstXmp = result->xmpData();
-        Log::msg(Log::DEBUG, "Copying XMP metadata");
-        for (const auto & datum : srcXmp) {
-            if (datum.groupName() != "tiff" && dstXmp.findKey(Exiv2::XmpKey(datum.key())) == dstXmp.end()) {
-                Log::msg(Log::DEBUG, "Add ", datum.key());
-                dstXmp.add(datum);
-            } else {
-                Log::msg(Log::DEBUG, "Ignore ", datum.key());
-            }
-        }
-
-        const Exiv2::IptcData & srcIptc = src->iptcData();
-        Exiv2::IptcData & dstIptc = result->iptcData();
-        Log::msg(Log::DEBUG, "Copying IPTC metadata");
-        for (const auto & datum : srcIptc) {
-            if (dstIptc.findKey(Exiv2::IptcKey(datum.key())) == dstIptc.end()) {
-                Log::msg(Log::DEBUG, "Add ", datum.key());
-                dstIptc.add(datum);
-            } else {
-                Log::msg(Log::DEBUG, "Ignore ", datum.key());
-            }
-        }
-
-        const Exiv2::ExifData & srcExif = src->exifData();
-        Exiv2::ExifData & dstExif = result->exifData();
-        Log::msg(Log::DEBUG, "Copying EXIF metadata");
-        // Correct Make and Model
-        auto makeIterator = srcExif.findKey(Exiv2::ExifKey("Exif.Image.Make"));
-        if (makeIterator != srcExif.end()) {
-            Log::msg(Log::DEBUG, "Reset Exif.Image.Make to ", makeIterator->toString());
-            dstExif["Exif.Image.Make"] = makeIterator->toString();
-        }
-        auto modelIterator = srcExif.findKey(Exiv2::ExifKey("Exif.Image.Model"));
-        if (modelIterator != srcExif.end()) {
-            Log::msg(Log::DEBUG, "Reset Exif.Image.Model to ", modelIterator->toString());
-            dstExif["Exif.Image.Model"] = modelIterator->toString();
-        }
-        for (const auto & datum : srcExif) {
-            if (datum.groupName() != "Thumbnail" &&
-                    datum.groupName().substr(0, 5) != "Image" &&
-                    datum.groupName().substr(0, 8) != "SubImage" &&
-                    dstExif.findKey(Exiv2::ExifKey(datum.key())) == dstExif.end()) {
-                Log::msg(Log::DEBUG, "Add ", datum.key());
-                dstExif.add(datum);
-            } else {
-                Log::msg(Log::DEBUG, "Ignore ", datum.key());
-            }
-        }
-
-        result->writeMetadata();
-    }
-    catch (Exiv2::Error& e) {
-        std::cerr << "Exiv2 error: " << e.what() << std::endl;
     }
 }
 

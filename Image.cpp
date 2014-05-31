@@ -38,6 +38,7 @@ Image::Image(Array2D<uint16_t> & rawImage) {
     buildImage(&rawImage[0]);
 }
 
+
 void Image::buildImage(uint16_t * rawImage) {
     resize(metaData.width, metaData.height);
     size_t size = width*height;

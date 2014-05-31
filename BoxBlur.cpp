@@ -29,22 +29,22 @@ void BoxBlur::blur(size_t radius) {
     // From http://blog.ivank.net/fastest-gaussian-blur.html
     tmp.reset(new float[width*height]);
     size_t hr = std::round(radius*0.39);
-    boxBlur_4(hr);
-    boxBlur_4(hr);
-    boxBlur_4(hr);
+    boxBlur(hr);
+    boxBlur(hr);
+    boxBlur(hr);
     tmp.reset();
 }
 
 
-void BoxBlur::boxBlur_4(size_t radius) {
-    boxBlurH_4(radius);
+void BoxBlur::boxBlur(size_t radius) {
+    boxBlurH(radius);
     data.swap(tmp);
-    boxBlurT_4(radius);
+    boxBlurT(radius);
     data.swap(tmp);
 }
 
 
-void BoxBlur::boxBlurH_4(size_t r) {
+void BoxBlur::boxBlurH(size_t r) {
     float iarr = 1.0 / (r+r+1);
     #pragma omp parallel for schedule(dynamic)
     for (size_t i = 0; i < height; ++i) {
@@ -69,7 +69,7 @@ void BoxBlur::boxBlurH_4(size_t r) {
 }
 
 
-void BoxBlur::boxBlurT_4(size_t r) {
+void BoxBlur::boxBlurT(size_t r) {
     float iarr = 1.0 / (r+r+1);
     #pragma omp parallel for schedule(dynamic)
     for (size_t i = 0; i < width; ++i) {

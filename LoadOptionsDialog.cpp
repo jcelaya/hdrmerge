@@ -30,6 +30,18 @@
 
 namespace hdrmerge {
 
+
+class FileItem : public QListWidgetItem {
+public:
+    FileItem(const QString & filename, QListWidget * parent) : QListWidgetItem(parent, 1000) {
+        QDir file(filename);
+        setText(file.path().section('/', -1));
+        setData(Qt::UserRole, QVariant(filename));
+        setSizeHint(QSize(0, 24));
+    }
+};
+
+
 LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
         : QDialog(parent, f), LoadOptions() {
     QVBoxLayout * layout = new QVBoxLayout(this);
@@ -75,26 +87,22 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
 
     setLayout(layout);
     setWindowTitle(tr("Open raw images"));
-    addFiles();
 }
 
 
 void LoadOptionsDialog::showEvent(QShowEvent * event) {
+    if (fileNames.size() == 0) {
+        addFiles();
+    } else {
+        for (auto & i : fileNames) {
+            new FileItem(i.c_str(), fileList);
+        }
+        fileNames.clear();
+    }
     if (fileList->count() == 0) {
         QMetaObject::invokeMethod(this, "reject", Qt::QueuedConnection);
     }
 }
-
-
-class FileItem : public QListWidgetItem {
-public:
-    FileItem(const QString & filename, QListWidget * parent) : QListWidgetItem(parent, 1000) {
-        QDir file(filename);
-        setText(file.path().section('/', -1));
-        setData(Qt::UserRole, QVariant(filename));
-        setSizeHint(QSize(0, 24));
-    }
-};
 
 
 void LoadOptionsDialog::addFiles() {

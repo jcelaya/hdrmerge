@@ -40,7 +40,6 @@ namespace hdrmerge {
 class ImageStack;
 class PreviewWidget;
 class DraggableScrollArea;
-class LoadOptions;
 
 class MainWindow : public QMainWindow {
 public:
@@ -51,8 +50,8 @@ public:
     /// Triggered when the window is closed, exit the application
     void closeEvent(QCloseEvent * event);
     /// Preloads a list of images
-    void preload(const LoadOptions * o) {
-        preloadOptions = o;
+    void preload(const std::vector<std::string> & o) {
+        preloadFiles = o;
     }
 
 protected:
@@ -62,7 +61,6 @@ protected:
 private slots:
     void about();
     void loadImages();
-    void loadImages(const LoadOptions & options);
     void saveResult();
     void layerSelected(QAction * action);
 
@@ -98,7 +96,7 @@ private:
     QSlider * exposureSlider;
 
     ImageStack * images;
-    const LoadOptions * preloadOptions;
+    std::vector<std::string> preloadFiles;
     bool shiftPressed, controlPressed;
 };
 

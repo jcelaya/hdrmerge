@@ -43,7 +43,7 @@ Launcher::Launcher(int argc, char * argv[]) : argc(argc), argv(argv), help(false
 int Launcher::startGUI() {
     // Create main window
     MainWindow mw;
-    mw.preload(&options);
+    mw.preload(options.fileNames);
     mw.show();
 
     return QApplication::exec();
@@ -51,21 +51,15 @@ int Launcher::startGUI() {
 
 
 struct CoutProgressIndicator : public ProgressIndicator {
-    CoutProgressIndicator() : currentPercent(0) {}
+    CoutProgressIndicator() {}
 
     virtual void advance(int percent, const char * message, const char * arg) {
-        currentPercent = percent;
         if (arg) {
-            Log::msg(Log::PROGRESS, '[', setw(3), currentPercent, "%] ", QCoreApplication::translate("LoadSave", message).arg(arg));
+            Log::msg(Log::PROGRESS, '[', setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message).arg(arg));
         } else {
-            Log::msg(Log::PROGRESS, '[', setw(3), currentPercent, "%] ", QCoreApplication::translate("LoadSave", message));
+            Log::msg(Log::PROGRESS, '[', setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message));
         }
     }
-    virtual int getPercent() const {
-        return currentPercent;
-    }
-
-    int currentPercent;
 };
 
 

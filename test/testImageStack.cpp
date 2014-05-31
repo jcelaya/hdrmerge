@@ -78,8 +78,10 @@ BOOST_AUTO_TEST_CASE(image_align) {
     // Align in chain, should remain aligned with e1
     e3.alignWith(e2);
     e4.alignWith(e3);
+    e3.displace(e2.getDeltaX(), e2.getDeltaY());
     BOOST_CHECK_EQUAL(e3.getDeltaX(), 38);
     BOOST_CHECK_EQUAL(e3.getDeltaY(), 26);
+    e4.displace(e3.getDeltaX(), e3.getDeltaY());
     BOOST_CHECK_EQUAL(e4.getDeltaX(), 32);
     BOOST_CHECK_EQUAL(e4.getDeltaY(), -4);
 }

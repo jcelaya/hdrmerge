@@ -34,9 +34,9 @@ public:
     void blur(size_t radius);
 
 private:
-    void boxBlur_4(size_t radius);
-    void boxBlurH_4(size_t radius);
-    void boxBlurT_4(size_t radius);
+    void boxBlur(size_t radius);
+    void boxBlurH(size_t radius);
+    void boxBlurT(size_t radius);
     std::unique_ptr<float[]> tmp;
 };
 } // namespace hdrmerge

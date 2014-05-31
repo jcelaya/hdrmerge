@@ -46,7 +46,7 @@ using namespace hdrmerge;
 
 class ProgressDialog : public QProgressDialog , public ProgressIndicator {
 public:
-    ProgressDialog(QWidget * parent = 0) : QProgressDialog(parent), currentPercent(0) {
+    ProgressDialog(QWidget * parent = 0) : QProgressDialog(parent) {
         setMaximum(100);
         setMinimum(0);
         setMinimumDuration(0);
@@ -58,17 +58,9 @@ public:
         if (arg) {
             translatedMessage = translatedMessage.arg(arg);
         }
-        QMetaObject::invokeMethod(this, "setValue", Qt::QueuedConnection, Q_ARG(int, (currentPercent = percent)));
+        QMetaObject::invokeMethod(this, "setValue", Qt::QueuedConnection, Q_ARG(int, percent));
         QMetaObject::invokeMethod(this, "setLabelText", Qt::QueuedConnection, Q_ARG(QString, translatedMessage));
     }
-
-    virtual int getPercent() const {
-        return currentPercent;
-    }
-
-private:
-
-    int currentPercent;
 };
 
 
@@ -224,38 +216,29 @@ void MainWindow::about() {
 
 
 void MainWindow::showEvent(QShowEvent * event) {
-    if (preloadOptions && !preloadOptions->fileNames.empty()) {
-        loadImages(*preloadOptions);
-        preloadOptions = nullptr;
-    }
+    loadImages();
 }
 
 
 void MainWindow::loadImages() {
-    LoadOptionsDialog lod;
-    if (lod.exec()) {
-        loadImages(lod);
+    LoadOptionsDialog lod(this);
+    if (!preloadFiles.empty()) {
+        lod.fileNames = preloadFiles;
     }
-    shiftPressed = controlPressed = false;
-    dragToolAction->trigger();
-}
-
-
-void MainWindow::loadImages(const LoadOptions & options) {
-    if (!options.fileNames.empty()) {
-        unsigned int numImages = options.fileNames.size();
+    if (lod.exec() && !lod.fileNames.empty()) {
+        unsigned int numImages = lod.fileNames.size();
         ImageStack * newImages = new ImageStack();
         ProgressDialog progress(this);
         progress.setWindowTitle(tr("Open raw images"));
-        QFuture<int> error = QtConcurrent::run([&] () { return newImages->load(options, progress); });
+        QFuture<int> error = QtConcurrent::run([&] () { return newImages->load(lod, progress); });
         while (error.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         int result = error.result();
         if (result < numImages * 2) {
             int i = result >> 1;
             QString message = result & 1 ?
-            tr("File %1 has not the same format as the previous ones.").arg(options.fileNames[i].c_str()) :
-            tr("Unable to open file %1.").arg(options.fileNames[i].c_str());
+            tr("File %1 has not the same format as the previous ones.").arg(lod.fileNames[i].c_str()) :
+            tr("Unable to open file %1.").arg(lod.fileNames[i].c_str());
             QMessageBox::warning(this, tr("Error opening file"), message);
             delete newImages;
             return;
@@ -271,6 +254,8 @@ void MainWindow::loadImages(const LoadOptions & options) {
         exposureSlider->setValue(0);
         createLayerSelector();
     }
+    shiftPressed = controlPressed = false;
+    dragToolAction->trigger();
 }
 
 

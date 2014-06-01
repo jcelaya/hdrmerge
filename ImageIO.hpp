@@ -46,7 +46,7 @@ public:
     }
 
     std::string buildOutputFileName() const;
-    static std::unique_ptr<Image> loadRawImage(MetaData & md);
+    static Image loadRawImage(MetaData & md);
 
 private:
     ImageStack stack;

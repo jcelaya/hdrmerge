@@ -29,6 +29,17 @@ using namespace std;
 using namespace hdrmerge;
 
 
+Image & Image::operator=(Image && move) {
+    *static_cast<Array2D<uint16_t> *>(this) = (Array2D<uint16_t> &&)std::move(move);
+    scaled.swap(move.scaled);
+    max = move.max;
+    satThreshold = move.satThreshold;
+    brightness = move.brightness;
+    relExp = move.relExp;
+    halfLightPercent = move.halfLightPercent;
+}
+
+
 void Image::buildImage(uint16_t * rawImage, const MetaData & metaData) {
     resize(metaData.width, metaData.height);
     size_t size = width*height;

@@ -43,7 +43,7 @@ public:
         mask.reset();
     }
 
-    int addImage(std::unique_ptr<Image> & i);
+    int addImage(Image && i);
     void align();
     void crop();
     void computeRelExposures();
@@ -65,17 +65,17 @@ public:
         flip = f;
     }
     double getMaxExposure() const {
-        return images[0]->getRelativeExposure();
+        return images[0].getRelativeExposure();
     }
     bool isCropped() const {
-        return width != images[0]->getWidth() || height != images[0]->getHeight();
+        return width != images[0].getWidth() || height != images[0].getHeight();
     }
 
     Image & getImage(unsigned int i) {
-        return *images[i];
+        return images[i];
     }
     const Image & getImage(unsigned int i) const {
-        return *images[i];
+        return images[i];
     }
     uint8_t getImageAt(size_t x, size_t y) const {
         return mask(x, y);
@@ -87,7 +87,7 @@ public:
     double value(size_t x, size_t y) const;
 
     bool isLayerValidAt(int layer, size_t x, size_t y) const {
-        return images[layer]->contains(x, y);
+        return images[layer].contains(x, y);
     }
 
 private:
@@ -101,7 +101,7 @@ private:
         }
     };
 
-    std::vector<std::unique_ptr<Image>> images;   ///< Images, from most to least exposed
+    std::vector<Image> images;   ///< Images, from most to least exposed
     EditableMaskImpl mask;
     size_t width;
     size_t height;

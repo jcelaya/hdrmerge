@@ -31,10 +31,8 @@ using namespace std;
 using namespace hdrmerge;
 
 
-unique_ptr<Image> ImageIO::loadRawImage(MetaData & md) {
+Image ImageIO::loadRawImage(MetaData & md) {
     LibRaw rawProcessor;
-    // Load the file with the last raw parameters
-    unique_ptr<Image> result;
     auto & d = rawProcessor.imgdata;
     if (rawProcessor.open_file(md.fileName.c_str()) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
@@ -43,11 +41,10 @@ unique_ptr<Image> ImageIO::loadRawImage(MetaData & md) {
             && d.idata.colors == 3 && d.idata.filters > 1000
             && rawProcessor.unpack() == LIBRAW_SUCCESS) {
             md.fromLibRaw(rawProcessor);
-            result.reset(new Image(d.rawdata.raw_image, md));
             md.dumpInfo();
         }
     }
-    return result;
+    return Image(d.rawdata.raw_image, md);
 }
 
 
@@ -66,18 +63,19 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
                 string name = options.fileNames[i];
                 #pragma omp critical
                 progress.advance(p += step, "Loading %1", name.c_str());
-                rawParameters.emplace_back(new MetaData(name));
-                std::unique_ptr<Image> image = loadRawImage(*rawParameters.back());
+                unique_ptr<MetaData> md(new MetaData(name));
+                Image image = loadRawImage(*md);
                 #pragma omp critical
                 if (!error) { // Report on the first image that fails, ignore the rest
-                    if (image.get() == nullptr || !image->good()) {
+                    if (!image.good()) {
                         error = 1;
                         failedImage = i;
-                    } else if (stack.size() && !rawParameters.back()->isSameFormat(*rawParameters.front())) {
+                    } else if (stack.size() && !md->isSameFormat(*rawParameters.front())) {
                         error = 2;
                         failedImage = i;
                     } else {
-                        int pos = stack.addImage(image);
+                        int pos = stack.addImage(std::move(image));
+                        rawParameters.emplace_back(std::move(md));
                         rawParameters[pos].swap(rawParameters.back());
                     }
                 }
@@ -89,6 +87,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
         rawParameters.clear();
         return (failedImage << 1) + error - 1;
     }
+    stack.setFlip(rawParameters.front()->flip);
     if (options.align) {
         Timer t("Align");
         progress.advance(p += step, "Aligning");

@@ -39,7 +39,7 @@ public:
     void fromLibRaw(const LibRaw & rawData);
 
     bool isSameFormat(const MetaData & r) const {
-        return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc;
+        return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc && flip == r.flip;
     }
     uint8_t FC(int x, int y) const {
         return (filters >> (((y << 1 & 14) | (x & 1)) << 1) & 3);

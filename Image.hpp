@@ -35,9 +35,16 @@ class Image : public Array2D<uint16_t> {
 public:
     static const int scaleSteps = 6;
 
+    Image() : Array2D<uint16_t>() {}
     Image(uint16_t * rawImage, const MetaData & metaData) {
         buildImage(rawImage, metaData);
     }
+    Image(const Image & copy) = delete;
+    Image & operator=(const Image & copy) = delete;
+    Image(Image && move) {
+        (*this) = std::move(move);
+    }
+    Image & operator=(Image && move);
 
     bool good() const {
         return width > 0;
@@ -57,9 +64,8 @@ public:
         scaled.reset();
     }
     void relativeExposure(const Image & nextImage);
-
-    static bool lBeforeR(const std::unique_ptr<Image> & l, const std::unique_ptr<Image> & r) {
-        return l->brightness > r->brightness;
+    bool operator<(const Image & r) {
+        return brightness > r.brightness;
     }
 
 private:

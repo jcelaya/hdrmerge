@@ -29,15 +29,15 @@ using namespace std;
 using namespace hdrmerge;
 
 
-int ImageStack::addImage(std::unique_ptr<Image> & i) {
+int ImageStack::addImage(Image && i) {
     if (images.empty()) {
-        width = i->getWidth();
-        height = i->getHeight();
+        width = i.getWidth();
+        height = i.getHeight();
     }
     images.push_back(std::move(i));
     int n = images.size() - 1;
-    while (n > 0 && Image::lBeforeR(images[n], images[n - 1])) {
-        images[n].swap(images[n - 1]);
+    while (n > 0 && images[n] < images[n - 1]) {
+        std::swap(images[n], images[n - 1]);
         --n;
     }
     return n;
@@ -48,15 +48,15 @@ void ImageStack::align() {
     if (images.size() > 1) {
         size_t errors[images.size()];
         for (int i = images.size() - 2; i >= 0; --i) {
-            errors[i] = images[i]->alignWith(*images[i + 1]);
+            errors[i] = images[i].alignWith(images[i + 1]);
         }
         for (int i = images.size() - 2; i >= 0; --i) {
-            images[i]->displace(images[i + 1]->getDeltaX(), images[i + 1]->getDeltaY());
-            Log::msg(Log::DEBUG, "Image ", i, " displaced to (", images[i]->getDeltaX(), ", ", images[i]->getDeltaY(),
+            images[i].displace(images[i + 1].getDeltaX(), images[i + 1].getDeltaY());
+            Log::msg(Log::DEBUG, "Image ", i, " displaced to (", images[i].getDeltaX(), ", ", images[i].getDeltaY(),
                      ") with error ", errors[i]);
         }
         for (auto & i : images) {
-            i->releaseAlignData();
+            i.releaseAlignData();
         }
     }
 }
@@ -64,24 +64,24 @@ void ImageStack::align() {
 void ImageStack::crop() {
     int dx = 0, dy = 0;
     for (auto & i : images) {
-        int newDx = max(dx, i->getDeltaX());
-        int bound = min(dx + width, i->getDeltaX() + i->getWidth());
+        int newDx = max(dx, i.getDeltaX());
+        int bound = min(dx + width, i.getDeltaX() + i.getWidth());
         width = bound > newDx ? bound - newDx : 0;
         dx = newDx;
-        int newDy = max(dy, i->getDeltaY());
-        bound = min(dy + height, i->getDeltaY() + i->getHeight());
+        int newDy = max(dy, i.getDeltaY());
+        bound = min(dy + height, i.getDeltaY() + i.getHeight());
         height = bound > newDy ? bound - newDy : 0;
         dy = newDy;
     }
     for (auto & i : images) {
-        i->displace(-dx, -dy);
+        i.displace(-dx, -dy);
     }
 }
 
 
 void ImageStack::computeRelExposures() {
     for (auto cur = images.rbegin(), next = cur++; cur != images.rend(); next = cur++) {
-        (*cur)->relativeExposure(**next);
+        cur->relativeExposure(*next);
     }
 }
 
@@ -94,13 +94,13 @@ void ImageStack::generateMask() {
         for (size_t x = 0; x < width; ++x, ++pos) {
             int i = mask[pos];
             while (i < images.size() - 1 &&
-                (!images[i]->contains(x, y) ||
-                images[i]->isSaturated(x, y) ||
-                images[i]->isSaturatedAround(x, y))) ++i;
+                (!images[i].contains(x, y) ||
+                images[i].isSaturated(x, y) ||
+                images[i].isSaturatedAround(x, y))) ++i;
             if (mask[pos] < i) {
                 mask[pos] = i;
                 mask.traceCircle(x, y, 4, [&] (int col, int row, uint8_t & layer) {
-                    if (layer < i && images[i]->contains(col, row)) {
+                    if (layer < i && images[i].contains(col, row)) {
                         layer = i;
                     }
                 });
@@ -111,7 +111,7 @@ void ImageStack::generateMask() {
 
 
 double ImageStack::value(size_t x, size_t y) const {
-    Image & img = *images[mask(x, y)];
+    const Image & img = images[mask(x, y)];
     return img.exposureAt(x, y);
 }
 
@@ -128,19 +128,19 @@ Array2D<float> ImageStack::compose(const MetaData & md) const {
         for (size_t x = 0, pos = y*width; x < width; ++x, ++pos) {
             int j = map[pos] > imageMax ? imageMax : ceil(map[pos]);
             double v = 0.0, vv = 0.0, p;
-            if (images[j]->contains(x, y)) {
-                v = images[j]->exposureAt(x, y);
+            if (images[j].contains(x, y)) {
+                v = images[j].exposureAt(x, y);
                 // Adjust false highlights
-                if (j < imageMax && images[j]->isSaturatedAround(x, y)) {
+                if (j < imageMax && images[j].isSaturatedAround(x, y)) {
                     v /= md.whiteMultAt(x, y);
                 }
                 p = j - map[pos];
             } else {
                 p = 1.0;
             }
-            if (j > 0 && images[j - 1]->contains(x, y)) {
-                vv = images[j - 1]->exposureAt(x, y);
-                if (images[j - 1]->isSaturatedAround(x, y)) {
+            if (j > 0 && images[j - 1].contains(x, y)) {
+                vv = images[j - 1].exposureAt(x, y);
+                if (images[j - 1].isSaturatedAround(x, y)) {
                     vv /= md.whiteMultAt(x, y);
                 }
             } else {

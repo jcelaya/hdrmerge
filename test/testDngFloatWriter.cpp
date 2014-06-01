@@ -39,12 +39,12 @@ struct NullProgressIndicator : public ProgressIndicator {
 
 BOOST_AUTO_TEST_CASE(testDngFloatWriter) {
     MetaData metaData("test/sample1.dng");
-    unique_ptr<Image> image = ImageIO::loadRawImage(metaData);
-    int imageWidth = image->getWidth();
+    Image image = ImageIO::loadRawImage(metaData);
+    int imageWidth = image.getWidth();
     NullProgressIndicator npi;
     for (int bps : {16, 24, 32}) {
         for (int width : {0, imageWidth / 2, imageWidth}) {
-            Array2D<float> result(*image);
+            Array2D<float> result(image);
             DngFloatWriter writer(npi);
             writer.setBitsPerSample(bps);
             writer.setPreviewWidth(width);

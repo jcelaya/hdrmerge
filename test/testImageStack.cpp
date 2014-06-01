@@ -21,7 +21,7 @@
  */
 
 #include <iostream>
-#include "../ImageStack.hpp"
+#include "../ImageIO.hpp"
 #include "SampleImage.hpp"
 #include "../Log.hpp"
 #include <boost/test/unit_test.hpp>
@@ -93,9 +93,9 @@ BOOST_AUTO_TEST_CASE(stack_load) {
     Image & e1ref = *e1, & e2ref = *e2;
     BOOST_REQUIRE(e1->good());
     BOOST_REQUIRE(e2->good());
-    BOOST_REQUIRE(images.addImage(e1));
+    BOOST_REQUIRE(images.addImage(e1) != -1);
     BOOST_CHECK(!e1.get());
-    BOOST_CHECK(images.addImage(e2));
+    BOOST_CHECK(images.addImage(e2) != -1);
     BOOST_CHECK_EQUAL(images.size(), 2);
     BOOST_CHECK_EQUAL(&images.getImage(0), &e2ref);
     BOOST_CHECK_EQUAL(images.getImage(0).getWidth(), images.getWidth());
@@ -117,10 +117,10 @@ BOOST_AUTO_TEST_CASE(stack_align) {
     BOOST_REQUIRE(e2->good());
     BOOST_REQUIRE(e3->good());
     BOOST_REQUIRE(e4->good());
-    BOOST_REQUIRE(images.addImage(e1));
-    BOOST_REQUIRE(images.addImage(e2));
-    BOOST_REQUIRE(images.addImage(e3));
-    BOOST_REQUIRE(images.addImage(e4));
+    BOOST_REQUIRE(images.addImage(e1) != -1);
+    BOOST_REQUIRE(images.addImage(e2) != -1);
+    BOOST_REQUIRE(images.addImage(e3) != -1);
+    BOOST_REQUIRE(images.addImage(e4) != -1);
     measureTime("Align images total", [&] () {images.align();});
     images.crop();
     BOOST_CHECK_EQUAL(images.getWidth(), 962);
@@ -166,21 +166,23 @@ BOOST_AUTO_TEST_CASE(auto_exposure) {
 }
 
 
-BOOST_AUTO_TEST_CASE(output_filename) {
-    ImageStack images;
-    unique_ptr<Image> e1, e2, e3;
-    e1.reset(new Image(image1));
-    e2.reset(new Image(image2));
-    e3.reset(new Image(image3));
-    BOOST_REQUIRE(e1->good());
-    BOOST_REQUIRE(e2->good());
-    BOOST_REQUIRE(e3->good());
+struct NullProgressIndicator : public ProgressIndicator {
+    virtual void advance(int percent, const char * message, const char * arg) {}
+};
 
-    images.addImage(e1);
-    string oneFile = images.buildOutputFileName();
+
+BOOST_AUTO_TEST_CASE(output_filename) {
+    ImageIO io;
+    LoadOptions lo;
+    lo.align = lo.crop = false;
+    NullProgressIndicator npi;
+    lo.fileNames.push_back(image1);
+    BOOST_REQUIRE(io.load(lo, npi) == 2);
+    string oneFile = io.buildOutputFileName();
     BOOST_CHECK_EQUAL(oneFile, "test/sample1");
-    images.addImage(e2);
-    images.addImage(e3);
-    string threeFile = images.buildOutputFileName();
+    lo.fileNames.push_back(image2);
+    lo.fileNames.push_back(image3);
+    BOOST_REQUIRE(io.load(lo, npi) == 6);
+    string threeFile = io.buildOutputFileName();
     BOOST_CHECK_EQUAL(threeFile, "test/sample1-3");
 }

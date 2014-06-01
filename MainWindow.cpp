@@ -65,7 +65,7 @@ public:
 
 
 MainWindow::MainWindow()
-    : QMainWindow(), images(NULL), shiftPressed(false), controlPressed(false) {
+    : QMainWindow(), shiftPressed(false), controlPressed(false) {
     createWidgets();
     createActions();
     createToolbars();
@@ -83,7 +83,7 @@ MainWindow::MainWindow()
 void MainWindow::createWidgets() {
     previewArea = new DraggableScrollArea(this);
     setCentralWidget(previewArea);
-    preview = new PreviewWidget(previewArea);
+    preview = new PreviewWidget(io.getImageStack(), previewArea);
     previewArea->setWidget(preview);
 
     radiusBox = new QSpinBox();
@@ -227,10 +227,9 @@ void MainWindow::loadImages() {
     }
     if (lod.exec() && !lod.fileNames.empty()) {
         unsigned int numImages = lod.fileNames.size();
-        ImageStack * newImages = new ImageStack();
         ProgressDialog progress(this);
         progress.setWindowTitle(tr("Open raw images"));
-        QFuture<int> error = QtConcurrent::run([&] () { return newImages->load(lod, progress); });
+        QFuture<int> error = QtConcurrent::run([&] () { return io.load(lod, progress); });
         while (error.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         int result = error.result();
@@ -240,14 +239,12 @@ void MainWindow::loadImages() {
             tr("File %1 has not the same format as the previous ones.").arg(lod.fileNames[i].c_str()) :
             tr("Unable to open file %1.").arg(lod.fileNames[i].c_str());
             QMessageBox::warning(this, tr("Error opening file"), message);
-            delete newImages;
-            return;
         }
-        images = newImages;
-        preview->setImageStack(images);
 
+        numImages = io.getImageStack().size();
         // Create GUI
-        mergeAction->setEnabled(true);
+        preview->reload();
+        mergeAction->setEnabled(numImages > 0);
         addGhostAction->setEnabled(numImages > 1);
         rmGhostAction->setEnabled(numImages > 1);
         radiusSlider->setValue(5);
@@ -274,18 +271,19 @@ static QPixmap getColorIcon(int i) {
 
 
 void MainWindow::createLayerSelector() {
-    unsigned int numImages = images->size();
+    ImageStack & images = io.getImageStack();
+    unsigned int numImages = images.size();
     layerSelector->clear();
     for (auto action : layerSelectorGroup->actions()) {
         layerSelectorGroup->removeAction(action);
         delete action;
     }
     if (numImages > 1) {
-        double logLeastExp = std::log2(images->getImage(numImages - 1).getRelativeExposure());
+        double logLeastExp = std::log2(images.getImage(numImages - 1).getRelativeExposure());
         for (unsigned int i = 1; i < numImages; i++) {
             QAction * action = new QAction(QIcon(getColorIcon(i)), std::to_string(i).c_str(), layerSelectorGroup);
             action->setCheckable(true);
-            double logExp = logLeastExp - std::log2(images->getImage(i - 1).getRelativeExposure());
+            double logExp = logLeastExp - std::log2(images.getImage(i - 1).getRelativeExposure());
             action->setToolTip(QString("+%1 EV").arg(logExp, 0, 'f', 2));
             if (i < 10)
                 action->setShortcut(Qt::Key_0 + i);
@@ -296,7 +294,8 @@ void MainWindow::createLayerSelector() {
         QAction * firstAction = layerSelectorGroup->actions().first();
         firstAction->setChecked(true);
         preview->selectLayer(0);
-
+    }
+    if (numImages > 0) {
         QWidget * lastLayer = new QWidget();
         lastLayer->setContentsMargins(0, 1, 0, 0);
         lastLayer->setLayout(new QHBoxLayout());
@@ -304,18 +303,18 @@ void MainWindow::createLayerSelector() {
         lastIcon->setPixmap(getColorIcon(numImages));
         lastLayer->layout()->addWidget(lastIcon);
         lastLayer->layout()->addWidget(new QLabel(std::to_string(numImages).c_str()));
-        lastLayer->setMinimumHeight(layerSelector->widgetForAction(firstAction)->height());
+        //lastLayer->setMinimumHeight(layerSelector->widgetForAction(firstAction)->height());
         layerSelector->addWidget(lastLayer);
     }
 }
 
 
 void MainWindow::saveResult() {
-    if (images) {
+    if (io.getImageStack().size() > 0) {
         QSettings settings;
         QVariant lastDirSetting = settings.value("lastSaveDirectory");
         // Take the prefix and add the first and last suffix
-        QString name = (images->buildOutputFileName() + ".dng").c_str();
+        QString name = (io.buildOutputFileName() + ".dng").c_str();
         if (!lastDirSetting.isNull()) {
             name = QDir(lastDirSetting.toString()).absolutePath() + name.right(name.size() - name.lastIndexOf('/'));
         }
@@ -336,7 +335,7 @@ void MainWindow::saveResult() {
                 ProgressDialog pd(this);
                 pd.setWindowTitle(tr("Save DNG file"));
                 QFuture<void> result = QtConcurrent::run([&]() {
-                    images->save(dpd, pd);
+                    io.save(dpd, pd);
                 });
                 while (result.isRunning())
                     QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);

@@ -28,7 +28,6 @@
 #include <memory>
 #include <cmath>
 #include "Image.hpp"
-#include "ProgressIndicator.hpp"
 #include "Array2D.hpp"
 #include "EditableMask.hpp"
 #include "LoadSaveOptions.hpp"
@@ -37,24 +36,36 @@ namespace hdrmerge {
 
 class ImageStack {
 public:
-    ImageStack() : mask(this), width(0), height(0) { setGamma(2.2f); }
+    ImageStack() : mask(this), width(0), height(0) {}
+    void clear() {
+        images.clear();
+        width = height = 0;
+        mask.reset();
+    }
 
-    int load(const LoadOptions & options, ProgressIndicator & progress);
-    int save(const SaveOptions & options, ProgressIndicator & progress);
-    void writeMaskImage(const std::string & maskFile);
+    int addImage(std::unique_ptr<Image> & i);
     void align();
     void crop();
     void computeRelExposures();
     void generateMask();
+    Array2D<float> compose() const;
 
     size_t size() const { return images.size(); }
 
     size_t getWidth() const {
         return width;
     }
-
     size_t getHeight() const {
         return height;
+    }
+    int getFlip() const {
+        return images[0]->getMetaData().flip;
+    }
+    double getMaxExposure() const {
+        return images[0]->getRelativeExposure();
+    }
+    bool isCropped() const {
+        return width != images[0]->getWidth() || height != images[0]->getHeight();
     }
 
     Image & getImage(unsigned int i) {
@@ -63,21 +74,15 @@ public:
     const Image & getImage(unsigned int i) const {
         return *images[i];
     }
+    uint8_t getImageAt(size_t x, size_t y) const {
+        return mask(x, y);
+    }
     EditableMask & getMask() {
         return mask;
     }
 
-    bool addImage(std::unique_ptr<Image> & i);
-    std::string buildOutputFileName() const;
     double value(size_t x, size_t y) const;
-    Array2D<float> compose() const;
-    void setGamma(float g);
-    uint8_t toneMap(double v) {
-        return toneCurve[(int)std::floor(v)];
-    }
-    uint8_t getImageAt(size_t x, size_t y) const {
-        return mask(x, y);
-    }
+
     bool isLayerValidAt(int layer, size_t x, size_t y) const {
         return images[layer]->contains(x, y);
     }
@@ -97,9 +102,6 @@ private:
     EditableMaskImpl mask;
     size_t width;
     size_t height;
-    uint8_t toneCurve[65536];
-
-    std::string replaceArguments(const std::string & maskFileName, const std::string & outFileName);
 };
 
 } // namespace hdrmerge

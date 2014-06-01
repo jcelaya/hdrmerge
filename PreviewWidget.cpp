@@ -32,26 +32,30 @@
 using namespace hdrmerge;
 
 
-PreviewWidget::PreviewWidget(QWidget * parent) : QWidget(parent), width(0), height(0), flip(0),
+PreviewWidget::PreviewWidget(ImageStack & s, QWidget * parent) : QWidget(parent), stack(s), width(0), height(0), flip(0),
 addPixels(false), rmPixels(false), layer(0), radius(5), expMult(1.0) {
+    float g = 1.0f / 2.2f;
+    for (int i = 0; i < 65536; i++) {
+        gamma[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g)) >> 8;
+    }
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     setMouseTracking(true);
 }
 
 
-void PreviewWidget::setImageStack(ImageStack * s) {
+void PreviewWidget::reload() {
     layer = 0;
     expMult = 1.0;
-    stack.reset(s);
-    flip = stack->getImage(0).getMetaData().flip;
+    flip = stack.size() ? stack.getFlip() : 0;
     if (flip == 5 || flip == 6) {
-        width = stack->getHeight();
-        height = stack->getWidth();
+        width = stack.getHeight();
+        height = stack.getWidth();
     } else {
-        width = stack->getWidth();
-        height = stack->getHeight();
+        width = stack.getWidth();
+        height = stack.getHeight();
     }
     pixmap.reset();
+    resize(QSize(0, 0));
     repaintAsync();
 }
 
@@ -123,15 +127,15 @@ QRgb PreviewWidget::getColor(int layer, int v) {
 
 QRgb PreviewWidget::rgb(int col, int row) const {
     rotate(col, row);
-    double v = stack->value(col, row) * expMult;
-    if (v < 0.0) v = 0.0;
-    else if (v > 65535.0) v = 65535.0;
-    return getColor(stack->getImageAt(col, row), stack->toneMap(v));
+    int v = (int)stack.value(col, row) * expMult;
+    if (v < 0) v = 0;
+    else if (v > 65535) v = 65535;
+    return getColor(stack.getImageAt(col, row), gamma[v]);
 }
 
 
 void PreviewWidget::render(QRect zone) {
-    if (!stack.get()) return;
+    if (!stack.size()) return;
     zone = zone.intersect(QRect(0, 0, width, height));
     if (zone.isNull()) return;
     cancelRender = false;
@@ -196,10 +200,10 @@ void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
     if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
         event->accept();
         if (pressed) {
-            stack->getMask().startAction(addPixels, layer);
+            stack.getMask().startAction(addPixels, layer);
         }
         rotate(rx, ry);
-        stack->getMask().editPixels(rx, ry, radius);
+        stack.getMask().editPixels(rx, ry, radius);
         render(QRect(mouseX - radius, mouseY - radius, 2*radius + 1, 2*radius + 1));
     } else {
         event->ignore();
@@ -209,14 +213,14 @@ void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
 
 
 void PreviewWidget::undo() {
-    if (stack.get() && stack->getMask().canUndo()) {
-        render(stack->getMask().undo());
+    if (stack.getMask().canUndo()) {
+        render(stack.getMask().undo());
     }
 }
 
 
 void PreviewWidget::redo() {
-    if (stack.get() && stack->getMask().canRedo()) {
-        render(stack->getMask().redo());
+    if (stack.getMask().canRedo()) {
+        render(stack.getMask().redo());
     }
 }

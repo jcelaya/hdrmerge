@@ -34,13 +34,13 @@ namespace hdrmerge {
 
 class PreviewWidget : public QWidget {
 public:
-    PreviewWidget(QWidget * parent);
+    PreviewWidget(ImageStack & s, QWidget * parent);
     QSize sizeHint() const;
 
     static QRgb getColor(int layer, int v);
 
 public slots:
-    void setImageStack(ImageStack * s);
+    void reload();
     void toggleAddPixelsTool(bool toggled) {
         addPixels = toggled;
         setShowBrush();
@@ -52,7 +52,7 @@ public slots:
     void selectLayer(int i) { layer = i; }
     void setRadius(int r) { radius = r; }
     void setExposureMultiplier(int e) {
-        expMult = 1.0 + (e / 500.0) / stack->getImage(0).getRelativeExposure();
+        expMult = 1.0 + (e / 500.0) / stack.getMaxExposure();
         repaintAsync();
     }
     void undo();
@@ -73,7 +73,7 @@ private:
     Q_OBJECT
 
     std::unique_ptr<QPixmap> pixmap;
-    std::unique_ptr<ImageStack> stack;
+    ImageStack & stack;
     size_t width, height;
     int flip;
     bool addPixels, rmPixels;
@@ -84,7 +84,8 @@ private:
     double expMult;
     QFuture<void> currentRender;
     bool cancelRender;
-
+    uint8_t gamma[65536];
+    
     void render(QRect zone);
     QRgb rgb(int col, int row) const;
     void rotate(int & x, int & y) const;

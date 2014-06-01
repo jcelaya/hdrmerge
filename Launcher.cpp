@@ -28,6 +28,7 @@
 #include <QLibraryInfo>
 #include <QLocale>
 #include "Launcher.hpp"
+#include "ImageIO.hpp"
 #include "MainWindow.hpp"
 #include "Log.hpp"
 using namespace std;
@@ -66,9 +67,9 @@ struct CoutProgressIndicator : public ProgressIndicator {
 int Launcher::automaticMerge() {
     auto tr = [&] (const char * text) { return QCoreApplication::translate("LoadSave", text); };
     CoutProgressIndicator progress;
-    ImageStack stack;
+    ImageIO io;
     int numImages = options.fileNames.size();
-    int result = stack.load(options, progress);
+    int result = io.load(options, progress);
     if (result < numImages * 2) {
         int format = result & 1;
         int i = result >> 1;
@@ -85,10 +86,10 @@ int Launcher::automaticMerge() {
             wOptions.fileName += ".dng";
         }
     } else {
-        wOptions.fileName = stack.buildOutputFileName() + ".dng";
+        wOptions.fileName = io.buildOutputFileName() + ".dng";
     }
     Log::msg(Log::PROGRESS, tr("Writing result to %1").arg(wOptions.fileName.c_str()));
-    stack.save(wOptions, progress);
+    io.save(wOptions, progress);
     return 0;
 }
 

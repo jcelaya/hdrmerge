@@ -21,118 +21,29 @@
  */
 
 #include <algorithm>
-#include <QImage>
 #include "ImageStack.hpp"
-#include "DngFloatWriter.hpp"
 #include "Log.hpp"
 #include "BoxBlur.hpp"
 using namespace std;
 using namespace hdrmerge;
 
 
-void ImageStack::setGamma(float g) {
-    g = 1.0f / g;
-    for (int i = 0; i < 65536; i++) {
-        toneCurve[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g)) >> 8;
-    }
-}
-
-
-bool ImageStack::addImage(std::unique_ptr<Image> & i) {
+int ImageStack::addImage(std::unique_ptr<Image> & i) {
     if (images.empty()) {
         width = i->getWidth();
         height = i->getHeight();
         images.push_back(std::move(i));
-        return true;
+        return 0;
     } else if (images.front()->isSameFormat(*i)) {
         images.push_back(std::move(i));
-        std::sort(images.begin(), images.end(), Image::comparePointers);
-        return true;
-    }
-    return false;
-}
-
-
-int ImageStack::load(const LoadOptions & options, ProgressIndicator & progress) {
-    int numImages = options.fileNames.size();
-    int step = 100 / (numImages + 1);
-    int p = -step;
-    int error = 0, failedImage = 0;
-    {
-        Timer t("Load files");
-        #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < numImages; ++i) {
-            if (!error) { // We cannot break from the for loop if we are using OpenMP
-                string name = options.fileNames[i];
-                #pragma omp critical
-                progress.advance(p += step, "Loading %1", name.c_str());
-                std::unique_ptr<Image> image(new Image(name.c_str()));
-                #pragma omp critical
-                if (!error) { // Report on the first image that fails, ignore the rest
-                    if (image.get() == nullptr || !image->good()) {
-                        error = 1;
-                        failedImage = i;
-                    } else if (!addImage(image)) {
-                        error = 2;
-                        failedImage = i;
-                    }
-                }
-            }
+        int n = images.size() - 1;
+        while (n > 0 && Image::lBeforeR(images[n], images[n - 1])) {
+            images[n].swap(images[n - 1]);
+            --n;
         }
+        return n;
     }
-    if (error) {
-        return (failedImage << 1) + error - 1;
-    }
-    if (options.align) {
-        Timer t("Align");
-        progress.advance(p += step, "Aligning");
-        align();
-        if (options.crop) {
-            crop();
-        }
-    }
-    computeRelExposures();
-    generateMask();
-    progress.advance(100, "Done loading!");
-    return numImages << 1;
-}
-
-
-int ImageStack::save(const SaveOptions & options, ProgressIndicator & progress) {
-    string cropped("");
-    if (width != images[0]->getWidth() || height != images[0]->getHeight()) {
-        cropped = " cropped";
-    }
-    Log::msg(2, "Writing ", options.fileName, ", ", options.bps, "-bit, ", width, 'x', height, cropped);
-    DngFloatWriter writer(progress);
-    progress.advance(0, "Rendering image");
-    writer.setBitsPerSample(options.bps);
-    writer.setPreviewWidth((options.previewSize * width) / 2);
-    writer.write(compose(), images.back()->getMetaData(), options.fileName);
-    if (options.saveMask) {
-        string name = replaceArguments(options.maskFileName, options.fileName);
-        writeMaskImage(name);
-    }
-}
-
-
-void ImageStack::writeMaskImage(const std::string & maskFile) {
-    Log::msg(Log::DEBUG, "Saving mask to ", maskFile);
-    QImage maskImage(width, height, QImage::Format_Indexed8);
-    int numColors = images.size() - 1;
-    for (int c = 0; c < numColors; ++c) {
-        int gray = (256 * c) / numColors;
-        maskImage.setColor(c, qRgb(gray, gray, gray));
-    }
-    maskImage.setColor(numColors, qRgb(255, 255, 255));
-    for (size_t y = 0, pos = 0; y < height; ++y) {
-        for (size_t x = 0; x < width; ++x, ++pos) {
-            maskImage.setPixel(x, y, mask[pos]);
-        }
-    }
-    if (!maskImage.save(QString(maskFile.c_str()))) {
-        Log::msg(Log::PROGRESS, "Cannot save mask image to ", maskFile);
-    }
+    return -1;
 }
 
 
@@ -251,58 +162,4 @@ Array2D<float> ImageStack::compose() const {
         dst[pos] /= max;
     }
     return dst;
-}
-
-
-string ImageStack::buildOutputFileName() const {
-    string name;
-    std::vector<string> names;
-    for (auto & image : images) {
-        const string & f = image->getMetaData().fileName;
-        names.push_back(f.substr(0, f.find_last_of('.')));
-    }
-    sort(names.begin(), names.end());
-    if (names.size() > 1) {
-        string & last = names.back();
-        int pos = last.length() - 1;
-        while (last[pos] >= '0' && last[pos] <= '9') pos--;
-        name = names.front() + '-' + names.back().substr(pos + 1);
-    } else {
-        name = names.front();
-    }
-    return name;
-}
-
-
-string ImageStack::replaceArguments(const string & maskFileName, const string & outFileName) {
-    string result = maskFileName;
-    const char * specs[4] = {
-        "%if",
-        "%id",
-        "%of",
-        "%od"
-    };
-    string names[4];
-    string inFileName = images.back()->getMetaData().fileName;
-    size_t index = inFileName.find_last_of('/');
-    if (index != string::npos) {
-        names[1] = inFileName.substr(0, index);
-        names[0] = inFileName.substr(index + 1);
-    } else {
-        names[0] = inFileName;
-    }
-    index = outFileName.find_last_of('/');
-    if (index != string::npos) {
-        names[3] = outFileName.substr(0, index);
-        names[2] = outFileName.substr(index + 1);
-    } else {
-        names[2] = outFileName;
-    }
-    // Replace specifiers
-    for (int i = 0; i < 4; ++i) {
-        while ((index = result.find(specs[i])) != string::npos) {
-            result.replace(index, 3, names[i]);
-        }
-    }
-    return result;
 }

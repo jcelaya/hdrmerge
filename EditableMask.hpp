@@ -33,6 +33,10 @@ namespace hdrmerge {
 class EditableMask : public Array2D<uint8_t> {
 public:
     EditableMask() : nextAction(editActions.end()) {}
+    void reset() {
+        editActions.clear();
+        nextAction = editActions.end();
+    }
 
     void startAction(bool add, int layer);
     void editPixels(int x, int y, size_t radius);

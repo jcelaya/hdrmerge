@@ -35,7 +35,9 @@ using namespace std;
 namespace hdrmerge {
 
 DngFloatWriter::DngFloatWriter(ProgressIndicator & pi)
-    : progress(pi), previewWidth(0), bps(16) {}
+    : progress(pi), previewWidth(0), bps(16) {
+    progress.advance(0, "Rendering image");
+}
 
 
 enum {

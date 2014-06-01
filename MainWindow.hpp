@@ -33,11 +33,11 @@
 #include <QToolBar>
 #include <QSpinBox>
 #include <QSlider>
+#include "ImageIO.hpp"
 
 
 namespace hdrmerge {
 
-class ImageStack;
 class PreviewWidget;
 class DraggableScrollArea;
 
@@ -45,11 +45,8 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow();
 
-    /// Triggered when the window is first shown
     void showEvent(QShowEvent * event);
-    /// Triggered when the window is closed, exit the application
     void closeEvent(QCloseEvent * event);
-    /// Preloads a list of images
     void preload(const std::vector<std::string> & o) {
         preloadFiles = o;
     }
@@ -95,7 +92,7 @@ private:
     QToolBar * layerSelector;
     QSlider * exposureSlider;
 
-    ImageStack * images;
+    ImageIO io;
     std::vector<std::string> preloadFiles;
     bool shiftPressed, controlPressed;
 };

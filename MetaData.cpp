@@ -53,6 +53,9 @@ void MetaData::fromLibRaw(const char * f, const LibRaw & rawData) {
     copy_n(r.color.cblack, 4, cblack);
     adjustBlack();
     copy_n(r.color.cam_mul, 4, camMul);
+    if (camMul[0] == 0 || camMul[1] == 0 || camMul[2] == 0) {
+        copy_n(r.color.pre_mul, 4, camMul);
+    }
     adjustWhite();
     copy_n((float *)r.color.cam_xyz, 3*4, (float *)camXyz);
     copy_n((float *)r.color.rgb_cam, 4*3, (float *)rgbCam);
@@ -99,6 +102,11 @@ void MetaData::adjustBlack() {
 
 
 void MetaData::adjustWhite() {
+    // FIXME: Set to 1, because I don't know how to
+    // compute the correct white balance (if at all posible)
+    if (camMul[0] == 0 || camMul[1] == 0 || camMul[2] == 0) {
+        camMul[0] = camMul[1] = camMul[2] = 1;
+    }
     float green = camMul[1];
     for (int c = 0; c < 3; ++c) {
         camMul[c] /= green;

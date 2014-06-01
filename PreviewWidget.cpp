@@ -133,13 +133,13 @@ QRgb PreviewWidget::rgb(int col, int row) const {
 void PreviewWidget::render(QRect zone) {
     if (!stack.get()) return;
     zone = zone.intersect(QRect(0, 0, width, height));
-    if (zone.isEmpty()) return;
+    if (zone.isNull()) return;
     cancelRender = false;
-    QImage image(zone.width() - 1, zone.height() - 1, QImage::Format_RGB32);
+    QImage image(zone.width(), zone.height(), QImage::Format_RGB32);
     #pragma omp parallel for schedule(dynamic)
-    for (int row = zone.top(); row < zone.bottom(); row++) {
+    for (int row = zone.top(); row <= zone.bottom(); row++) {
         QRgb * scanLine = reinterpret_cast<QRgb *>(image.scanLine(row - zone.top()));
-        for (int col = zone.left(); !cancelRender && col < zone.right(); col++) {
+        for (int col = zone.left(); !cancelRender && col <= zone.right(); col++) {
             *scanLine++ = rgb(col, row);
         }
     }

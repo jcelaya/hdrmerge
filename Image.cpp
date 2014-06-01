@@ -54,13 +54,13 @@ void Image::buildImage(uint16_t * rawImage) {
             }
         }
     }
-    max = metaData.max;
+    max = metaData.max == 0 ? maxPerColor[0] : metaData.max;
     for (int c = 0; c < 4; ++c) {
         if (maxPerColor[c] < max) {
             max = maxPerColor[c];
         }
     }
-    relExp = 65535.0 / max;
+    relExp = max == 0 ? 0 : 65535.0 / max;
     brightness /= size;
     subtractBlack();
     metaData.max = max;

@@ -67,18 +67,18 @@ void PreviewWidget::rotate(int & x, int & y) const {
     int tmp;
     switch (flip) {
         case 3:
-            x = width - x;
-            y = height - y;
+            x = width - 1 - x;
+            y = height - 1 - y;
             break;
         case 5:
             tmp = x;
-            x = height - y;
+            x = height - 1 - y;
             y = tmp;
             break;
         case 6:
             tmp = x;
             x = y;
-            y = width - tmp;
+            y = width - 1 - tmp;
             break;
     }
 }

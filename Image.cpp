@@ -20,26 +20,16 @@
  *
  */
 
-#include <libraw/libraw.h>
 #include "Image.hpp"
 #include "Bitmap.hpp"
 #include "Histogram.hpp"
 #include "Log.hpp"
+#include "MetaData.hpp"
 using namespace std;
 using namespace hdrmerge;
 
 
-Image::Image(Array2D<uint16_t> & rawImage) {
-    // For testing purposes
-    metaData.width = metaData.rawWidth = rawImage.getWidth();
-    metaData.height = rawImage.getHeight();
-    metaData.max = 255;
-    metaData.filters = 0x4b4b4b4b;
-    buildImage(&rawImage[0]);
-}
-
-
-void Image::buildImage(uint16_t * rawImage) {
+void Image::buildImage(uint16_t * rawImage, const MetaData & metaData) {
     resize(metaData.width, metaData.height);
     size_t size = width*height;
     brightness = 0.0;
@@ -62,31 +52,13 @@ void Image::buildImage(uint16_t * rawImage) {
     }
     relExp = max == 0 ? 0 : 65535.0 / max;
     brightness /= size;
-    subtractBlack();
-    metaData.max = max;
+    subtractBlack(metaData);
     satThreshold = 0.99*max;
     preScale();
-    metaData.dumpInfo();
 }
 
 
-Image::Image(const char * f) {
-    LibRaw rawProcessor;
-    auto & d = rawProcessor.imgdata;
-    if (rawProcessor.open_file(f) == LIBRAW_SUCCESS) {
-        libraw_decoder_info_t decoder_info;
-        rawProcessor.get_decoder_info(&decoder_info);
-        if(decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD
-                && d.idata.colors == 3 && d.idata.filters > 1000
-                && rawProcessor.unpack() == LIBRAW_SUCCESS) {
-            metaData.fromLibRaw(f, rawProcessor);
-            buildImage(d.rawdata.raw_image);
-        }
-    }
-}
-
-
-void Image::subtractBlack() {
+void Image::subtractBlack(const MetaData & metaData) {
     if (metaData.hasBlack()) {
         for (size_t y = 0, pos = 0; y < height; ++y) {
             for (size_t x = 0; x < width; ++x, ++pos) {
@@ -99,11 +71,6 @@ void Image::subtractBlack() {
         }
         max -= metaData.black;
     }
-}
-
-
-bool Image::isSameFormat(const Image & ref) const {
-    return metaData.isSameFormat(ref.metaData);
 }
 
 

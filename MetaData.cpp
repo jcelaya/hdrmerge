@@ -38,8 +38,7 @@ MetaData::MetaData() : width(0), height(0), rawWidth(0), topMargin(0), leftMargi
 max(0), black(0), cblack{}, camMul{}, camXyz{}, rgbCam{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
-void MetaData::fromLibRaw(const char * f, const LibRaw & rawData) {
-    fileName = f;
+void MetaData::fromLibRaw(const LibRaw & rawData) {
     auto & r = rawData.imgdata;
     width = r.sizes.width;
     height = r.sizes.height;
@@ -117,10 +116,7 @@ void MetaData::adjustWhite() {
 
 void MetaData::dumpInfo() const {
     // Show idata
-    Log::msg(Log::DEBUG, "Image ", fileName, ", ", width, 'x', height, ", by ", maker, ", model ", model);
-    Log::msg(Log::DEBUG, colors, " colors with mask ", hex, filters, dec, ", ", cdesc, ", ", max, " max value");
+    Log::msg(Log::DEBUG, width, 'x', height, ", by ", maker, ' ' , model, ", ", hex, filters, dec, ' ', cdesc, ", ", max, " sat");
     // Show other
-    Log::msg(Log::DEBUG, "ISO:", isoSpeed, " shutter:1/", (1.0/shutter), " aperture:f", aperture, " exposure:", logExp(), " steps");
-    // Show matrices
-    Log::msg(Log::DEBUG, "White balance: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
+    Log::msg(Log::DEBUG, isoSpeed, "ISO 1/", (1.0/shutter), "sec f", aperture, " EV:", logExp(), " wb: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
 }

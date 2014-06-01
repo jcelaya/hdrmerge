@@ -30,6 +30,7 @@ namespace hdrmerge {
 
 class SampleImage : public Array2D<uint16_t> {
 public:
+    MetaData metaData;
     SampleImage() : Array2D<uint16_t>() {}
     SampleImage(const std::string & f) : Array2D<uint16_t>() {
         QImage image;
@@ -47,6 +48,10 @@ public:
             if (max < data[i]) max = data[i];
         }
         Log::msg(Log::DEBUG, "Data in range ", min, " - ", max);
+        metaData.width = metaData.rawWidth = width;
+        metaData.height = height;
+        metaData.max = 255;
+        metaData.filters = 0x4b4b4b4b;
     }
 
     void save(const std::string & f) {

@@ -20,12 +20,12 @@
  *
  */
 
+#include <iostream>
 #include <QBuffer>
 #include <QDateTime>
 #include <QImageWriter>
 #include <zlib.h>
 #include "config.h"
-#include "ExifTransfer.hpp"
 #include "DngFloatWriter.hpp"
 #include "Renderer.hpp"
 #include "Log.hpp"
@@ -135,10 +135,6 @@ void DngFloatWriter::write(Array2D<float> && rawPixels, const MetaData & md, con
         previewIFD.write(file, false);
     }
     file.close();
-
-    ExifTransfer exif(metaData->fileName, filename);
-    exif.copyMetadata();
-    progress.advance(100, "Done writing!");
 }
 
 

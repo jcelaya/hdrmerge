@@ -27,6 +27,7 @@
 #include "ImageStack.hpp"
 #include "ProgressIndicator.hpp"
 #include "LoadSaveOptions.hpp"
+#include "MetaData.hpp"
 
 namespace hdrmerge {
 
@@ -45,10 +46,11 @@ public:
     }
 
     std::string buildOutputFileName() const;
+    static std::unique_ptr<Image> loadRawImage(MetaData & md);
 
 private:
     ImageStack stack;
-    std::vector<std::string> fileNames;
+    std::vector<std::unique_ptr<MetaData>> rawParameters;
 
     std::string replaceArguments(const std::string & maskFileName, const std::string & outFileName);
     void writeMaskImage(const std::string & maskFile);

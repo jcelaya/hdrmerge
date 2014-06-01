@@ -36,7 +36,7 @@ namespace hdrmerge {
 
 class ImageStack {
 public:
-    ImageStack() : mask(this), width(0), height(0) {}
+    ImageStack() : mask(this), width(0), height(0), flip(0) {}
     void clear() {
         images.clear();
         width = height = 0;
@@ -48,7 +48,7 @@ public:
     void crop();
     void computeRelExposures();
     void generateMask();
-    Array2D<float> compose() const;
+    Array2D<float> compose(const MetaData & md) const;
 
     size_t size() const { return images.size(); }
 
@@ -59,7 +59,10 @@ public:
         return height;
     }
     int getFlip() const {
-        return images[0]->getMetaData().flip;
+        return flip;
+    }
+    void setFlip(int f) {
+        flip = f;
     }
     double getMaxExposure() const {
         return images[0]->getRelativeExposure();
@@ -102,6 +105,7 @@ private:
     EditableMaskImpl mask;
     size_t width;
     size_t height;
+    int flip;
 };
 
 } // namespace hdrmerge

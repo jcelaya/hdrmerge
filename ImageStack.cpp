@@ -24,6 +24,7 @@
 #include "ImageStack.hpp"
 #include "Log.hpp"
 #include "BoxBlur.hpp"
+#include "MetaData.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -32,18 +33,14 @@ int ImageStack::addImage(std::unique_ptr<Image> & i) {
     if (images.empty()) {
         width = i->getWidth();
         height = i->getHeight();
-        images.push_back(std::move(i));
-        return 0;
-    } else if (images.front()->isSameFormat(*i)) {
-        images.push_back(std::move(i));
-        int n = images.size() - 1;
-        while (n > 0 && Image::lBeforeR(images[n], images[n - 1])) {
-            images[n].swap(images[n - 1]);
-            --n;
-        }
-        return n;
     }
-    return -1;
+    images.push_back(std::move(i));
+    int n = images.size() - 1;
+    while (n > 0 && Image::lBeforeR(images[n], images[n - 1])) {
+        images[n].swap(images[n - 1]);
+        --n;
+    }
+    return n;
 }
 
 
@@ -119,12 +116,11 @@ double ImageStack::value(size_t x, size_t y) const {
 }
 
 
-Array2D<float> ImageStack::compose() const {
+Array2D<float> ImageStack::compose(const MetaData & md) const {
     BoxBlur map(mask);
     measureTime("Blur", [&] () { map.blur(3); });
     Timer t("Compose");
     Array2D<float> dst(width, height);
-    const MetaData & md = images.front()->getMetaData();
     int imageMax = images.size() - 1;
     float max = 0.0;
     #pragma omp parallel for schedule(dynamic)

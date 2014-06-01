@@ -28,11 +28,12 @@
 #include <QImage>
 #include "config.h"
 #include "Array2D.hpp"
-#include "MetaData.hpp"
 #include "ProgressIndicator.hpp"
 #include "TiffDirectory.hpp"
 
 namespace hdrmerge {
+
+class MetaData;
 
 class DngFloatWriter {
 public:

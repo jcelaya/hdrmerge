@@ -32,8 +32,11 @@ namespace hdrmerge {
 class MetaData {
 public:
     MetaData();
+    MetaData(const std::string & f) : MetaData() {
+        fileName = f;
+    }
 
-    void fromLibRaw(const char * f, const LibRaw & rawData);
+    void fromLibRaw(const LibRaw & rawData);
 
     bool isSameFormat(const MetaData & r) const {
         return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc;

@@ -39,57 +39,64 @@ static const char * sample2 = "test/sample2.png"; // (20, 32)
 static const char * sample3 = "test/sample3.png"; // (38, 26)
 static const char * sample4 = "test/sample4.png"; // (34, -4)
 
+struct ImageIOFixture {
+    ImageIO io;
+    unique_ptr<Image> e1, e2, e3, e4;
+};
 
-BOOST_AUTO_TEST_CASE(image_load) {
-    Image e1(image1);
-    BOOST_REQUIRE(e1.good());
-    Image e2(image2);
-    BOOST_REQUIRE(e2.good());
-    BOOST_REQUIRE(e2.isSameFormat(e1));
-    Image e3(sample1);
-    BOOST_CHECK(!e3.good());
+
+BOOST_FIXTURE_TEST_CASE(image_load, ImageIOFixture) {
+    MetaData m1(image1), m2(image2), m3(sample1);
+    e1 = io.loadRawImage(m1);
+    BOOST_REQUIRE(e1->good());
+    e2 = io.loadRawImage(m2);
+    BOOST_REQUIRE(e2->good());
+    BOOST_REQUIRE(m2.isSameFormat(m1));
+    e3 = io.loadRawImage(m3);
+    BOOST_CHECK(!e3.get());
 }
 
 
-BOOST_AUTO_TEST_CASE(image_align) {
+BOOST_FIXTURE_TEST_CASE(image_align, ImageIOFixture) {
     SampleImage si1(sample1);
     SampleImage si2(sample2);
     SampleImage si3(sample3);
     SampleImage si4(sample4);
-    Image e1(si1);
-    Image e2(si2);
-    Image e3(si3);
-    Image e4(si4);
-    BOOST_REQUIRE(e1.good());
-    BOOST_REQUIRE(e2.good());
-    BOOST_REQUIRE(e3.good());
-    BOOST_REQUIRE(e4.good());
-    e2.alignWith(e1);
-    e3.alignWith(e1);
-    e4.alignWith(e1);
-    BOOST_CHECK_EQUAL(e1.getDeltaX(), 0);
-    BOOST_CHECK_EQUAL(e1.getDeltaY(), 0);
-    BOOST_CHECK_EQUAL(e2.getDeltaX(), 20);
-    BOOST_CHECK_EQUAL(e2.getDeltaY(), 32);
-    BOOST_CHECK_EQUAL(e3.getDeltaX(), 38);
-    BOOST_CHECK_EQUAL(e3.getDeltaY(), 26);
-    BOOST_CHECK_EQUAL(e4.getDeltaX(), 32);
-    BOOST_CHECK_EQUAL(e4.getDeltaY(), -4);
+    e1.reset(new Image(si1.begin(), si1.metaData));
+    e2.reset(new Image(si2.begin(), si2.metaData));
+    e3.reset(new Image(si3.begin(), si3.metaData));
+    e4.reset(new Image(si4.begin(), si4.metaData));
+    BOOST_REQUIRE(e1->good());
+    BOOST_REQUIRE(e2->good());
+    BOOST_REQUIRE(e3->good());
+    BOOST_REQUIRE(e4->good());
+    e2->alignWith(*e1);
+    e3->alignWith(*e1);
+    e4->alignWith(*e1);
+    BOOST_CHECK_EQUAL(e1->getDeltaX(), 0);
+    BOOST_CHECK_EQUAL(e1->getDeltaY(), 0);
+    BOOST_CHECK_EQUAL(e2->getDeltaX(), 20);
+    BOOST_CHECK_EQUAL(e2->getDeltaY(), 32);
+    BOOST_CHECK_EQUAL(e3->getDeltaX(), 38);
+    BOOST_CHECK_EQUAL(e3->getDeltaY(), 26);
+    BOOST_CHECK_EQUAL(e4->getDeltaX(), 32);
+    BOOST_CHECK_EQUAL(e4->getDeltaY(), -4);
     // Align in chain, should remain aligned with e1
-    e3.alignWith(e2);
-    e4.alignWith(e3);
-    e3.displace(e2.getDeltaX(), e2.getDeltaY());
-    BOOST_CHECK_EQUAL(e3.getDeltaX(), 38);
-    BOOST_CHECK_EQUAL(e3.getDeltaY(), 26);
-    e4.displace(e3.getDeltaX(), e3.getDeltaY());
-    BOOST_CHECK_EQUAL(e4.getDeltaX(), 32);
-    BOOST_CHECK_EQUAL(e4.getDeltaY(), -4);
+    e3->alignWith(*e2);
+    e4->alignWith(*e3);
+    e3->displace(e2->getDeltaX(), e2->getDeltaY());
+    BOOST_CHECK_EQUAL(e3->getDeltaX(), 38);
+    BOOST_CHECK_EQUAL(e3->getDeltaY(), 26);
+    e4->displace(e3->getDeltaX(), e3->getDeltaY());
+    BOOST_CHECK_EQUAL(e4->getDeltaX(), 32);
+    BOOST_CHECK_EQUAL(e4->getDeltaY(), -4);
 }
 
 BOOST_AUTO_TEST_CASE(stack_load) {
     ImageStack images;
     BOOST_CHECK_EQUAL(images.size(), 0);
-    unique_ptr<Image> e1(new Image(image2)), e2(new Image(image1));
+    MetaData m1(image2), m2(image1);
+    unique_ptr<Image> e1(ImageIO::loadRawImage(m1)), e2(ImageIO::loadRawImage(m2));
     Image & e1ref = *e1, & e2ref = *e2;
     BOOST_REQUIRE(e1->good());
     BOOST_REQUIRE(e2->good());
@@ -108,10 +115,10 @@ BOOST_AUTO_TEST_CASE(stack_align) {
     SampleImage si2(sample2);
     SampleImage si3(sample3);
     SampleImage si4(sample4);
-    unique_ptr<Image> e1(new Image(si1)),
-        e2(new Image(si2)),
-        e3(new Image(si3)),
-        e4(new Image(si4));
+    unique_ptr<Image> e1(new Image(si1.begin(), si1.metaData)),
+        e2(new Image(si2.begin(), si2.metaData)),
+        e3(new Image(si3.begin(), si3.metaData)),
+        e4(new Image(si4.begin(), si4.metaData));
     Image & e1ref = *e1, & e2ref = *e2, & e3ref = *e3, & e4ref = *e4;
     BOOST_REQUIRE(e1->good());
     BOOST_REQUIRE(e2->good());
@@ -139,10 +146,11 @@ BOOST_AUTO_TEST_CASE(stack_align) {
 BOOST_AUTO_TEST_CASE(auto_exposure) {
     ImageStack images;
     unique_ptr<Image> e1, e2, e3;
+    MetaData m1(image1), m2(image2), m3(image3);
     measureTime("Load images", [&] () {
-        e1.reset(new Image(image1));
-        e2.reset(new Image(image2));
-        e3.reset(new Image(image3));
+        e1 = ImageIO::loadRawImage(m1);
+        e2 = ImageIO::loadRawImage(m2);
+        e3 = ImageIO::loadRawImage(m3);
     });
     BOOST_REQUIRE(e1->good());
     BOOST_REQUIRE(e2->good());
@@ -159,7 +167,7 @@ BOOST_AUTO_TEST_CASE(auto_exposure) {
     measureTime("Compute relative exposures", [&] () {
         images.computeRelExposures();
     });
-    double metaImmExp = 1.0 / (1 << (int)(e1ref.getMetaData().logExp() - e2ref.getMetaData().logExp()));
+    double metaImmExp = 1.0 / (1 << (int)(m1.logExp() - m2.logExp()));
     double dataImmExp = e1ref.getRelativeExposure() / e2ref.getRelativeExposure();
     cerr << "Relative exposure from data: " << dataImmExp << endl;
     cerr << "Relative exposure from metadata: " << metaImmExp << endl;
@@ -182,7 +190,7 @@ BOOST_AUTO_TEST_CASE(output_filename) {
     BOOST_CHECK_EQUAL(oneFile, "test/sample1");
     lo.fileNames.push_back(image2);
     lo.fileNames.push_back(image3);
-    BOOST_REQUIRE(io.load(lo, npi) == 6);
+    BOOST_REQUIRE_EQUAL(io.load(lo, npi), 6);
     string threeFile = io.buildOutputFileName();
     BOOST_CHECK_EQUAL(threeFile, "test/sample1-3");
 }

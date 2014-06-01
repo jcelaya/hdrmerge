@@ -22,11 +22,33 @@
 
 #include <algorithm>
 #include <QImage>
+#include <libraw/libraw.h>
 #include "ImageIO.hpp"
 #include "DngFloatWriter.hpp"
 #include "Log.hpp"
+#include "ExifTransfer.hpp"
 using namespace std;
 using namespace hdrmerge;
+
+
+unique_ptr<Image> ImageIO::loadRawImage(MetaData & md) {
+    LibRaw rawProcessor;
+    // Load the file with the last raw parameters
+    unique_ptr<Image> result;
+    auto & d = rawProcessor.imgdata;
+    if (rawProcessor.open_file(md.fileName.c_str()) == LIBRAW_SUCCESS) {
+        libraw_decoder_info_t decoder_info;
+        rawProcessor.get_decoder_info(&decoder_info);
+        if(decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD
+            && d.idata.colors == 3 && d.idata.filters > 1000
+            && rawProcessor.unpack() == LIBRAW_SUCCESS) {
+            md.fromLibRaw(rawProcessor);
+            result.reset(new Image(d.rawdata.raw_image, md));
+            md.dumpInfo();
+        }
+    }
+    return result;
+}
 
 
 int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
@@ -35,7 +57,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
     int p = -step;
     int error = 0, failedImage = 0;
     stack.clear();
-    fileNames.clear();
+    rawParameters.clear();
     {
         Timer t("Load files");
         #pragma omp parallel for schedule(dynamic)
@@ -44,20 +66,19 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
                 string name = options.fileNames[i];
                 #pragma omp critical
                 progress.advance(p += step, "Loading %1", name.c_str());
-                std::unique_ptr<Image> image(new Image(name.c_str()));
+                rawParameters.emplace_back(new MetaData(name));
+                std::unique_ptr<Image> image = loadRawImage(*rawParameters.back());
                 #pragma omp critical
                 if (!error) { // Report on the first image that fails, ignore the rest
                     if (image.get() == nullptr || !image->good()) {
                         error = 1;
                         failedImage = i;
+                    } else if (stack.size() && !rawParameters.back()->isSameFormat(*rawParameters.front())) {
+                        error = 2;
+                        failedImage = i;
                     } else {
                         int pos = stack.addImage(image);
-                        if (pos == -1) {
-                            error = 2;
-                            failedImage = i;
-                        } else {
-                            fileNames.insert(fileNames.begin() + pos, name);
-                        }
+                        rawParameters[pos].swap(rawParameters.back());
                     }
                 }
             }
@@ -65,7 +86,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
     }
     if (error) {
         stack.clear();
-        fileNames.clear();
+        rawParameters.clear();
         return (failedImage << 1) + error - 1;
     }
     if (options.align) {
@@ -89,7 +110,12 @@ int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     DngFloatWriter writer(progress);
     writer.setBitsPerSample(options.bps);
     writer.setPreviewWidth((options.previewSize * stack.getWidth()) / 2);
-    writer.write(stack.compose(), stack.getImage(stack.size() - 1).getMetaData(), options.fileName);
+    writer.write(stack.compose(*rawParameters.back()), *rawParameters.back(), options.fileName);
+
+    ExifTransfer exif(rawParameters.back()->fileName, options.fileName);
+    exif.copyMetadata();
+    progress.advance(100, "Done writing!");
+
     if (options.saveMask) {
         string name = replaceArguments(options.maskFileName, options.fileName);
         writeMaskImage(name);
@@ -121,8 +147,9 @@ void ImageIO::writeMaskImage(const std::string & maskFile) {
 string ImageIO::buildOutputFileName() const {
     string name;
     vector<string> names;
-    for (auto & f : fileNames) {
-        name = f.substr(0, f.find_last_of('.'));
+    for (auto & rp : rawParameters) {
+        name = rp->fileName;
+        name = name.substr(0, name.find_last_of('.'));
         names.push_back(name);
     }
     sort(names.begin(), names.end());
@@ -147,7 +174,7 @@ string ImageIO::replaceArguments(const string & maskFileName, const string & out
         "%od"
     };
     string names[4];
-    string inFileName = fileNames.back();
+    string inFileName = rawParameters.back()->fileName;
     size_t index = inFileName.find_last_of('/');
     if (index != string::npos) {
         names[1] = inFileName.substr(0, index);

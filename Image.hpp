@@ -25,23 +25,22 @@
 
 #include <memory>
 #include "Array2D.hpp"
-#include "MetaData.hpp"
 
 
 namespace hdrmerge {
+
+class MetaData;
 
 class Image : public Array2D<uint16_t> {
 public:
     static const int scaleSteps = 6;
 
-    Image(Array2D<uint16_t> & rawImage);
-    Image(const char * f);
+    Image(uint16_t * rawImage, const MetaData & metaData) {
+        buildImage(rawImage, metaData);
+    }
 
     bool good() const {
         return width > 0;
-    }
-    const MetaData & getMetaData() const {
-        return metaData;
     }
     double exposureAt(size_t x, size_t y) const {
         return (*this)(x, y) * relExp;
@@ -53,7 +52,6 @@ public:
     double getRelativeExposure() const {
         return relExp;
     }
-    bool isSameFormat(const Image & ref) const;
     size_t alignWith(const Image & r);
     void releaseAlignData() {
         scaled.reset();
@@ -65,7 +63,6 @@ public:
     }
 
 private:
-    MetaData metaData;
     std::unique_ptr<Array2D<uint16_t>[]> scaled;
     uint16_t max;
     uint16_t satThreshold;
@@ -73,8 +70,8 @@ private:
     double relExp;
     double halfLightPercent;
 
-    void subtractBlack();
-    void buildImage(uint16_t * rawImage);
+    void subtractBlack(const MetaData & metaData);
+    void buildImage(uint16_t * rawImage, const MetaData & metaData);
     void preScale();
 };
 

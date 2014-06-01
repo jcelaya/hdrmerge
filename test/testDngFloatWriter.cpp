@@ -23,9 +23,10 @@
 #include <string>
 #include <cmath>
 #include <QDir>
-#include "../Image.hpp"
+#include "../ImageIO.hpp"
 #include "../Log.hpp"
 #include "../DngFloatWriter.hpp"
+#include "../ExifTransfer.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;
@@ -37,18 +38,23 @@ struct NullProgressIndicator : public ProgressIndicator {
 
 
 BOOST_AUTO_TEST_CASE(testDngFloatWriter) {
-    Image image("test/sample1.dng");
-    int imageWidth = image.getWidth();
+    MetaData metaData("test/sample1.dng");
+    unique_ptr<Image> image = ImageIO::loadRawImage(metaData);
+    int imageWidth = image->getWidth();
     NullProgressIndicator npi;
     for (int bps : {16, 24, 32}) {
         for (int width : {0, imageWidth / 2, imageWidth}) {
-            Array2D<float> result(image);
+            Array2D<float> result(*image);
             DngFloatWriter writer(npi);
             writer.setBitsPerSample(bps);
             writer.setPreviewWidth(width);
             string fileName = QDir::tempPath().toStdString() + "/testDngFloat_" + to_string(bps) + "_" + to_string(width) + ".dng";
             string title = string("Save Dng Float with ") + to_string(bps) + " bps and preview width " + to_string(width);
-            measureTime(title.c_str(), [&] () {writer.write(std::move(result), image.getMetaData(), fileName);});
+            measureTime(title.c_str(), [&] () {
+                writer.write(std::move(result), metaData, fileName);
+                ExifTransfer exif("test/sample1.dng", fileName);
+                exif.copyMetadata();
+            });
         }
     }
 }

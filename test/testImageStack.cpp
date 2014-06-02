@@ -46,7 +46,7 @@ struct ImageIOFixture {
 
 
 BOOST_FIXTURE_TEST_CASE(image_load, ImageIOFixture) {
-    MetaData m1(image1), m2(image2), m3(sample1);
+    RawParameters m1(image1), m2(image2), m3(sample1);
     e1 = io.loadRawImage(m1);
     BOOST_REQUIRE(e1.good());
     e2 = io.loadRawImage(m2);
@@ -62,10 +62,10 @@ BOOST_FIXTURE_TEST_CASE(image_align, ImageIOFixture) {
     SampleImage si2(sample2);
     SampleImage si3(sample3);
     SampleImage si4(sample4);
-    e1 = Image(si1.begin(), si1.metaData);
-    e2 = Image(si2.begin(), si2.metaData);
-    e3 = Image(si3.begin(), si3.metaData);
-    e4 = Image(si4.begin(), si4.metaData);
+    e1 = Image(si1.begin(), si1.params);
+    e2 = Image(si2.begin(), si2.params);
+    e3 = Image(si3.begin(), si3.params);
+    e4 = Image(si4.begin(), si4.params);
     BOOST_REQUIRE(e1.good());
     BOOST_REQUIRE(e2.good());
     BOOST_REQUIRE(e3.good());
@@ -95,7 +95,7 @@ BOOST_FIXTURE_TEST_CASE(image_align, ImageIOFixture) {
 BOOST_AUTO_TEST_CASE(stack_load) {
     ImageStack images;
     BOOST_CHECK_EQUAL(images.size(), 0);
-    MetaData m1(image2), m2(image1);
+    RawParameters m1(image2), m2(image1);
     Image e1(ImageIO::loadRawImage(m1)), e2(ImageIO::loadRawImage(m2));
     BOOST_REQUIRE(e1.good());
     BOOST_REQUIRE(e2.good());
@@ -112,10 +112,10 @@ BOOST_AUTO_TEST_CASE(stack_align) {
     SampleImage si2(sample2);
     SampleImage si3(sample3);
     SampleImage si4(sample4);
-    Image e1(si1.begin(), si1.metaData),
-        e2(si2.begin(), si2.metaData),
-        e3(si3.begin(), si3.metaData),
-        e4(si4.begin(), si4.metaData);
+    Image e1(si1.begin(), si1.params),
+        e2(si2.begin(), si2.params),
+        e3(si3.begin(), si3.params),
+        e4(si4.begin(), si4.params);
     BOOST_REQUIRE(e1.good());
     BOOST_REQUIRE(e2.good());
     BOOST_REQUIRE(e3.good());
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(stack_align) {
 BOOST_AUTO_TEST_CASE(auto_exposure) {
     ImageStack images;
     Image e1, e2, e3;
-    MetaData m1(image1), m2(image2), m3(image3);
+    RawParameters m1(image1), m2(image2), m3(image3);
     measureTime("Load images", [&] () {
         e1 = ImageIO::loadRawImage(m1);
         e2 = ImageIO::loadRawImage(m2);

@@ -32,29 +32,32 @@ using namespace hdrmerge;
 using namespace std;
 
 
-struct NullProgressIndicator : public ProgressIndicator {
-    virtual void advance(int percent, const char * message, const char * arg) {}
-};
-
-
 BOOST_AUTO_TEST_CASE(testDngFloatWriter) {
-    MetaData metaData("test/sample1.dng");
-    Image image = ImageIO::loadRawImage(metaData);
+    RawParameters params("test/sample1.dng");
+    Image image = ImageIO::loadRawImage(params);
     int imageWidth = image.getWidth();
-    NullProgressIndicator npi;
-    for (int bps : {16, 24, 32}) {
-        for (int width : {0, imageWidth / 2, imageWidth}) {
-            Array2D<float> result(image);
-            DngFloatWriter writer(npi);
+    float max = 0;
+    for (auto i : image) {
+        if (max < i) max = i;
+    }
+    int bps = 16, width = imageWidth;
+//     for (int bps : {16, 24, 32}) {
+//         for (int width : {0, imageWidth / 2, imageWidth}) {
+            Array2D<float> result(image.getWidth(), image.getHeight());
+            for (int i = 0; i < image.getWidth()*image.getHeight(); ++i)
+                result[i] = image[i] / max;
+            QImage preview = ImageIO::renderPreview(result, params.fileName, 1.0);
+            DngFloatWriter writer;
             writer.setBitsPerSample(bps);
             writer.setPreviewWidth(width);
+            writer.setPreview(preview);
             string fileName = QDir::tempPath().toStdString() + "/testDngFloat_" + to_string(bps) + "_" + to_string(width) + ".dng";
             string title = string("Save Dng Float with ") + to_string(bps) + " bps and preview width " + to_string(width);
             measureTime(title.c_str(), [&] () {
-                writer.write(std::move(result), metaData, fileName);
-                ExifTransfer exif("test/sample1.dng", fileName);
+                writer.write(std::move(result), params, fileName);
+                ExifTransfer exif(params.fileName, fileName);
                 exif.copyMetadata();
             });
-        }
-    }
+//         }
+//     }
 }

@@ -25,8 +25,8 @@
 
 #include <ostream>
 #include <string>
+#include <chrono>
 #include <QString>
-#include <QDateTime>
 
 namespace hdrmerge {
 
@@ -83,16 +83,16 @@ inline std::ostream & operator<<(std::ostream & os, const QString & s) {
 class Timer {
 public:
     Timer(const char * n) : name(n) {
-        start = QDateTime::currentMSecsSinceEpoch();
+        start = std::chrono::steady_clock::now();
     }
     ~Timer() {
-        qint64 end = QDateTime::currentMSecsSinceEpoch();
-        double t = (end - start) / 1000.0;
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        double t = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
         Log::msg(Log::DEBUG, name, ": ", t, " seconds");
     }
 
 private:
-    qint64 start;
+    std::chrono::steady_clock::time_point start;
     const char * name;
 };
 

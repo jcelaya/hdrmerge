@@ -29,15 +29,15 @@
 
 namespace hdrmerge {
 
-class MetaData;
+class RawParameters;
 
 class Image : public Array2D<uint16_t> {
 public:
     static const int scaleSteps = 6;
 
     Image() : Array2D<uint16_t>() {}
-    Image(uint16_t * rawImage, const MetaData & metaData) {
-        buildImage(rawImage, metaData);
+    Image(uint16_t * rawImage, const RawParameters & params) {
+        buildImage(rawImage, params);
     }
     Image(const Image & copy) = delete;
     Image & operator=(const Image & copy) = delete;
@@ -76,8 +76,8 @@ private:
     double relExp;
     double halfLightPercent;
 
-    void subtractBlack(const MetaData & metaData);
-    void buildImage(uint16_t * rawImage, const MetaData & metaData);
+    void subtractBlack(const RawParameters & params);
+    void buildImage(uint16_t * rawImage, const RawParameters & params);
     void preScale();
 };
 

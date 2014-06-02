@@ -30,12 +30,7 @@ namespace hdrmerge {
 
 class ExifTransfer {
 public:
-    ExifTransfer(const std::string & srcFile, const std::string & dstFile) {
-        src = Exiv2::ImageFactory::open(srcFile);
-        src->readMetadata();
-        dst = Exiv2::ImageFactory::open(dstFile);
-        dst->readMetadata();
-    }
+    ExifTransfer(const std::string & srcFile, const std::string & dstFile);
 
     void copyMetadata();
 

@@ -27,18 +27,12 @@
 #include <zlib.h>
 #include "config.h"
 #include "DngFloatWriter.hpp"
-#include "Renderer.hpp"
+#include "RawParameters.hpp"
 #include "Log.hpp"
 using namespace std;
 
 
 namespace hdrmerge {
-
-DngFloatWriter::DngFloatWriter(ProgressIndicator & pi)
-    : progress(pi), previewWidth(0), bps(16) {
-    progress.advance(0, "Rendering image");
-}
-
 
 enum {
     DNGVERSION = 50706,
@@ -100,16 +94,13 @@ enum {
 } Tag;
 
 
-void DngFloatWriter::write(Array2D<float> && rawPixels, const MetaData & md, const string & filename) {
-    metaData = &md;
+void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p, const string & filename) {
+    params = &p;
     rawData = std::move(rawPixels);
     width = rawData.getWidth();
     height = rawData.getHeight();
-
-    progress.advance(25, "Rendering preview");
     renderPreviews();
 
-    progress.advance(50, "Initialize metadata");
     file.open(filename, ios_base::binary);
     createMainIFD();
     subIFDoffsets[0] = 8 + mainIFD.length();
@@ -123,7 +114,6 @@ void DngFloatWriter::write(Array2D<float> && rawPixels, const MetaData & md, con
     mainIFD.setValue(SUBIFDS, (const void *)subIFDoffsets);
     file.seekp(dataOffset);
 
-    progress.advance(75, "Writing output");
     Timer t("Write output");
     writePreviews();
     writeRawData();
@@ -144,8 +134,8 @@ void DngFloatWriter::createMainIFD() {
     mainIFD.addEntry(DNGBACKVERSION, IFD::BYTE, 4, dngVersion);
     uint8_t tiffep[] = { 1, 0, 0, 0 };
     mainIFD.addEntry(TIFFEPSTD, IFD::BYTE, 4, tiffep);
-    mainIFD.addEntry(MAKE, IFD::ASCII, metaData->maker.length() + 1, metaData->maker.c_str());
-    mainIFD.addEntry(MODEL, IFD::ASCII, metaData->model.length() + 1, metaData->model.c_str());
+    mainIFD.addEntry(MAKE, IFD::ASCII, params->maker.length() + 1, params->maker.c_str());
+    mainIFD.addEntry(MODEL, IFD::ASCII, params->model.length() + 1, params->model.c_str());
     std::string appVersion("HDRMerge " HDRMERGE_VERSION_STRING);
     mainIFD.addEntry(SOFTWARE, IFD::ASCII, appVersion.length() + 1, appVersion.c_str());
     mainIFD.addEntry(RESOLUTIONUNIT, IFD::SHORT, 3); // Cm
@@ -154,20 +144,20 @@ void DngFloatWriter::createMainIFD() {
     mainIFD.addEntry(YRESOLUTION, IFD::RATIONAL, 1, resolution);
     char empty[] = { 0 };
     mainIFD.addEntry(COPYRIGHT, IFD::ASCII, 1, empty);
-    mainIFD.addEntry(IMAGEDESCRIPTION, IFD::ASCII, metaData->description.length() + 1, metaData->description.c_str());
+    mainIFD.addEntry(IMAGEDESCRIPTION, IFD::ASCII, params->description.length() + 1, params->description.c_str());
     QDateTime currentTime = QDateTime::currentDateTime();
     QString currentTimeText = currentTime.toString("yyyy:MM:dd hh:mm:ss");
     mainIFD.addEntry(DATETIME, IFD::ASCII, 20, currentTimeText.toAscii().constData());
-    mainIFD.addEntry(DATETIMEORIGINAL, IFD::ASCII, metaData->dateTime.length() + 1, metaData->dateTime.c_str());
+    mainIFD.addEntry(DATETIMEORIGINAL, IFD::ASCII, params->dateTime.length() + 1, params->dateTime.c_str());
 
     // Profile
     mainIFD.addEntry(CALIBRATIONILLUMINANT, IFD::SHORT, 21); // D65
-    string profName(metaData->maker + " " + metaData->model);
+    string profName(params->maker + " " + params->model);
     mainIFD.addEntry(PROFILENAME, IFD::ASCII, profName.length() + 1, profName.c_str());
     int32_t colorMatrix[18];
     for (int row = 0, i = 0; row < 3; ++row) {
         for (int col = 0; col < 3; ++col) {
-            colorMatrix[i++] = std::round(metaData->camXyz[row][col] * 10000.0f);
+            colorMatrix[i++] = std::round(params->camXyz[row][col] * 10000.0f);
             colorMatrix[i++] = 10000;
         }
     }
@@ -176,16 +166,16 @@ void DngFloatWriter::createMainIFD() {
     // Color
     uint32_t analogBalance[] = { 1, 1, 1, 1, 1, 1 };
     mainIFD.addEntry(ANALOGBALANCE, IFD::RATIONAL, 3, analogBalance);
-    double minWb = std::min(metaData->camMul[0], std::min(metaData->camMul[1], metaData->camMul[2]));
-    double wb[] = { minWb/metaData->camMul[0], minWb/metaData->camMul[1], minWb/metaData->camMul[2] };
+    double minWb = std::min(params->camMul[0], std::min(params->camMul[1], params->camMul[2]));
+    double wb[] = { minWb/params->camMul[0], minWb/params->camMul[1], minWb/params->camMul[2] };
     uint32_t cameraNeutral[] = {
         (uint32_t)std::round(1000000.0 * wb[0]), 1000000,
         (uint32_t)std::round(1000000.0 * wb[1]), 1000000,
         (uint32_t)std::round(1000000.0 * wb[2]), 1000000};
     mainIFD.addEntry(CAMERANEUTRAL, IFD::RATIONAL, 3, cameraNeutral);
 
-    mainIFD.addEntry(ORIENTATION, IFD::SHORT, metaData->tiffOrientation);
-    string cameraName(metaData->maker + " " + metaData->model);
+    mainIFD.addEntry(ORIENTATION, IFD::SHORT, params->tiffOrientation);
+    string cameraName(params->maker + " " + params->model);
     mainIFD.addEntry(UNIQUENAME, IFD::ASCII, cameraName.length() + 1, &cameraName[0]);
     // TODO: Add Digest and Unique ID
     mainIFD.addEntry(SUBIFDS, IFD::LONG, previewWidth > 0 ? 2 : 1, subIFDoffsets);
@@ -251,7 +241,7 @@ void DngFloatWriter::createRawIFD() {
     rawIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, 32803); // CFA
     uint16_t cfaPatternDim[] = { 2, 2 };
     rawIFD.addEntry(CFAPATTERNDIM, IFD::SHORT, 2, cfaPatternDim);
-    uint8_t cfaPattern[] = { metaData->FC(0, 0), metaData->FC(1, 0), metaData->FC(0, 1), metaData->FC(1, 1) };
+    uint8_t cfaPattern[] = { params->FC(0, 0), params->FC(1, 0), params->FC(0, 1), params->FC(1, 1) };
     for (uint8_t & i : cfaPattern) {
         if (i == 3) i = 1;
     }
@@ -286,11 +276,7 @@ void DngFloatWriter::createPreviewIFD() {
 
 
 void DngFloatWriter::renderPreviews() {
-    Renderer r(rawData, *metaData);
-    r.process();
-    thumbnail = r.getScaledVersion(256).convertToFormat(QImage::Format_RGB888);
     if (previewWidth > 0) {
-        preview = r.getScaledVersion(previewWidth);
         QBuffer buffer(&jpegPreviewData);
         buffer.open(QIODevice::WriteOnly);
         QImageWriter writer(&buffer, "JPEG");

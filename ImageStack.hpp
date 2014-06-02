@@ -48,7 +48,7 @@ public:
     void crop();
     void computeRelExposures();
     void generateMask();
-    Array2D<float> compose(const MetaData & md) const;
+    Array2D<float> compose(const RawParameters & md) const;
 
     size_t size() const { return images.size(); }
 

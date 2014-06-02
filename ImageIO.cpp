@@ -30,21 +30,20 @@
 using namespace std;
 using namespace hdrmerge;
 
-
-Image ImageIO::loadRawImage(MetaData & md) {
+Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
-    if (rawProcessor.open_file(md.fileName.c_str()) == LIBRAW_SUCCESS) {
+    if (rawProcessor.open_file(rawParameters.fileName.c_str()) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
         rawProcessor.get_decoder_info(&decoder_info);
         if(decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD
             && d.idata.colors == 3 && d.idata.filters > 1000
             && rawProcessor.unpack() == LIBRAW_SUCCESS) {
-            md.fromLibRaw(rawProcessor);
-            md.dumpInfo();
+            rawParameters.fromLibRaw(rawProcessor);
+            rawParameters.dumpInfo();
         }
     }
-    return Image(d.rawdata.raw_image, md);
+    return Image(d.rawdata.raw_image, rawParameters);
 }
 
 
@@ -63,19 +62,19 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
                 string name = options.fileNames[i];
                 #pragma omp critical
                 progress.advance(p += step, "Loading %1", name.c_str());
-                unique_ptr<MetaData> md(new MetaData(name));
-                Image image = loadRawImage(*md);
+                unique_ptr<RawParameters> params(new RawParameters(name));
+                Image image = loadRawImage(*params);
                 #pragma omp critical
                 if (!error) { // Report on the first image that fails, ignore the rest
                     if (!image.good()) {
                         error = 1;
                         failedImage = i;
-                    } else if (stack.size() && !md->isSameFormat(*rawParameters.front())) {
+                    } else if (stack.size() && !params->isSameFormat(*rawParameters.front())) {
                         error = 2;
                         failedImage = i;
                     } else {
                         int pos = stack.addImage(std::move(image));
-                        rawParameters.emplace_back(std::move(md));
+                        rawParameters.emplace_back(std::move(params));
                         rawParameters[pos].swap(rawParameters.back());
                     }
                 }
@@ -106,12 +105,27 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
 int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     string cropped = stack.isCropped() ? " cropped" : "";
     Log::msg(2, "Writing ", options.fileName, ", ", options.bps, "-bit, ", stack.getWidth(), 'x', stack.getHeight(), cropped);
-    DngFloatWriter writer(progress);
+
+    progress.advance(0, "Rendering image");
+    RawParameters & params = *rawParameters.back();
+    Array2D<float> composedImage = stack.compose(params);
+
+    progress.advance(33, "Rendering preview");
+    float brightness = 1.0;
+    if (stack.size() > 1) {
+        brightness = std::log2(stack.getImage(stack.size() - 1).getRelativeExposure() / stack.getImage(0).getRelativeExposure()) / 2.0;
+    }
+    Log::msg(Log::DEBUG, "brightness ", brightness);
+    QImage preview = renderPreview(composedImage, params.fileName, brightness);
+
+    progress.advance(66, "Writing output");
+    DngFloatWriter writer;
     writer.setBitsPerSample(options.bps);
     writer.setPreviewWidth((options.previewSize * stack.getWidth()) / 2);
-    writer.write(stack.compose(*rawParameters.back()), *rawParameters.back(), options.fileName);
+    writer.setPreview(preview);
+    writer.write(std::move(composedImage), params, options.fileName);
 
-    ExifTransfer exif(rawParameters.back()->fileName, options.fileName);
+    ExifTransfer exif(params.fileName, options.fileName);
     exif.copyMetadata();
     progress.advance(100, "Done writing!");
 
@@ -140,6 +154,54 @@ void ImageIO::writeMaskImage(const std::string & maskFile) {
     if (!maskImage.save(QString(maskFile.c_str()))) {
         Log::msg(Log::PROGRESS, "Cannot save mask image to ", maskFile);
     }
+}
+
+
+QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string & fileName, float brightness) {
+    Timer t("Render preview");
+    LibRaw rawProcessor;
+    auto & d = rawProcessor.imgdata;
+    if (rawProcessor.open_file(fileName.c_str()) == LIBRAW_SUCCESS
+            && rawProcessor.unpack() == LIBRAW_SUCCESS) {
+        auto & d = rawProcessor.imgdata;
+        d.sizes.height = rawData.getHeight();
+        d.sizes.width = rawData.getWidth();
+        d.params.user_sat = 65535;
+        d.params.user_black = 0;
+        for (int c = 0; c < 4; ++c) {
+            d.params.user_cblack[c] = 0;
+        }
+        d.params.highlight = 2;
+        d.params.user_qual = 3;
+        d.params.med_passes = 0;
+        d.params.use_camera_wb = 1;
+        d.params.bright = brightness;
+        for (size_t y = 0; y < rawData.getHeight(); ++y) {
+            for (size_t x = 0; x < rawData.getWidth(); ++x) {
+                size_t dpos = (y + d.sizes.top_margin)*d.sizes.raw_width + x + d.sizes.left_margin;
+                int v = rawData(x, y) * d.params.user_sat;
+                if (v < 0) v = 0;
+                else if (v > 65535) v = 65535;
+                d.rawdata.raw_image[dpos] = v;
+            }
+        }
+        int error = rawProcessor.dcraw_process();
+        libraw_processed_image_t * image = rawProcessor.dcraw_make_mem_image();
+        if (image == nullptr) {
+            Log::msg(2, "dcraw_make_mem_image() returned NULL");
+        } else {
+            QImage interpolated(image->width, image->height, QImage::Format_RGB32);
+            for (int y = 0; y < image->height; ++y) {
+                for (int x = 0; x < image->width; ++x) {
+                    int pos = (y*image->width + x)*3;
+                    int r = image->data[pos], g = image->data[pos + 1], b = image->data[pos + 2];
+                    interpolated.setPixel(x, y, qRgb(r, g, b));
+                }
+            }
+            return interpolated;
+        }
+    }
+    return QImage();
 }
 
 

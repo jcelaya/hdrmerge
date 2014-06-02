@@ -28,16 +28,15 @@
 #include <QImage>
 #include "config.h"
 #include "Array2D.hpp"
-#include "ProgressIndicator.hpp"
 #include "TiffDirectory.hpp"
 
 namespace hdrmerge {
 
-class MetaData;
+class RawParameters;
 
 class DngFloatWriter {
 public:
-    DngFloatWriter(ProgressIndicator & pi);
+    DngFloatWriter() : previewWidth(0), bps(16) {}
 
     void setPreviewWidth(size_t w) {
         previewWidth = w;
@@ -45,13 +44,16 @@ public:
     void setBitsPerSample(int b) {
         bps = b;
     }
-    void write(Array2D<float> && rawPixels, const MetaData & md, const std::string & filename);
+    void setPreview(const QImage & p) {
+        thumbnail = p.scaledToWidth(256).convertToFormat(QImage::Format_RGB888);
+        preview = p.scaledToWidth(previewWidth);
+    }
+    void write(Array2D<float> && rawPixels, const RawParameters & p, const std::string & filename);
 
 private:
-    ProgressIndicator & progress;
     uint32_t previewWidth;
     int bps;
-    const MetaData * metaData;
+    const RawParameters * params;
     Array2D<float> rawData;
     std::ofstream file;
     IFD mainIFD, rawIFD, previewIFD;

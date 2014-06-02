@@ -24,10 +24,11 @@
 #define _IMAGEIO_H_
 
 #include <vector>
+#include <QImage>
 #include "ImageStack.hpp"
 #include "ProgressIndicator.hpp"
 #include "LoadSaveOptions.hpp"
-#include "MetaData.hpp"
+#include "RawParameters.hpp"
 
 namespace hdrmerge {
 
@@ -46,11 +47,12 @@ public:
     }
 
     std::string buildOutputFileName() const;
-    static Image loadRawImage(MetaData & md);
+    static Image loadRawImage(RawParameters & rawParameters);
+    static QImage renderPreview(const Array2D<float> & rawData, const std::string & fileName, float brightness);
 
 private:
     ImageStack stack;
-    std::vector<std::unique_ptr<MetaData>> rawParameters;
+    std::vector<std::unique_ptr<RawParameters>> rawParameters;
 
     std::string replaceArguments(const std::string & maskFileName, const std::string & outFileName);
     void writeMaskImage(const std::string & maskFile);

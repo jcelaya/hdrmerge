@@ -26,7 +26,7 @@
 #include <QDateTime>
 #include <libraw/libraw.h>
 #include "Log.hpp"
-#include "MetaData.hpp"
+#include "RawParameters.hpp"
 using namespace hdrmerge;
 using namespace std;
 
@@ -34,11 +34,11 @@ using namespace std;
 void adobe_cam_xyz(const string & t_make, const string & t_model, float * cam_xyz);
 
 
-MetaData::MetaData() : width(0), height(0), rawWidth(0), topMargin(0), leftMargin(0), filters(0),
+RawParameters::RawParameters() : width(0), height(0), rawWidth(0), topMargin(0), leftMargin(0), filters(0),
 max(0), black(0), cblack{}, camMul{}, camXyz{}, rgbCam{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
-void MetaData::fromLibRaw(const LibRaw & rawData) {
+void RawParameters::fromLibRaw(const LibRaw & rawData) {
     auto & r = rawData.imgdata;
     width = r.sizes.width;
     height = r.sizes.height;
@@ -83,12 +83,12 @@ void MetaData::fromLibRaw(const LibRaw & rawData) {
 }
 
 
-double MetaData::logExp() const {
+double RawParameters::logExp() const {
     return std::log2(isoSpeed * shutter / (100.0 * aperture * aperture));
 }
 
 
-void MetaData::adjustBlack() {
+void RawParameters::adjustBlack() {
     uint16_t minb = cblack[0] + black;
     for (int i = 0; i < 4; ++i) {
         cblack[i] += black;
@@ -100,7 +100,7 @@ void MetaData::adjustBlack() {
 }
 
 
-void MetaData::adjustWhite() {
+void RawParameters::adjustWhite() {
     // FIXME: Set to 1, because I don't know how to
     // compute the correct white balance (if at all posible)
     if (camMul[0] == 0 || camMul[1] == 0 || camMul[2] == 0) {
@@ -114,7 +114,7 @@ void MetaData::adjustWhite() {
 }
 
 
-void MetaData::dumpInfo() const {
+void RawParameters::dumpInfo() const {
     // Show idata
     Log::msg(Log::DEBUG, width, 'x', height, ", by ", maker, ' ' , model, ", ", hex, filters, dec, ' ', cdesc, ", ", max, " sat");
     // Show other

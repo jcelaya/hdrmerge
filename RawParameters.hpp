@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef _METADATA_H_
-#define _METADATA_H_
+#ifndef _RAWPARAMETERS_H_
+#define _RAWPARAMETERS_H_
 
 #include <string>
 class LibRaw;
@@ -29,16 +29,17 @@ class LibRaw;
 
 namespace hdrmerge {
 
-class MetaData {
+class RawParameters {
 public:
-    MetaData();
-    MetaData(const std::string & f) : MetaData() {
+    RawParameters();
+    RawParameters(const std::string & f) : RawParameters() {
         fileName = f;
     }
+    virtual ~RawParameters() {}
 
     void fromLibRaw(const LibRaw & rawData);
 
-    bool isSameFormat(const MetaData & r) const {
+    bool isSameFormat(const RawParameters & r) const {
         return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc && flip == r.flip;
     }
     uint8_t FC(int x, int y) const {
@@ -80,4 +81,4 @@ public:
 
 } // namespace hdrmerge
 
-#endif // _METADATA_H_
+#endif // _RAWPARAMETERS_H_

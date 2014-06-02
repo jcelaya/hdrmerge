@@ -24,7 +24,7 @@
 #include "ImageStack.hpp"
 #include "Log.hpp"
 #include "BoxBlur.hpp"
-#include "MetaData.hpp"
+#include "RawParameters.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -116,7 +116,7 @@ double ImageStack::value(size_t x, size_t y) const {
 }
 
 
-Array2D<float> ImageStack::compose(const MetaData & md) const {
+Array2D<float> ImageStack::compose(const RawParameters & md) const {
     BoxBlur map(mask);
     measureTime("Blur", [&] () { map.blur(3); });
     Timer t("Compose");

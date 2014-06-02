@@ -24,7 +24,7 @@
 #include "Bitmap.hpp"
 #include "Histogram.hpp"
 #include "Log.hpp"
-#include "MetaData.hpp"
+#include "RawParameters.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -40,22 +40,22 @@ Image & Image::operator=(Image && move) {
 }
 
 
-void Image::buildImage(uint16_t * rawImage, const MetaData & metaData) {
-    resize(metaData.width, metaData.height);
+void Image::buildImage(uint16_t * rawImage, const RawParameters & params) {
+    resize(params.width, params.height);
     size_t size = width*height;
     brightness = 0.0;
     uint16_t maxPerColor[4] = {0, 0, 0, 0};
-    for (size_t y = 0, ry = metaData.topMargin; y < height; ++y, ++ry) {
-        for (size_t x = 0, rx = metaData.leftMargin; x < width; ++x, ++rx) {
-            uint16_t v = rawImage[ry*metaData.rawWidth + rx];
+    for (size_t y = 0, ry = params.topMargin; y < height; ++y, ++ry) {
+        for (size_t x = 0, rx = params.leftMargin; x < width; ++x, ++rx) {
+            uint16_t v = rawImage[ry*params.rawWidth + rx];
             (*this)(x, y) = v;
             brightness += v;
-            if (v > maxPerColor[metaData.FC(x, y)]) {
-                maxPerColor[metaData.FC(x, y)] = v;
+            if (v > maxPerColor[params.FC(x, y)]) {
+                maxPerColor[params.FC(x, y)] = v;
             }
         }
     }
-    max = metaData.max == 0 ? maxPerColor[0] : metaData.max;
+    max = params.max == 0 ? maxPerColor[0] : params.max;
     for (int c = 0; c < 4; ++c) {
         if (maxPerColor[c] < max) {
             max = maxPerColor[c];
@@ -63,24 +63,24 @@ void Image::buildImage(uint16_t * rawImage, const MetaData & metaData) {
     }
     relExp = max == 0 ? 0 : 65535.0 / max;
     brightness /= size;
-    subtractBlack(metaData);
+    subtractBlack(params);
     satThreshold = 0.99*max;
     preScale();
 }
 
 
-void Image::subtractBlack(const MetaData & metaData) {
-    if (metaData.hasBlack()) {
+void Image::subtractBlack(const RawParameters & params) {
+    if (params.hasBlack()) {
         for (size_t y = 0, pos = 0; y < height; ++y) {
             for (size_t x = 0; x < width; ++x, ++pos) {
-                if ((*this)[pos] > metaData.blackAt(x, y)) {
-                    (*this)[pos] -= metaData.blackAt(x, y);
+                if ((*this)[pos] > params.blackAt(x, y)) {
+                    (*this)[pos] -= params.blackAt(x, y);
                 } else {
                     (*this)[pos] = 0;
                 }
             }
         }
-        max -= metaData.black;
+        max -= params.black;
     }
 }
 

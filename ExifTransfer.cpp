@@ -28,6 +28,18 @@ using namespace Exiv2;
 using namespace std;
 
 
+ExifTransfer::ExifTransfer(const std::string & srcFile, const std::string & dstFile) {
+    try {
+        src = Exiv2::ImageFactory::open(srcFile);
+        src->readMetadata();
+        dst = Exiv2::ImageFactory::open(dstFile);
+        dst->readMetadata();
+    } catch (Exiv2::Error & e) {
+        std::cerr << "Exiv2 error: " << e.what() << std::endl;
+    }
+}
+
+
 void ExifTransfer::copyMetadata() {
     try {
         copyXMP();

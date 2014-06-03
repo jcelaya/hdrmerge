@@ -265,7 +265,7 @@ void DngFloatWriter::createPreviewIFD() {
     previewIFD.addEntry(ROWSPERSTRIP, IFD::LONG, preview.height());
     previewIFD.addEntry(STRIPBYTES, IFD::LONG, 0);
     previewIFD.addEntry(STRIPOFFSETS, IFD::LONG, 0);
-    uint16_t subsampling[] = { 2, 2 };
+    uint16_t subsampling[] = { 1, 1 };
     previewIFD.addEntry(YCBCRSUBSAMPLING, IFD::SHORT, 2, subsampling);
     previewIFD.addEntry(YCBCRPOSITIONING, IFD::SHORT, 2);
     uint32_t coefficients[] = { 299, 1000, 587, 1000, 114, 1000 };
@@ -280,7 +280,7 @@ void DngFloatWriter::renderPreviews() {
         QBuffer buffer(&jpegPreviewData);
         buffer.open(QIODevice::WriteOnly);
         QImageWriter writer(&buffer, "JPEG");
-        writer.setQuality(90);
+        writer.setQuality(85);
         if (!writer.write(preview)) {
             cerr << "Error converting the preview to JPEG: " << writer.errorString() << endl;
             previewWidth = 0;

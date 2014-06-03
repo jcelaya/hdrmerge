@@ -32,8 +32,8 @@
 using namespace hdrmerge;
 
 
-PreviewWidget::PreviewWidget(ImageStack & s, QWidget * parent) : QWidget(parent), stack(s), width(0), height(0), flip(0),
-addPixels(false), rmPixels(false), layer(0), radius(5), expMult(1.0) {
+PreviewWidget::PreviewWidget(ImageStack & s, QWidget * parent) : QWidget(parent), stack(s),
+width(0), height(0), flip(0), addPixels(false), rmPixels(false), layer(0), radius(5), expMult(1.0) {
     float g = 1.0f / 2.2f;
     for (int i = 0; i < 65536; i++) {
         gamma[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g)) >> 8;

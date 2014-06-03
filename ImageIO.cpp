@@ -111,12 +111,7 @@ int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     Array2D<float> composedImage = stack.compose(params);
 
     progress.advance(33, "Rendering preview");
-    float brightness = 1.0;
-    if (stack.size() > 1) {
-        brightness = std::log2(stack.getImage(stack.size() - 1).getRelativeExposure() / stack.getImage(0).getRelativeExposure()) / 2.0;
-    }
-    Log::msg(Log::DEBUG, "brightness ", brightness);
-    QImage preview = renderPreview(composedImage, params.fileName, brightness);
+    QImage preview = renderPreview(composedImage, params.fileName, stack.getMaxExposure());
 
     progress.advance(66, "Writing output");
     DngFloatWriter writer;
@@ -157,7 +152,7 @@ void ImageIO::writeMaskImage(const std::string & maskFile) {
 }
 
 
-QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string & fileName, float brightness) {
+QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string & fileName, float expShift) {
     Timer t("Render preview");
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
@@ -175,8 +170,10 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string 
         d.params.user_qual = 3;
         d.params.med_passes = 0;
         d.params.use_camera_wb = 1;
-        d.params.bright = brightness;
         d.params.user_flip = 0;
+        d.params.exp_correc = 1;
+        d.params.exp_shift = expShift;
+        d.params.exp_preser = 1.0;
         for (size_t y = 0; y < rawData.getHeight(); ++y) {
             for (size_t x = 0; x < rawData.getWidth(); ++x) {
                 size_t dpos = (y + d.sizes.top_margin)*d.sizes.raw_width + x + d.sizes.left_margin;

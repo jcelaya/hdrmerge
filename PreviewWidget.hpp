@@ -52,7 +52,7 @@ public slots:
     void selectLayer(int i) { layer = i; }
     void setRadius(int r) { radius = r; }
     void setExposureMultiplier(int e) {
-        expMult = 1.0 + (e / 500.0) / stack.getMaxExposure();
+        expMult = 1.0 + e * stack.getMaxExposure() / (stack.size() * 1000.0);
         repaintAsync();
     }
     void undo();
@@ -85,7 +85,7 @@ private:
     QFuture<void> currentRender;
     bool cancelRender;
     uint8_t gamma[65536];
-    
+
     void render(QRect zone);
     QRgb rgb(int col, int row) const;
     void rotate(int & x, int & y) const;

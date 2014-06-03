@@ -65,7 +65,7 @@ public:
         flip = f;
     }
     double getMaxExposure() const {
-        return images[0].getRelativeExposure();
+        return images.back().getRelativeExposure() / images[0].getRelativeExposure();
     }
     bool isCropped() const {
         return width != images[0].getWidth() || height != images[0].getHeight();

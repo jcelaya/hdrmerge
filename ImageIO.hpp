@@ -48,7 +48,7 @@ public:
 
     std::string buildOutputFileName() const;
     static Image loadRawImage(RawParameters & rawParameters);
-    static QImage renderPreview(const Array2D<float> & rawData, const std::string & fileName, float brightness);
+    static QImage renderPreview(const Array2D<float> & rawData, const std::string & fileName, float expShift);
 
 private:
     ImageStack stack;

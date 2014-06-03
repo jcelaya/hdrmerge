@@ -176,6 +176,7 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string 
         d.params.med_passes = 0;
         d.params.use_camera_wb = 1;
         d.params.bright = brightness;
+        d.params.user_flip = 0;
         for (size_t y = 0; y < rawData.getHeight(); ++y) {
             for (size_t x = 0; x < rawData.getWidth(); ++x) {
                 size_t dpos = (y + d.sizes.top_margin)*d.sizes.raw_width + x + d.sizes.left_margin;

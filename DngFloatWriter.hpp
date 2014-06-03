@@ -45,8 +45,8 @@ public:
         bps = b;
     }
     void setPreview(const QImage & p) {
-        thumbnail = p.scaledToWidth(256).convertToFormat(QImage::Format_RGB888);
-        preview = p.scaledToWidth(previewWidth);
+        thumbnail = p.scaledToWidth(256, Qt::SmoothTransformation).convertToFormat(QImage::Format_RGB888);
+        preview = p.scaledToWidth(previewWidth, Qt::SmoothTransformation);
     }
     void write(Array2D<float> && rawPixels, const RawParameters & p, const std::string & filename);
 

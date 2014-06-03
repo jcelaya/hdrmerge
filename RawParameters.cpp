@@ -69,6 +69,11 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
     dateTime = dateTimeTmpText.toAscii().constData();
     colors = r.idata.colors;
     flip = r.sizes.flip;
+    switch ((flip + 3600) % 360) {
+        case 270: flip = 5; break;
+        case 180: flip = 3; break;
+        case  90: flip = 6; break;
+    }
     switch (flip) {
         case 0: tiffOrientation = 1; break;
         case 3: tiffOrientation = 3; break;
@@ -116,7 +121,7 @@ void RawParameters::adjustWhite() {
 
 void RawParameters::dumpInfo() const {
     // Show idata
-    Log::msg(Log::DEBUG, width, 'x', height, ", by ", maker, ' ' , model, ", ", hex, filters, dec, ' ', cdesc, ", ", max, " sat");
+    Log::msg(Log::DEBUG, width, 'x', height, ", by ", maker, ' ' , model, ", ", hex, filters, dec, ' ', cdesc, ", ", max, " sat, flip ", flip);
     // Show other
     Log::msg(Log::DEBUG, isoSpeed, "ISO 1/", (1.0/shutter), "sec f", aperture, " EV:", logExp(), " wb: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
 }

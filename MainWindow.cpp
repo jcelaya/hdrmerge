@@ -316,7 +316,9 @@ void MainWindow::saveResult() {
         // Take the prefix and add the first and last suffix
         QString name = (io.buildOutputFileName() + ".dng").c_str();
         if (!lastDirSetting.isNull()) {
-            name = QDir(lastDirSetting.toString()).absolutePath() + name.right(name.size() - name.lastIndexOf('/'));
+            size_t slashPos = name.lastIndexOf('/');
+            if (slashPos > name.length()) slashPos = 0;
+            name = QDir(lastDirSetting.toString()).absolutePath() + "/" + name.right(name.size() - slashPos);
         }
         QString file = QFileDialog::getSaveFileName(this, tr("Save DNG file"), name,
             tr("Digital Negatives (*.dng)"), NULL, QFileDialog::DontUseNativeDialog);

@@ -282,7 +282,7 @@ void DngFloatWriter::renderPreviews() {
         QImageWriter writer(&buffer, "JPEG");
         writer.setQuality(90);
         if (!writer.write(preview)) {
-            cerr << "Error converting the preview to JPEG: " << writer.errorString();
+            cerr << "Error converting the preview to JPEG: " << writer.errorString() << endl;
             previewWidth = 0;
         }
     }

@@ -83,6 +83,7 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
     }
     // LibRaw does not create this matrix for DNG files!!!
     if (!camXyz[0][0]) {
+        Log::msg(Log::DEBUG, "Generating cam_xyz matrix for ", maker, " ", model);
         adobe_cam_xyz(maker, model, (float *)camXyz);
     }
 }

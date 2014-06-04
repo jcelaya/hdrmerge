@@ -64,8 +64,7 @@ public:
 };
 
 
-MainWindow::MainWindow()
-    : QMainWindow(), shiftPressed(false), controlPressed(false) {
+MainWindow::MainWindow() : QMainWindow() {
     createWidgets();
     createActions();
     createToolbars();
@@ -91,11 +90,12 @@ void MainWindow::createWidgets() {
     radiusBox->findChild<QLineEdit*>()->setReadOnly(true);
     radiusBox->setToolTip(tr("Brush radius of the add/remove tool."));
     radiusSlider = new QSlider(Qt::Horizontal);
-    radiusSlider->setRange(0, 200);
+    radiusSlider->setRange(0, PreviewWidget::maxRadius);
     radiusSlider->setMaximumWidth(200);
     radiusSlider->setToolTip(tr("Brush radius of the add/remove tool."));
     connect(radiusBox, SIGNAL(valueChanged(int)), preview, SLOT(setRadius(int)));
     connect(radiusSlider, SIGNAL(valueChanged(int)), preview, SLOT(setRadius(int)));
+    connect(preview, SIGNAL(radiusChanged(int)), radiusSlider, SLOT(setValue(int)));
     connect(radiusBox, SIGNAL(valueChanged(int)), radiusSlider, SLOT(setValue(int)));
     connect(radiusSlider, SIGNAL(valueChanged(int)), radiusBox, SLOT(setValue(int)));
     radiusBox->setValue(5);
@@ -182,6 +182,7 @@ void MainWindow::createToolbars() {
     toolBar->addAction(toolActionGroup->addAction(addGhostAction));
     toolBar->addAction(toolActionGroup->addAction(rmGhostAction));
     dragToolAction->setChecked(true);
+    lastTool = dragToolAction;
     toolBar->addSeparator();
     toolBar->addWidget(new QLabel(" " + tr("Radius:"), toolBar));
     toolBar->addWidget(radiusBox);
@@ -189,6 +190,7 @@ void MainWindow::createToolbars() {
     toolBar->addSeparator();
     toolBar->addWidget(new QLabel(" " + tr("Brightness:"), toolBar));
     toolBar->addWidget(exposureSlider);
+    connect(toolActionGroup, SIGNAL(triggered(QAction *)), this, SLOT(toolSelected(QAction *)));
 
     layerSelector = addToolBar("Layers");
     layerSelector->setObjectName("Layers");
@@ -251,8 +253,7 @@ void MainWindow::loadImages() {
         exposureSlider->setValue(0);
         createLayerSelector();
     }
-    shiftPressed = controlPressed = false;
-    dragToolAction->trigger();
+    setToolFromKey();
 }
 
 
@@ -344,8 +345,7 @@ void MainWindow::saveResult() {
             }
         }
     }
-    shiftPressed = controlPressed = false;
-    dragToolAction->trigger();
+    setToolFromKey();
 }
 
 
@@ -361,25 +361,9 @@ void MainWindow::layerSelected(QAction * action) {
 }
 
 
-void MainWindow::keyPressEvent(QKeyEvent * event) {
-    if (event->key() == Qt::Key_Shift)
-        shiftPressed = true;
-    else if (event->key() == Qt::Key_Control)
-        controlPressed = true;
-    else QMainWindow::keyPressEvent(event);
-    if (shiftPressed && addGhostAction->isEnabled()) addGhostAction->trigger();
-    else if (controlPressed && rmGhostAction->isEnabled()) rmGhostAction->trigger();
-    else dragToolAction->trigger();
-}
-
-
-void MainWindow::keyReleaseEvent(QKeyEvent * event) {
-    if (event->key() == Qt::Key_Shift)
-        shiftPressed = false;
-    else if (event->key() == Qt::Key_Control)
-        controlPressed = false;
-    else QMainWindow::keyReleaseEvent(event);
-    if (shiftPressed && addGhostAction->isEnabled()) addGhostAction->trigger();
-    else if (controlPressed && rmGhostAction->isEnabled()) rmGhostAction->trigger();
-    else dragToolAction->trigger();
+void MainWindow::setToolFromKey() {
+    Qt::KeyboardModifiers mods = QApplication::queryKeyboardModifiers();
+    if (mods & Qt::ShiftModifier && addGhostAction->isEnabled()) addGhostAction->setChecked(true);
+    else if (mods & Qt::ControlModifier && rmGhostAction->isEnabled()) rmGhostAction->setChecked(true);
+    else lastTool->setChecked(true);
 }

@@ -212,6 +212,20 @@ void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
 }
 
 
+void PreviewWidget::wheelEvent(QWheelEvent * event) {
+    Qt::KeyboardModifiers mods = QApplication::queryKeyboardModifiers();
+    if (mods & Qt::AltModifier) {
+        event->accept();
+        int step = event->delta() / 24;
+        if (step == 0) step = event->delta() > 0 ? 1 : -1;
+        setRadius(radius - step);
+        emit radiusChanged(radius);
+    } else {
+        event->ignore();
+    }
+}
+
+
 void PreviewWidget::undo() {
     if (stack.getMask().canUndo()) {
         render(stack.getMask().undo());

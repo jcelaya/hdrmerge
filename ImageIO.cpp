@@ -20,6 +20,7 @@
  *
  */
 
+#include <cstdlib>
 #include <algorithm>
 #include <QImage>
 #include <libraw/libraw.h>
@@ -152,28 +153,45 @@ void ImageIO::writeMaskImage(const std::string & maskFile) {
 }
 
 
+static void prepareRawBuffer(LibRaw & rawProcessor) {
+    rawProcessor.imgdata.progress_flags |= LIBRAW_PROGRESS_LOAD_RAW;
+    auto & i = rawProcessor.imgdata;
+    auto & r = i.rawdata;
+    auto & s = i.sizes;
+    r.color4_image = nullptr;
+    r.color3_image = nullptr;
+    r.raw_alloc = std::malloc(s.raw_width * (s.raw_height + 7) * sizeof(ushort));
+    r.raw_image = (ushort*) r.raw_alloc;
+    if(!s.raw_pitch)
+        s.raw_pitch = s.raw_width*2; // Bayer case, not set before
+    copy_n(&i.color, 1, &r.color);
+    copy_n(&i.sizes, 1, &r.sizes);
+    copy_n(&i.idata, 1, &r.iparams);
+}
+
+
 QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string & fileName, float expShift) {
     Timer t("Render preview");
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
-    if (rawProcessor.open_file(fileName.c_str()) == LIBRAW_SUCCESS
-            && rawProcessor.unpack() == LIBRAW_SUCCESS) {
-        auto & d = rawProcessor.imgdata;
+    d.params.user_sat = 65535;
+    d.params.user_black = 0;
+    for (int c = 0; c < 4; ++c) {
+        d.params.user_cblack[c] = 0;
+    }
+    d.params.highlight = 2;
+    d.params.user_qual = 3;
+    d.params.med_passes = 0;
+    d.params.use_camera_wb = 1;
+    d.params.user_flip = 0;
+    d.params.exp_correc = 1;
+    d.params.exp_shift = expShift;
+    d.params.exp_preser = 1.0;
+    if (rawProcessor.open_file(fileName.c_str()) == LIBRAW_SUCCESS) {
+//             && rawProcessor.unpack() == LIBRAW_SUCCESS) {
+        prepareRawBuffer(rawProcessor);
         d.sizes.height = rawData.getHeight();
         d.sizes.width = rawData.getWidth();
-        d.params.user_sat = 65535;
-        d.params.user_black = 0;
-        for (int c = 0; c < 4; ++c) {
-            d.params.user_cblack[c] = 0;
-        }
-        d.params.highlight = 2;
-        d.params.user_qual = 3;
-        d.params.med_passes = 0;
-        d.params.use_camera_wb = 1;
-        d.params.user_flip = 0;
-        d.params.exp_correc = 1;
-        d.params.exp_shift = expShift;
-        d.params.exp_preser = 1.0;
         for (size_t y = 0; y < rawData.getHeight(); ++y) {
             for (size_t x = 0; x < rawData.getWidth(); ++x) {
                 size_t dpos = (y + d.sizes.top_margin)*d.sizes.raw_width + x + d.sizes.left_margin;

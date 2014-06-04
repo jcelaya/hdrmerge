@@ -34,6 +34,8 @@ namespace hdrmerge {
 
 class PreviewWidget : public QWidget {
 public:
+    static const int maxRadius = 200;
+
     PreviewWidget(ImageStack & s, QWidget * parent);
     QSize sizeHint() const;
 
@@ -50,7 +52,12 @@ public slots:
         setShowBrush();
     }
     void selectLayer(int i) { layer = i; }
-    void setRadius(int r) { radius = r; }
+    void setRadius(int r) {
+        radius = r;
+        if (radius < 0) radius = 0;
+        if (radius > maxRadius) radius = maxRadius;
+        setShowBrush();
+    }
     void setExposureMultiplier(int e) {
         expMult = 1.0 + e * stack.getMaxExposure() / (stack.size() * 1000.0);
         repaintAsync();
@@ -58,11 +65,15 @@ public slots:
     void undo();
     void redo();
 
+signals:
+    void radiusChanged(int r);
+
 protected:
     void paintEvent(QPaintEvent * event);
     void mousePressEvent(QMouseEvent * event) { mouseEvent(event, true); }
     void mouseMoveEvent(QMouseEvent * event) { mouseEvent(event, false); }
     void mouseEvent(QMouseEvent * event, bool pressed);
+    void wheelEvent(QWheelEvent * event);
     void enterEvent(QEvent * event) { update(); }
     void leaveEvent(QEvent * event) { update(); }
 

@@ -52,14 +52,17 @@ public:
     }
 
 protected:
-    void keyPressEvent(QKeyEvent * event);
-    void keyReleaseEvent(QKeyEvent * event);
+    void keyPressEvent(QKeyEvent * event) { setToolFromKey(); }
+    void keyReleaseEvent(QKeyEvent * event) { setToolFromKey(); }
 
 private slots:
     void about();
     void loadImages();
     void saveResult();
     void layerSelected(QAction * action);
+    void toolSelected(QAction * action) {
+        lastTool = action;
+    }
 
 private:
     void createWidgets();
@@ -67,6 +70,7 @@ private:
     void createMenus();
     void createToolbars();
     void createLayerSelector();
+    void setToolFromKey();
 
     Q_OBJECT
 
@@ -76,9 +80,11 @@ private:
     QAction * redoAction;
     QAction * aboutAction;
     QAction * mergeAction;
+
     QAction * dragToolAction;
     QAction * addGhostAction;
     QAction * rmGhostAction;
+    QAction * lastTool;
 
     QMenu * fileMenu;
     QMenu * editMenu;
@@ -94,7 +100,6 @@ private:
 
     ImageIO io;
     std::vector<std::string> preloadFiles;
-    bool shiftPressed, controlPressed;
 };
 
 } // namespace hdrmerge

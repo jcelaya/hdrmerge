@@ -265,7 +265,7 @@ void DngFloatWriter::createPreviewIFD() {
     previewIFD.addEntry(ROWSPERSTRIP, IFD::LONG, preview.height());
     previewIFD.addEntry(STRIPBYTES, IFD::LONG, 0);
     previewIFD.addEntry(STRIPOFFSETS, IFD::LONG, 0);
-    uint16_t subsampling[] = { 1, 1 };
+    uint16_t subsampling[] = { 2, 2 };
     previewIFD.addEntry(YCBCRSUBSAMPLING, IFD::SHORT, 2, subsampling);
     previewIFD.addEntry(YCBCRPOSITIONING, IFD::SHORT, 2);
     uint32_t coefficients[] = { 299, 1000, 587, 1000, 114, 1000 };

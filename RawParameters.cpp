@@ -34,7 +34,7 @@ using namespace std;
 void adobe_cam_xyz(const string & t_make, const string & t_model, float * cam_xyz);
 
 
-RawParameters::RawParameters() : width(0), height(0), rawWidth(0), topMargin(0), leftMargin(0), filters(0),
+RawParameters::RawParameters() : width(0), height(0), rawWidth(0), rawHeight(0), topMargin(0), leftMargin(0), filters(0),
 max(0), black(0), cblack{}, camMul{}, camXyz{}, rgbCam{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
@@ -43,6 +43,7 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
     width = r.sizes.width;
     height = r.sizes.height;
     rawWidth = r.sizes.raw_width;
+    rawHeight = r.sizes.raw_height;
     topMargin = r.sizes.top_margin;
     leftMargin = r.sizes.left_margin;
     filters = r.idata.filters;
@@ -83,7 +84,6 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
     }
     // LibRaw does not create this matrix for DNG files!!!
     if (!camXyz[0][0]) {
-        Log::msg(Log::DEBUG, "Generating cam_xyz matrix for ", maker, " ", model);
         adobe_cam_xyz(maker, model, (float *)camXyz);
     }
 }

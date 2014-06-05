@@ -116,46 +116,59 @@ double ImageStack::value(size_t x, size_t y) const {
 }
 
 
-Array2D<float> ImageStack::compose(const RawParameters & md) const {
+Array2D<float> ImageStack::compose(const RawParameters & params) const {
     BoxBlur map(mask);
     measureTime("Blur", [&] () { map.blur(3); });
     Timer t("Compose");
-    Array2D<float> dst(width, height);
+    Array2D<float> dst(params.rawWidth, params.rawHeight);
+    fill_n(dst.begin(), dst.size(), 0.0);
+    dst.displace(-(int)params.leftMargin, -(int)params.topMargin);
     int imageMax = images.size() - 1;
     float max = 0.0;
-    #pragma omp parallel for schedule(dynamic)
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t x = 0, pos = y*width; x < width; ++x, ++pos) {
-            int j = map[pos] > imageMax ? imageMax : ceil(map[pos]);
-            double v = 0.0, vv = 0.0, p;
-            if (images[j].contains(x, y)) {
-                v = images[j].exposureAt(x, y);
-                // Adjust false highlights
-                if (j < imageMax && images[j].isSaturatedAround(x, y)) {
-                    v /= md.whiteMultAt(x, y);
+    #pragma omp parallel
+    {
+        float maxthr = 0.0;
+        #pragma omp for schedule(dynamic)
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {
+                int j = map(x, y) > imageMax ? imageMax : ceil(map(x, y));
+                double v = 0.0, vv = 0.0, p;
+                if (images[j].contains(x, y)) {
+                    v = images[j].exposureAt(x, y);
+                    // Adjust false highlights
+                    if (j < imageMax && images[j].isSaturatedAround(x, y)) {
+                        v /= params.whiteMultAt(x, y);
+                    }
+                    p = j - map(x, y);
+                } else {
+                    p = 1.0;
                 }
-                p = j - map[pos];
-            } else {
-                p = 1.0;
-            }
-            if (j > 0 && images[j - 1].contains(x, y)) {
-                vv = images[j - 1].exposureAt(x, y);
-                if (images[j - 1].isSaturatedAround(x, y)) {
-                    vv /= md.whiteMultAt(x, y);
+                if (j > 0 && images[j - 1].contains(x, y)) {
+                    vv = images[j - 1].exposureAt(x, y);
+                    if (images[j - 1].isSaturatedAround(x, y)) {
+                        vv /= params.whiteMultAt(x, y);
+                    }
+                } else {
+                    p = 0.0;
                 }
-            } else {
-                p = 0.0;
+                v = v*(1.0 - p) + vv*p;
+                dst(x, y) = v;
+                if (v > maxthr) {
+                    maxthr = v;
+                }
             }
-            v = v*(1.0 - p) + vv*p;
-            dst[pos] = v;
-            if (v > max) {
-                max = v;
-            }
+        }
+        #pragma omp critical
+        if (maxthr > max) {
+            max = maxthr;
         }
     }
 
-    for (size_t pos = 0; pos < width * height; ++pos) {
-        dst[pos] /= max;
+    for (size_t y = 0; y < height; ++y) {
+        for (size_t x = 0; x < width; ++x) {
+            dst(x, y) /= max;
+        }
     }
+    dst.displace(params.leftMargin, params.topMargin);
     return dst;
 }

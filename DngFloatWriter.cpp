@@ -217,7 +217,11 @@ void DngFloatWriter::createRawIFD() {
     rawIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 0);
     rawIFD.addEntry(IMAGEWIDTH, IFD::LONG, width);
     rawIFD.addEntry(IMAGELENGTH, IFD::LONG, height);
-    uint32_t aa[] = { 0, 0, height, width };
+    uint32_t aa[4];
+    aa[0] = params->topMargin;
+    aa[1] = params->leftMargin;
+    aa[2] = aa[0] + params->height;
+    aa[3] = aa[1] + params->width;
     rawIFD.addEntry(ACTIVEAREA, IFD::LONG, 4, aa);
     rawIFD.addEntry(SAMPLESPERPIXEL, IFD::SHORT, 1);
     rawIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, bps);

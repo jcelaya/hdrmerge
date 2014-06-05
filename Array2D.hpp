@@ -74,6 +74,9 @@ public:
     size_t getHeight() const {
         return height;
     }
+    size_t size() const {
+        return width*height;
+    }
     int getDeltaX() const {
         return dx;
     }

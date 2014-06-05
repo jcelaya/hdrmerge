@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(testDngFloatWriter) {
             Array2D<float> result(image.getWidth(), image.getHeight());
             for (int i = 0; i < image.getWidth()*image.getHeight(); ++i)
                 result[i] = image[i] / max;
-            QImage preview = ImageIO::renderPreview(result, params.fileName, 1.0);
+            QImage preview = ImageIO::renderPreview(result, params, 1.0);
             DngFloatWriter writer;
             writer.setBitsPerSample(bps);
             writer.setPreviewWidth(width);

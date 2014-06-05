@@ -108,11 +108,13 @@ int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     Log::msg(2, "Writing ", options.fileName, ", ", options.bps, "-bit, ", stack.getWidth(), 'x', stack.getHeight(), cropped);
 
     progress.advance(0, "Rendering image");
-    RawParameters & params = *rawParameters.back();
+    RawParameters params = *rawParameters.back();
+    params.width = stack.getWidth();
+    params.height = stack.getHeight();
     Array2D<float> composedImage = stack.compose(params);
 
     progress.advance(33, "Rendering preview");
-    QImage preview = renderPreview(composedImage, params.fileName, stack.getMaxExposure());
+    QImage preview = renderPreview(composedImage, params, stack.getMaxExposure());
 
     progress.advance(66, "Writing output");
     DngFloatWriter writer;
@@ -170,7 +172,7 @@ static void prepareRawBuffer(LibRaw & rawProcessor) {
 }
 
 
-QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string & fileName, float expShift) {
+QImage ImageIO::renderPreview(const Array2D<float> & rawData, RawParameters & rawParameters, float expShift) {
     Timer t("Render preview");
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
@@ -187,19 +189,17 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string 
     d.params.exp_correc = 1;
     d.params.exp_shift = expShift;
     d.params.exp_preser = 1.0;
-    if (rawProcessor.open_file(fileName.c_str()) == LIBRAW_SUCCESS) {
+    if (rawProcessor.open_file(rawParameters.fileName.c_str()) == LIBRAW_SUCCESS) {
 //             && rawProcessor.unpack() == LIBRAW_SUCCESS) {
         prepareRawBuffer(rawProcessor);
-        d.sizes.height = rawData.getHeight();
-        d.sizes.width = rawData.getWidth();
-        for (size_t y = 0; y < rawData.getHeight(); ++y) {
-            for (size_t x = 0; x < rawData.getWidth(); ++x) {
-                size_t dpos = (y + d.sizes.top_margin)*d.sizes.raw_width + x + d.sizes.left_margin;
-                int v = rawData(x, y) * d.params.user_sat;
-                if (v < 0) v = 0;
-                else if (v > 65535) v = 65535;
-                d.rawdata.raw_image[dpos] = v;
-            }
+        // Assume the other sizes are the ones in the raw parameters
+        d.sizes.width = rawParameters.width;
+        d.sizes.height = rawParameters.height;
+        for (size_t pos = 0; pos < rawData.size(); ++pos) {
+            int v = rawData[pos] * d.params.user_sat;
+            if (v < 0) v = 0;
+            else if (v > 65535) v = 65535;
+            d.rawdata.raw_image[pos] = v;
         }
         int error = rawProcessor.dcraw_process();
         libraw_processed_image_t * image = rawProcessor.dcraw_make_mem_image();
@@ -215,7 +215,7 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string 
                 }
             }
             // The result is a bit bigger than the original...
-            return interpolated.copy(0, 0, rawData.getWidth(), rawData.getHeight());
+            return interpolated.copy(0, 0, rawParameters.width, rawParameters.height);
         }
     }
     return QImage();

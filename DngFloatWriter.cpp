@@ -289,6 +289,16 @@ void DngFloatWriter::renderPreviews() {
 }
 
 
+void DngFloatWriter::setPreview(const QImage & p) {
+    thumbnail = p.scaledToWidth(256, Qt::SmoothTransformation).convertToFormat(QImage::Format_RGB888);
+    if (previewWidth != p.width()) {
+        preview = p.scaledToWidth(previewWidth, Qt::SmoothTransformation);
+    } else {
+        preview = p;
+    }
+}
+
+
 void DngFloatWriter::writePreviews() {
     size_t thumbsize = thumbnail.width() * thumbnail.height() * 3;
     mainIFD.setValue(STRIPBYTES, thumbsize);

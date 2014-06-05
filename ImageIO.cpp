@@ -160,7 +160,7 @@ static void prepareRawBuffer(LibRaw & rawProcessor) {
     auto & s = i.sizes;
     r.color4_image = nullptr;
     r.color3_image = nullptr;
-    r.raw_alloc = std::malloc(s.raw_width * (s.raw_height + 7) * sizeof(ushort));
+    r.raw_alloc = std::calloc(s.raw_width * (s.raw_height + 7), sizeof(ushort));
     r.raw_image = (ushort*) r.raw_alloc;
     if(!s.raw_pitch)
         s.raw_pitch = s.raw_width*2; // Bayer case, not set before
@@ -214,7 +214,8 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const std::string 
                     interpolated.setPixel(x, y, qRgb(r, g, b));
                 }
             }
-            return interpolated;
+            // The result is a bit bigger than the original...
+            return interpolated.copy(0, 0, rawData.getWidth(), rawData.getHeight());
         }
     }
     return QImage();

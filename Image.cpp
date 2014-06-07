@@ -61,7 +61,7 @@ void Image::buildImage(uint16_t * rawImage, const RawParameters & params) {
             max = maxPerColor[c];
         }
     }
-    relExp = max == 0 ? 0 : 65535.0 / max;
+    relExp = max == 0 ? 1.0 : 65535.0 / max;
     brightness /= size;
     subtractBlack(params);
     satThreshold = 0.99*max;

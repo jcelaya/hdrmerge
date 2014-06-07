@@ -24,8 +24,9 @@
 #define _RAWPARAMETERS_H_
 
 #include <string>
-class LibRaw;
+#include "Array2D.hpp"
 
+class LibRaw;
 
 namespace hdrmerge {
 
@@ -43,6 +44,7 @@ public:
         return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc && flip == r.flip;
     }
     uint8_t FC(int x, int y) const {
+        // (x, y) is relative to the ACTIVE AREA
         return (filters >> (((y << 1 & 14) | (x & 1)) << 1) & 3);
     }
     double logExp() const;
@@ -57,7 +59,8 @@ public:
         return camMul[FC(x, y)];
     }
     void adjustBlack();
-    void adjustWhite();
+    void adjustWhite(const Array2D<uint16_t> & image);
+    void autoWB(const Array2D<uint16_t> & image);
 
     std::string fileName;
     size_t width, height;
@@ -66,7 +69,9 @@ public:
     uint32_t filters;
     uint16_t max;
     uint16_t black;
+    uint16_t maxBlack;
     uint16_t cblack[4];
+    float preMul[4];
     float camMul[4];
     float camXyz[4][3];
     float rgbCam[3][4];

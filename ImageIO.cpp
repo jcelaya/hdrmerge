@@ -41,7 +41,6 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
             && d.idata.colors == 3 && d.idata.filters > 1000
             && rawProcessor.unpack() == LIBRAW_SUCCESS) {
             rawParameters.fromLibRaw(rawProcessor);
-            rawParameters.dumpInfo();
         }
     }
     return Image(d.rawdata.raw_image, rawParameters);
@@ -111,6 +110,7 @@ int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     RawParameters params = *rawParameters.back();
     params.width = stack.getWidth();
     params.height = stack.getHeight();
+    params.adjustWhite(stack.getImage(stack.size() - 1));
     Array2D<float> composedImage = stack.compose(params);
 
     progress.advance(33, "Rendering preview");
@@ -162,17 +162,17 @@ static void prepareRawBuffer(LibRaw & rawProcessor) {
     auto & s = i.sizes;
     r.color4_image = nullptr;
     r.color3_image = nullptr;
-    r.raw_alloc = std::calloc(s.raw_width * (s.raw_height + 7), sizeof(ushort));
+    size_t numPixels = s.raw_width * (s.raw_height + 7);
+    r.raw_alloc = std::malloc(numPixels * sizeof(ushort));
     r.raw_image = (ushort*) r.raw_alloc;
-    if(!s.raw_pitch)
-        s.raw_pitch = s.raw_width*2; // Bayer case, not set before
+    s.raw_pitch = s.raw_width*2;
     copy_n(&i.color, 1, &r.color);
     copy_n(&i.sizes, 1, &r.sizes);
     copy_n(&i.idata, 1, &r.iparams);
 }
 
 
-QImage ImageIO::renderPreview(const Array2D<float> & rawData, RawParameters & rawParameters, float expShift) {
+QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameters & params, float expShift) {
     Timer t("Render preview");
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
@@ -184,22 +184,27 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, RawParameters & ra
     d.params.highlight = 2;
     d.params.user_qual = 3;
     d.params.med_passes = 0;
-    d.params.use_camera_wb = 1;
+    copy_n(params.camMul, 4, d.params.user_mul);
     d.params.user_flip = 0;
     d.params.exp_correc = 1;
     d.params.exp_shift = expShift;
     d.params.exp_preser = 1.0;
-    if (rawProcessor.open_file(rawParameters.fileName.c_str()) == LIBRAW_SUCCESS) {
+    if (rawProcessor.open_file(params.fileName.c_str()) == LIBRAW_SUCCESS) {
 //             && rawProcessor.unpack() == LIBRAW_SUCCESS) {
         prepareRawBuffer(rawProcessor);
-        // Assume the other sizes are the ones in the raw parameters
-        d.sizes.width = rawParameters.width;
-        d.sizes.height = rawParameters.height;
-        for (size_t pos = 0; pos < rawData.size(); ++pos) {
-            int v = rawData[pos] * d.params.user_sat;
-            if (v < 0) v = 0;
-            else if (v > 65535) v = 65535;
-            d.rawdata.raw_image[pos] = v;
+        // Assume the other sizes are the same as in the raw parameters
+        d.sizes.width = params.width;
+        d.sizes.height = params.height;
+        size_t oddx = params.leftMargin & 1, oddy = params.topMargin & 1;
+        float scale = d.params.user_sat / (float)(params.max - params.black);
+        for (size_t y = 0; y < params.rawHeight; ++y) {
+            for (size_t x = 0; x < params.rawWidth; ++x) {
+                size_t pos = y*params.rawWidth + x;
+                int v = (rawData[pos] - params.blackAt(x ^ oddx, y ^ oddy)) * scale;
+                if (v < 0) v = 0;
+                else if (v > 65535) v = 65535;
+                d.rawdata.raw_image[pos] = v;
+            }
         }
         int error = rawProcessor.dcraw_process();
         libraw_processed_image_t * image = rawProcessor.dcraw_make_mem_image();
@@ -214,8 +219,8 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, RawParameters & ra
                     interpolated.setPixel(x, y, qRgb(r, g, b));
                 }
             }
-            // The result is a bit bigger than the original...
-            return interpolated.copy(0, 0, rawParameters.width, rawParameters.height);
+            // The result may be a bit bigger than the original...
+            return interpolated.copy(0, 0, params.width, params.height);
         }
     }
     return QImage();

@@ -50,6 +50,9 @@ enum {
     BITSPERSAMPLE = 258,
     FILLORDER = 266,
     ACTIVEAREA = 50829,
+    MASKEDAREAS = 50830,
+    CROPORIGIN = 50719,
+    CROPSIZE = 50720,
 
     TILEWIDTH = 322,
     TILELENGTH = 323,
@@ -63,6 +66,8 @@ enum {
     COMPRESSION = 259,
     PREDICTOR = 317,
     SAMPLEFORMAT = 339,
+    BLACKLEVELREP = 50713,
+    BLACKLEVEL = 50714,
     WHITELEVEL = 50717,
     CFAPATTERNDIM = 33421,
     CFAPATTERN = 33422,
@@ -99,6 +104,13 @@ void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p,
     rawData = std::move(rawPixels);
     width = rawData.getWidth();
     height = rawData.getHeight();
+
+    // FIXME: This is temporal, until I fix RawTherapee
+    width = params->width;
+    height = params->height;
+    rawData.displace(-(int)params->leftMargin, -(int)params->topMargin);
+    // FIXME: END
+
     renderPreviews();
 
     file.open(filename, ios_base::binary);
@@ -154,14 +166,17 @@ void DngFloatWriter::createMainIFD() {
     mainIFD.addEntry(CALIBRATIONILLUMINANT, IFD::SHORT, 21); // D65
     string profName(params->maker + " " + params->model);
     mainIFD.addEntry(PROFILENAME, IFD::ASCII, profName.length() + 1, profName.c_str());
-    int32_t colorMatrix[18];
-    for (int row = 0, i = 0; row < 3; ++row) {
-        for (int col = 0; col < 3; ++col) {
-            colorMatrix[i++] = std::round(params->camXyz[row][col] * 10000.0f);
-            colorMatrix[i++] = 10000;
+    if (params->camXyz[0][0]) {
+        // TODO: Not including this tag breaks the DNG standard, but...
+        int32_t colorMatrix[18];
+        for (int row = 0, i = 0; row < 3; ++row) {
+            for (int col = 0; col < 3; ++col) {
+                colorMatrix[i++] = std::round(params->camXyz[row][col] * 10000.0f);
+                colorMatrix[i++] = 10000;
+            }
         }
+        mainIFD.addEntry(COLORMATRIX, IFD::SRATIONAL, 9, colorMatrix);
     }
-    mainIFD.addEntry(COLORMATRIX, IFD::SRATIONAL, 9, colorMatrix);
 
     // Color
     uint32_t analogBalance[] = { 1, 1, 1, 1, 1, 1 };
@@ -217,12 +232,48 @@ void DngFloatWriter::createRawIFD() {
     rawIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 0);
     rawIFD.addEntry(IMAGEWIDTH, IFD::LONG, width);
     rawIFD.addEntry(IMAGELENGTH, IFD::LONG, height);
+
+    // Areas
     uint32_t aa[4];
     aa[0] = params->topMargin;
     aa[1] = params->leftMargin;
+    // FIXME: This is temporal, until I fix RawTherapee
+    aa[0] = aa[1] = 0;
+    // FIXME: END
     aa[2] = aa[0] + params->height;
     aa[3] = aa[1] + params->width;
     rawIFD.addEntry(ACTIVEAREA, IFD::LONG, 4, aa);
+    uint32_t ma[16];
+    int nma = 0;
+    if (aa[0] > 0) {
+        ma[nma] = 0; ma[nma + 1] = 0; ma[nma + 2] = aa[0]; ma[nma + 3] = width; nma += 4;
+    }
+    if (aa[1] > 0) {
+        ma[nma] = aa[0]; ma[nma + 1] = 0; ma[nma + 2] = aa[2]; ma[nma + 3] = aa[1]; nma += 4;
+    }
+    if (aa[2] < height) {
+        ma[nma] = aa[2]; ma[nma + 1] = 0; ma[nma + 2] = height; ma[nma + 3] = width; nma += 4;
+    }
+    if (aa[3] < width) {
+        ma[nma] = aa[0]; ma[nma + 1] = aa[3]; ma[nma + 2] = aa[2]; ma[nma + 3] = width; nma += 4;
+    }
+    if (nma > 0) {
+        rawIFD.addEntry(MASKEDAREAS, IFD::LONG, nma, ma);
+    } else {
+        // If there are no masked areas, black levels must be encoded, but not both.
+        uint16_t brep[2] = { 2, 2 };
+        rawIFD.addEntry(BLACKLEVELREP, IFD::SHORT, 2, brep);
+        uint16_t cblack[] = { params->blackAt(0, 0), params->blackAt(1, 0),
+                              params->blackAt(0, 1), params->blackAt(1, 1) };
+        rawIFD.addEntry(BLACKLEVEL, IFD::SHORT, 4, cblack);
+    }
+    uint32_t crop[2];
+    crop[0] = 0;
+    crop[1] = 0;
+    rawIFD.addEntry(CROPORIGIN, IFD::LONG, 2, crop);
+    crop[0] = params->width;
+    crop[1] = params->height;
+    rawIFD.addEntry(CROPSIZE, IFD::LONG, 2, crop);
     rawIFD.addEntry(SAMPLESPERPIXEL, IFD::SHORT, 1);
     rawIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, bps);
     if (bps == 24) {
@@ -241,7 +292,7 @@ void DngFloatWriter::createRawIFD() {
     rawIFD.addEntry(TILEOFFSETS, IFD::LONG, numTiles, buffer);
     rawIFD.addEntry(TILEBYTES, IFD::LONG, numTiles, buffer);
 
-    rawIFD.addEntry(WHITELEVEL, IFD::SHORT, 1);
+    rawIFD.addEntry(WHITELEVEL, IFD::SHORT, params->max);
     rawIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, 32803); // CFA
     uint16_t cfaPatternDim[] = { 2, 2 };
     rawIFD.addEntry(CFAPATTERNDIM, IFD::SHORT, 2, cfaPatternDim);

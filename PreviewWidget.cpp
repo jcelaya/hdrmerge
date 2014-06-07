@@ -228,13 +228,15 @@ void PreviewWidget::wheelEvent(QWheelEvent * event) {
 
 void PreviewWidget::undo() {
     if (stack.getMask().canUndo()) {
-        render(stack.getMask().undo());
+        QRect undoRect = stack.getMask().undo();
+        render(QRect(unrotate(undoRect.topLeft()), unrotate(undoRect.bottomRight())));
     }
 }
 
 
 void PreviewWidget::redo() {
     if (stack.getMask().canRedo()) {
-        render(stack.getMask().redo());
+        QRect redoRect = stack.getMask().redo();
+        render(QRect(unrotate(redoRect.topLeft()), unrotate(redoRect.bottomRight())));
     }
 }

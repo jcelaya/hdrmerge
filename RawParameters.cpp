@@ -34,8 +34,8 @@ using namespace std;
 void adobe_cam_xyz(const string & t_make, const string & t_model, float * cam_xyz);
 
 
-RawParameters::RawParameters() : width(0), height(0), rawWidth(0), rawHeight(0), topMargin(0), leftMargin(0), filters(0),
-max(0), black(0), cblack{}, camMul{}, camXyz{}, rgbCam{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
+RawParameters::RawParameters() : width(0), height(0), rawWidth(0), rawHeight(0), topMargin(0), leftMargin(0), filters(0), max(0),
+black(0), maxBlack(0), cblack{}, preMul{}, camMul{}, camXyz{}, rgbCam{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
 void RawParameters::fromLibRaw(const LibRaw & rawData) {
@@ -52,11 +52,12 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
     black = r.color.black;
     copy_n(r.color.cblack, 4, cblack);
     adjustBlack();
+    copy_n(r.color.pre_mul, 4, preMul);
     copy_n(r.color.cam_mul, 4, camMul);
-    if (camMul[0] == 0 || camMul[1] == 0 || camMul[2] == 0) {
-        copy_n(r.color.pre_mul, 4, camMul);
+    if (camMul[0] == 0 || camMul[0] == -1) {
+        Log::msg(Log::DEBUG, "Invalid camera white balance: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
+        camMul[0] = 0;
     }
-    adjustWhite();
     copy_n((float *)r.color.cam_xyz, 3*4, (float *)camXyz);
     copy_n((float *)r.color.rgb_cam, 4*3, (float *)rgbCam);
     isoSpeed = r.other.iso_speed;
@@ -86,6 +87,7 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
     if (!camXyz[0][0]) {
         adobe_cam_xyz(maker, model, (float *)camXyz);
     }
+    dumpInfo();
 }
 
 
@@ -96,33 +98,62 @@ double RawParameters::logExp() const {
 
 void RawParameters::adjustBlack() {
     uint16_t minb = cblack[0] + black;
+    maxBlack = minb;
     for (int i = 0; i < 4; ++i) {
         cblack[i] += black;
         if (minb > cblack[i]) {
             minb = cblack[i];
         }
+        if (maxBlack < cblack[i])
+            maxBlack = cblack[i];
     }
     black = minb;
 }
 
 
-void RawParameters::adjustWhite() {
-    // FIXME: Set to 1, because I don't know how to
-    // compute the correct white balance (if at all posible)
-    if (camMul[0] == 0 || camMul[1] == 0 || camMul[2] == 0) {
-        camMul[0] = camMul[1] = camMul[2] = 1;
+void RawParameters::adjustWhite(const Array2D<uint16_t> & image) {
+    if (camMul[0] == 0) {
+        autoWB(image);
     }
     float green = camMul[1];
     for (int c = 0; c < 3; ++c) {
         camMul[c] /= green;
     }
     camMul[3] = camMul[1];
+    Log::msg(Log::DEBUG, "Adjusted white balance: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
+}
+
+
+void RawParameters::autoWB(const Array2D<uint16_t> & image) {
+    double sum[4] = { 0.0, 0.0, 0.0, 0.0 };
+    size_t count[4] = { 0, 0, 0, 0 };
+    for (size_t y = 0; y < image.getHeight(); ++y) {
+        for (size_t x = 0; x < image.getWidth(); ++x) {
+            int c = FC(x, y);
+            sum[c] += image(x, y);
+            count[c]++;
+        }
+    }
+    for (int c = 0; c < 4; ++c) {
+        if (sum[c] > 0.0) {
+            camMul[c] = count[c] / sum[c];
+        } else {
+            copy_n(preMul, 4, camMul);
+            break;
+        }
+    }
 }
 
 
 void RawParameters::dumpInfo() const {
+    size_t slashpos = fileName.find_last_of('/');
+    slashpos = slashpos == string::npos ? 0 : slashpos + 1;
     // Show idata
-    Log::msg(Log::DEBUG, width, 'x', height, ", by ", maker, ' ' , model, ", ", hex, filters, dec, ' ', cdesc, ", ", max, " sat, flip ", flip);
-    // Show other
-    Log::msg(Log::DEBUG, isoSpeed, "ISO 1/", (1.0/shutter), "sec f", aperture, " EV:", logExp(), " wb: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
+    Log::msg(Log::DEBUG,
+             fileName.substr(slashpos), ": ", width, 'x', height, " (", rawWidth, 'x', rawHeight, '+', leftMargin, '+', topMargin,
+             ", by ", maker, ' ' , model, ", ", isoSpeed, "ISO 1/", (1.0/shutter), "sec f", aperture, " EV:", logExp()
+    );
+    Log::msg(Log::DEBUG, hex, filters, dec, ' ', cdesc, ", sat ", max, ", black ", black, ", flip ", flip,
+             ", wb: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3],
+             ", cblack: ", cblack[0], ' ', cblack[1], ' ', cblack[2], ' ', cblack[3]);
 }

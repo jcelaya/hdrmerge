@@ -100,6 +100,11 @@ private:
     void render(QRect zone);
     QRgb rgb(int col, int row) const;
     void rotate(int & x, int & y) const;
+    QPoint unrotate(QPoint p) const {
+        int x = p.x(), y = p.y();
+        rotate(x, y); rotate(x, y); rotate(x, y);
+        return QPoint(x, y);
+    }
     void createBrush(bool plus);
     void setShowBrush();
     void repaintAsync();

@@ -52,18 +52,31 @@ HDRMerge also allows you to treat HDR images as any other raw image, introducing
 
 In the last revision of the DNG SDK, version 1.4, Adobe introduced the possibility of encoding the data as 16-, 24- and 32-bit floating point numbers, instead of the usual 16-bit integers. In this way, the dynamic range that can be represented with such an encoding is vastly increased. Furthermore, the floating point encoding dedicates the same number of levels to each exposure step.
 
-The drawback is that very few programs read this format. Officially, only recent versions of Adobe products read it. I have confirmed Adobe Lightroom v5.4 myself. So, I also provided a patch for the fantastic [RawTherapee][1] raw development program that allows it to import this format natively. This functionality is available from [its repository code][2] and will be publicly released in version 4.1. RawTherapee includes a tone mapping operator that produces great results (realistic ones, at least; if you like alien landscapes, this may be not for you).
+The drawback is that very few programs read this format. Officially, only recent versions of Adobe products read it. I have confirmed Adobe Lightroom v5.4 myself. So, I also provided a patch for the fantastic [RawTherapee][1] raw development program that allows it to import this format natively. It is available since version 4.1. RawTherapee includes a tone mapping operator that produces great results (realistic ones, at least; if you like alien landscapes, this may not be for you).
 
-If you want to tone-map an image resulting from HDRMerge with a program like Luminance or Photomatix, a solution would be to develop it first as a 16-bit TIFF image, with RawTherapee or Lightroom. Then, open it with your tone-mapping program as a single image. 16-bit integers, along with a gamma correction, are usually enough to encode most HDR images with detailed shadows free of noise (after all, the dynamic range is all about [noise][3]). You can also pull the shadows up yourself during raw development.
+If you want to tone-map an image resulting from HDRMerge with a program like Luminance or Photomatix, a solution would be to develop it first as a 16-bit TIFF image, with RawTherapee or Lightroom. Then, open it with your tone-mapping program as a single image. 16-bit integers, along with a gamma correction, are usually enough to encode most HDR images with detailed shadows free of noise (after all, the dynamic range is all about [noise][2]). You can also pull the shadows up yourself during raw development.
 
 [1]: http://rawtherapee.com/
-[2]: http://code.google.com/p/rawtherapee/
-[3]: http://theory.uchicago.edu/~ejm/pix/20d/tests/noise/index.html
+[2]: http://theory.uchicago.edu/~ejm/pix/20d/tests/noise/index.html
 
 
 # Feature List
 
-v0.4.2:
+### v0.4.4:
+
+* Better support for more camera models.
+* Better rendering of the embedded preview image.
+* Change the edit brush radius with Alt+Mouse wheel.
+* Several bugfixes.
+  * The original embedded preview is not included in the output anymore.
+  * Fixed some glitches with the edit tools.
+
+### v0.4.3:
+
+* Fix segmentation fault error painting the preview of some rotated images.
+* Fix DateTime tag in Windows hosts.
+
+### v0.4.2:
 
 * Improved GUI:
   * A slider to control the brush radius.
@@ -74,11 +87,11 @@ v0.4.2:
   * Posibility of saving the output options.
 * First release with a Windows version, both 32- and 64-bit.
 
-v0.4.1:
+### v0.4.1:
 
 * Bugfixes release
 
-v0.4:
+### v0.4:
 
 * Great performance improvements with OpenMP.
 * Not depend anymore on DNG & XMP SDK! Windows and Mac version soon...
@@ -86,9 +99,9 @@ v0.4:
 * More control on the logging output.
 * The user may disable alignment and/or cropping. This is most useful to obtain an image of the same size as the inputs. Some programs have this requirement to apply a flat-field image, for instance.
 
-v0.3: This is the first public version of HDRMerge
+### v0.3: This is the first public version of HDRMerge
 
-* Supports any raw format supported by LibRaw.
+* Supports most raw format supported by LibRaw (No foveon of Fuji formats for the moment).
 * Automatic alignment of small translations.
 * Automatic crop to the optimal size.
 * Automatic merge mask creation. The mask identifies the best source image for each pixel of the output.
@@ -127,9 +140,9 @@ Source images can be loaded from the Open option in the File menu, or passed as 
 
 Once the input images are loaded, the interface presents you with a 100% preview of the result. The selected pixels from each input image are painted with a different color. You can then pan the result to inspect it.
 
-When some objects were moving while you took the shots, there will appear "ghosts". You can use the bottom toolbar to add or remove pixels from each image but the last one, until all the pixels that belong to a moving object only come from one of the input images. Usually, you will want to only remove pixels, starting with the first layer and then going down. Adding pixels to the first layers may result in burned areas appearing in the result image, so be careful. On the other hand, the pixels of the first layers contain less noise in the shadows. These operations can be undone and redone with the actions of the Edit menu.
+When some objects were moving while you took the shots, there will appear "ghosts". You can use the toolbar to add or remove pixels from each image but the last one, until all the pixels that belong to a moving object only come from one of the input images. Usually, you will want to only remove pixels, starting with the first layer and then going down. Adding pixels to the first layers may result in burned areas appearing in the result image, so be careful. On the other hand, the pixels of the first layers contain less noise in the shadows. These operations can be undone and redone with the actions of the Edit menu.
 
-Once the preview is satisfactory, the Save HDR option of the File menu generates the output DNG file. You can select the number of bits per sample (16, 24 or 32), the size of the embedded preview (full, half or no preview) and whether to save an image with the mask that was used to merge the input files. The number of bits per sample has an important impact in the output file size. As a rule of thumb, the default value of 16 bits will be enough most of the time. Empirical tests (thanks to DrSlony) show no apparent difference between 16- and 32-bit images, after merging 5 exposures with 2EV steps, despite strong manipulation of shadows/mid-tones/highlights. Nevertheless, if you see some unexpected noise in the shadows of the output image, you can try a 24-bit output. 32 bits will almost never be necessary, but it can be selected anyway.
+Once the preview is satisfactory, the Save HDR option of the File menu generates the output DNG file. You can select the number of bits per sample (16, 24 or 32), the size of the embedded preview (full, half or no preview) and whether to save an image with the mask that was used to merge the input files. The number of bits per sample has an important impact in the output file size. As a rule of thumb, the default value of 16 bits will be enough most of the time. Empirical tests (thanks to DrSlony) show no apparent difference between 16- and 32-bit images, after merging 5 exposures with 2EV steps, despite strong manipulation of shadows/mid-tones/highlights. Nevertheless, if you see some unexpected quantization noise in the output image, you can try a 24-bit output. 32 bits will almost never be necessary, but it can be selected anyway.
 
 The program can also be run without GUI, in batch mode. This is accomplished either by providing an output file name with the "-o" switch, or by generating an automatic one with the "-a" switch. Other switches control the output parameters, refer to the output of the "--help" switch.
 

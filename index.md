@@ -16,7 +16,7 @@ HDRMerge is currently supported in Linux and Windows, with the Mac version on it
 
 # Getting started
 
-You may want to read the [manual]({% post_url 2014-05-24-using-hdrmerge %}), or jump directly to the command line help with `hdrmerge --help`.
+You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-05-24-using-hdrmerge %}), or jump directly to the command line help with `hdrmerge --help`.
 
 
 # Feature List

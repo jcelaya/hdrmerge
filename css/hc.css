@@ -357,6 +357,13 @@ img
   padding-bottom:30px
 }
 
+.post img
+{
+  display: block;
+  margin-left: auto;
+  margin-right: auto
+}
+
 .user-social
 {
   color:#c4c4c4;

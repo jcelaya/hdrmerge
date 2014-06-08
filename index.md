@@ -21,6 +21,20 @@ You may want to read the [manual]({% post_url 2014-05-24-using-hdrmerge %}), or 
 
 # Feature List
 
+### v0.4.4:
+
+* Better support for more camera models.
+* Better rendering of the embedded preview image.
+* Change the edit brush radius with Alt+Mouse wheel.
+* Several bugfixes.
+  * The original embedded preview is not included in the output anymore.
+  * Fixed some glitches with the edit tools.
+
+### v0.4.3:
+
+* Fix segmentation fault error painting the preview of some rotated images.
+* Fix DateTime tag in Windows hosts.
+
 ### v0.4.2:
 
 * Improved GUI:
@@ -46,7 +60,7 @@ You may want to read the [manual]({% post_url 2014-05-24-using-hdrmerge %}), or 
 
 ### v0.3: The first public version of HDRMerge
 
-* Supports any raw format supported by LibRaw.
+* Supports most raw format supported by LibRaw (No foveon of Fuji formats for the moment).
 * Automatic alignment of small translations.
 * Automatic crop to the optimal size.
 * Automatic merge mask creation. The mask identifies the best source image for each pixel of the output.

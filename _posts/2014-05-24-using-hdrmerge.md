@@ -28,7 +28,7 @@ If neither "-o" nor "-a" is given, the program will show the GUI and load the fi
 
 When the GUI is invoked, the program will directly present you the Open dialog:
 
-![Load dialog]({{ site.url }}/images/load_dialog.png)
+![Load dialog]({{ site.baseurl }}/images/load_dialog.png)
 
 This dialog can also be shown later with the `Open` command in the `File` menu.
 The Open dialog allows you to select multiple raw images.
@@ -53,7 +53,7 @@ The size, orientation, Bayer pattern and black and white levels must be the same
 
 Once the input images are loaded, the interface presents you with the main window:
 
-![Main window]({{ site.url }}/images/main_window.png)
+![Main window]({{ site.baseurl }}/images/main_window.png)
 
 Most of its space is occupied by a 100% preview of the result.
 There, input images are stacked on top of each other, and you can see the selected pixels from each layer painted with a different color.
@@ -91,7 +91,7 @@ These operations can be undone and redone with the actions of the `Edit` menu, o
 Once you are satisfied with the preview, the `Save HDR` command of the `File` menu generates the output DNG file.
 It will first ask you for a file name, and then it will present the Save dialog:
 
-![Save dialog]({{ site.url }}/images/save_dialog.png)
+![Save dialog]({{ site.baseurl }}/images/save_dialog.png)
 
 You can select the number of bits per sample (16, 24 or 32), the size of the embedded preview (full, half or no preview) and whether to save an image with the mask that was used to merge the input files.
 The number of bits per sample has an important impact in the output file size.

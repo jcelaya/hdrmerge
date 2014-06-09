@@ -102,14 +102,9 @@ enum {
 void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p, const string & filename) {
     params = &p;
     rawData = std::move(rawPixels);
-    width = rawData.getWidth();
-    height = rawData.getHeight();
-
-    // FIXME: This is temporal, until I fix RawTherapee
     width = params->width;
     height = params->height;
     rawData.displace(-(int)params->leftMargin, -(int)params->topMargin);
-    // FIXME: END
 
     renderPreviews();
 
@@ -235,38 +230,14 @@ void DngFloatWriter::createRawIFD() {
 
     // Areas
     uint32_t aa[4];
-    aa[0] = params->topMargin;
-    aa[1] = params->leftMargin;
-    // FIXME: This is temporal, until I fix RawTherapee
     aa[0] = aa[1] = 0;
-    // FIXME: END
-    aa[2] = aa[0] + params->height;
-    aa[3] = aa[1] + params->width;
+    aa[2] = params->height;
+    aa[3] = params->width;
     rawIFD.addEntry(ACTIVEAREA, IFD::LONG, 4, aa);
-    uint32_t ma[16];
-    int nma = 0;
-    if (aa[0] > 0) {
-        ma[nma] = 0; ma[nma + 1] = 0; ma[nma + 2] = aa[0]; ma[nma + 3] = width; nma += 4;
-    }
-    if (aa[1] > 0) {
-        ma[nma] = aa[0]; ma[nma + 1] = 0; ma[nma + 2] = aa[2]; ma[nma + 3] = aa[1]; nma += 4;
-    }
-    if (aa[2] < height) {
-        ma[nma] = aa[2]; ma[nma + 1] = 0; ma[nma + 2] = height; ma[nma + 3] = width; nma += 4;
-    }
-    if (aa[3] < width) {
-        ma[nma] = aa[0]; ma[nma + 1] = aa[3]; ma[nma + 2] = aa[2]; ma[nma + 3] = width; nma += 4;
-    }
-    if (nma > 0) {
-        rawIFD.addEntry(MASKEDAREAS, IFD::LONG, nma, ma);
-    } else {
-        // If there are no masked areas, black levels must be encoded, but not both.
-        uint16_t brep[2] = { 2, 2 };
-        rawIFD.addEntry(BLACKLEVELREP, IFD::SHORT, 2, brep);
-        uint16_t cblack[] = { params->blackAt(0, 0), params->blackAt(1, 0),
-                              params->blackAt(0, 1), params->blackAt(1, 1) };
-        rawIFD.addEntry(BLACKLEVEL, IFD::SHORT, 4, cblack);
-    }
+    uint16_t brep[2] = { 2, 2 };
+    rawIFD.addEntry(BLACKLEVELREP, IFD::SHORT, 2, brep);
+    uint16_t cblack[] = { 0, 0, 0, 0 };
+    rawIFD.addEntry(BLACKLEVEL, IFD::SHORT, 4, cblack);
     uint32_t crop[2];
     crop[0] = 0;
     crop[1] = 0;

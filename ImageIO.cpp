@@ -200,7 +200,7 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
         for (size_t y = 0; y < params.rawHeight; ++y) {
             for (size_t x = 0; x < params.rawWidth; ++x) {
                 size_t pos = y*params.rawWidth + x;
-                int v = (rawData[pos] - params.blackAt(x ^ oddx, y ^ oddy)) * scale;
+                int v = rawData[pos] * scale;
                 if (v < 0) v = 0;
                 else if (v > 65535) v = 65535;
                 d.rawdata.raw_image[pos] = v;

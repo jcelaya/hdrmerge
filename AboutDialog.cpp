@@ -38,6 +38,7 @@ AboutDialog::AboutDialog(QWidget * parent, Qt::WindowFlags f) : QDialog(parent, 
     layout->addWidget(logoLabel);
     layout->addSpacing(12);
     QLabel * text = new QLabel("<h1>HDRMerge</h1>"
+    "<p><a href=\"http://jcelaya.github.io/hdrmerge/\">http://jcelaya.github.io/hdrmerge/</a></p>"
     "<p>" + tr("A software for the fusion of multiple raw images into a single high dynamic range image.") + "</p>"
         "<p>Copyright &copy; 2012 Javier Celaya (jcelaya@gmail.com)</p>"
         "<p>This is free software: you can redistribute it and/or modify it under the terms of the GNU "

@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <ostream>
+#include <string>
 
 #ifndef _TIFFDIRECTORY_HPP_
 #define _TIFFDIRECTORY_HPP_
@@ -76,6 +77,9 @@ public:
         }
     }
     void addEntry(uint16_t tag, uint16_t type, uint32_t count, const void * data);
+    void addEntry(uint16_t tag, const std::string str) {
+        addEntry(tag, ASCII, str.length() + 1, str.c_str());
+    }
     void write(std::ostream & file, bool hasNext);
     size_t length() const;
 

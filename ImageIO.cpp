@@ -212,6 +212,7 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
             Log::msg(2, "dcraw_make_mem_image() returned NULL");
         } else {
             QImage interpolated(image->width, image->height, QImage::Format_RGB32);
+            if (interpolated.isNull()) return QImage();
             for (int y = 0; y < image->height; ++y) {
                 for (int x = 0; x < image->width; ++x) {
                     int pos = (y*image->width + x)*3;
@@ -219,7 +220,7 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
                     interpolated.setPixel(x, y, qRgb(r, g, b));
                 }
             }
-            // The result may be a bit bigger than the original...
+            // The result may be some pixels bigger than the original...
             return interpolated.copy(0, 0, params.width, params.height);
         }
     }

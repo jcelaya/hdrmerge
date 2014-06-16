@@ -99,6 +99,20 @@ enum {
 } Tag;
 
 
+enum {
+    TIFF_CM = 3,
+    TIFF_D65 = 21,
+    TIFF_RGB = 2,
+    TIFF_UNCOMPRESSED = 1,
+    TIFF_DEFLATE = 8,
+    TIFF_JPEG = 7,
+    TIFF_FP2XPREDICTOR = 34894,
+    TIFF_FPFORMAT = 3,
+    TIFF_CFA = 32803,
+    TIFF_YCBCR = 6,
+} Constant;
+
+
 void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p, const string & filename) {
     params = &p;
     rawData = std::move(rawPixels);
@@ -141,28 +155,26 @@ void DngFloatWriter::createMainIFD() {
     mainIFD.addEntry(DNGBACKVERSION, IFD::BYTE, 4, dngVersion);
     uint8_t tiffep[] = { 1, 0, 0, 0 };
     mainIFD.addEntry(TIFFEPSTD, IFD::BYTE, 4, tiffep);
-    mainIFD.addEntry(MAKE, IFD::ASCII, params->maker.length() + 1, params->maker.c_str());
-    mainIFD.addEntry(MODEL, IFD::ASCII, params->model.length() + 1, params->model.c_str());
-    std::string appVersion("HDRMerge " HDRMERGE_VERSION_STRING);
-    mainIFD.addEntry(SOFTWARE, IFD::ASCII, appVersion.length() + 1, appVersion.c_str());
-    mainIFD.addEntry(RESOLUTIONUNIT, IFD::SHORT, 3); // Cm
+    mainIFD.addEntry(MAKE, params->maker);
+    mainIFD.addEntry(MODEL, params->model);
+    mainIFD.addEntry(SOFTWARE, "HDRMerge " HDRMERGE_VERSION_STRING);
+    mainIFD.addEntry(RESOLUTIONUNIT, IFD::SHORT, TIFF_CM);
     uint32_t resolution[] = { 100, 1 };
     mainIFD.addEntry(XRESOLUTION, IFD::RATIONAL, 1, resolution);
     mainIFD.addEntry(YRESOLUTION, IFD::RATIONAL, 1, resolution);
-    char empty[] = { 0 };
-    mainIFD.addEntry(COPYRIGHT, IFD::ASCII, 1, empty);
-    mainIFD.addEntry(IMAGEDESCRIPTION, IFD::ASCII, params->description.length() + 1, params->description.c_str());
+    mainIFD.addEntry(COPYRIGHT, "");
+    mainIFD.addEntry(IMAGEDESCRIPTION, params->description);
     QDateTime currentTime = QDateTime::currentDateTime();
     QString currentTimeText = currentTime.toString("yyyy:MM:dd hh:mm:ss");
-    mainIFD.addEntry(DATETIME, IFD::ASCII, 20, currentTimeText.toAscii().constData());
-    mainIFD.addEntry(DATETIMEORIGINAL, IFD::ASCII, params->dateTime.length() + 1, params->dateTime.c_str());
+    mainIFD.addEntry(DATETIME, currentTimeText.toAscii().constData());
+    mainIFD.addEntry(DATETIMEORIGINAL, params->dateTime);
 
     // Profile
-    mainIFD.addEntry(CALIBRATIONILLUMINANT, IFD::SHORT, 21); // D65
+    mainIFD.addEntry(CALIBRATIONILLUMINANT, IFD::SHORT, TIFF_D65);
     string profName(params->maker + " " + params->model);
-    mainIFD.addEntry(PROFILENAME, IFD::ASCII, profName.length() + 1, profName.c_str());
+    mainIFD.addEntry(PROFILENAME, profName);
     if (params->camXyz[0][0]) {
-        // TODO: Not including this tag breaks the DNG standard, but...
+        // TODO: Not including this tag breaks the DNG standard, but... don't know where to get it
         int32_t colorMatrix[18];
         for (int row = 0, i = 0; row < 3; ++row) {
             for (int col = 0; col < 3; ++col) {
@@ -183,10 +195,8 @@ void DngFloatWriter::createMainIFD() {
         (uint32_t)std::round(1000000.0 * wb[1]), 1000000,
         (uint32_t)std::round(1000000.0 * wb[2]), 1000000};
     mainIFD.addEntry(CAMERANEUTRAL, IFD::RATIONAL, 3, cameraNeutral);
-
     mainIFD.addEntry(ORIENTATION, IFD::SHORT, params->tiffOrientation);
-    string cameraName(params->maker + " " + params->model);
-    mainIFD.addEntry(UNIQUENAME, IFD::ASCII, cameraName.length() + 1, &cameraName[0]);
+    mainIFD.addEntry(UNIQUENAME, params->maker + " " + params->model);
     // TODO: Add Digest and Unique ID
     mainIFD.addEntry(SUBIFDS, IFD::LONG, previewWidth > 0 ? 2 : 1, subIFDoffsets);
 
@@ -198,8 +208,8 @@ void DngFloatWriter::createMainIFD() {
     uint16_t bpsthumb[] = {8, 8, 8};
     mainIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, 3, bpsthumb);
     mainIFD.addEntry(PLANARCONFIG, IFD::SHORT, 1);
-    mainIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, 2); // RGB
-    mainIFD.addEntry(COMPRESSION, IFD::SHORT, 1); // Uncompressed
+    mainIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, TIFF_RGB);
+    mainIFD.addEntry(COMPRESSION, IFD::SHORT, TIFF_UNCOMPRESSED);
     mainIFD.addEntry(ROWSPERSTRIP, IFD::LONG, thumbnail.height());
     mainIFD.addEntry(STRIPBYTES, IFD::LONG, 0);
     mainIFD.addEntry(STRIPOFFSETS, IFD::LONG, 0);
@@ -251,9 +261,9 @@ void DngFloatWriter::createRawIFD() {
         rawIFD.addEntry(FILLORDER, IFD::SHORT, 1);
     }
     rawIFD.addEntry(PLANARCONFIG, IFD::SHORT, 1);
-    rawIFD.addEntry(COMPRESSION, IFD::SHORT, 8); // Deflate
-    rawIFD.addEntry(PREDICTOR, IFD::SHORT, 34894); //FP2X
-    rawIFD.addEntry(SAMPLEFORMAT, IFD::SHORT, 3); // Floating Point
+    rawIFD.addEntry(COMPRESSION, IFD::SHORT, TIFF_DEFLATE);
+    rawIFD.addEntry(PREDICTOR, IFD::SHORT, TIFF_FP2XPREDICTOR);
+    rawIFD.addEntry(SAMPLEFORMAT, IFD::SHORT, TIFF_FPFORMAT);
 
     calculateTiles();
     uint32_t numTiles = tilesAcross * tilesDown;
@@ -264,8 +274,8 @@ void DngFloatWriter::createRawIFD() {
     rawIFD.addEntry(TILEBYTES, IFD::LONG, numTiles, buffer);
 
     rawIFD.addEntry(WHITELEVEL, IFD::SHORT, params->max);
-    rawIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, 32803); // CFA
     uint16_t cfaPatternDim[] = { 2, 2 };
+    rawIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, TIFF_CFA);
     rawIFD.addEntry(CFAPATTERNDIM, IFD::SHORT, 2, cfaPatternDim);
     uint8_t cfaPattern[] = { params->FC(0, 0), params->FC(1, 0), params->FC(0, 1), params->FC(1, 1) };
     for (uint8_t & i : cfaPattern) {
@@ -286,8 +296,8 @@ void DngFloatWriter::createPreviewIFD() {
     uint16_t bpspre[] = {8, 8, 8};
     previewIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, 3, bpspre);
     previewIFD.addEntry(PLANARCONFIG, IFD::SHORT, 1);
-    previewIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, 6); // YCbCr
-    previewIFD.addEntry(COMPRESSION, IFD::SHORT, 7); // JPEG
+    previewIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, TIFF_YCBCR);
+    previewIFD.addEntry(COMPRESSION, IFD::SHORT, TIFF_JPEG);
     previewIFD.addEntry(ROWSPERSTRIP, IFD::LONG, preview.height());
     previewIFD.addEntry(STRIPBYTES, IFD::LONG, 0);
     previewIFD.addEntry(STRIPOFFSETS, IFD::LONG, 0);

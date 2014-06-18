@@ -116,9 +116,8 @@ enum {
 void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p, const string & filename) {
     params = &p;
     rawData = std::move(rawPixels);
-    width = params->width;
-    height = params->height;
-    rawData.displace(-(int)params->leftMargin, -(int)params->topMargin);
+    width = rawData.getWidth();
+    height = rawData.getHeight();
 
     renderPreviews();
 
@@ -234,27 +233,36 @@ void DngFloatWriter::calculateTiles() {
 
 
 void DngFloatWriter::createRawIFD() {
+    uint16_t cfaRows, cfaCols;
+    cfaRows = cfaCols = 2;
+    uint16_t cfaPatternDim[] = { cfaRows, cfaCols };
+
     rawIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 0);
     rawIFD.addEntry(IMAGEWIDTH, IFD::LONG, width);
     rawIFD.addEntry(IMAGELENGTH, IFD::LONG, height);
 
     // Areas
-    uint32_t aa[4];
-    aa[0] = aa[1] = 0;
-    aa[2] = params->height;
-    aa[3] = params->width;
-    rawIFD.addEntry(ACTIVEAREA, IFD::LONG, 4, aa);
-    uint16_t brep[2] = { 2, 2 };
-    rawIFD.addEntry(BLACKLEVELREP, IFD::SHORT, 2, brep);
-    uint16_t cblack[] = { 0, 0, 0, 0 };
-    rawIFD.addEntry(BLACKLEVEL, IFD::SHORT, 4, cblack);
     uint32_t crop[2];
-    crop[0] = 0;
-    crop[1] = 0;
+    crop[0] = crop[1] = 0;
     rawIFD.addEntry(CROPORIGIN, IFD::LONG, 2, crop);
     crop[0] = params->width;
     crop[1] = params->height;
     rawIFD.addEntry(CROPSIZE, IFD::LONG, 2, crop);
+    uint32_t aa[4];
+    aa[0] = params->topMargin;
+    aa[1] = params->leftMargin;
+    aa[2] = aa[0] + params->height;
+    aa[3] = aa[1] + params->width;
+    rawIFD.addEntry(ACTIVEAREA, IFD::LONG, 4, aa);
+    rawIFD.addEntry(BLACKLEVELREP, IFD::SHORT, 2, cfaPatternDim);
+    uint16_t cblack[cfaRows * cfaCols];
+    for (int row = 0; row < cfaRows; ++row) {
+        for (int col = 0; col < cfaCols; ++col) {
+            cblack[row*cfaCols + col] = params->blackAt(col, row);
+        }
+    }
+    rawIFD.addEntry(BLACKLEVEL, IFD::SHORT, cfaRows * cfaCols, cblack);
+    rawIFD.addEntry(WHITELEVEL, IFD::SHORT, params->max);
     rawIFD.addEntry(SAMPLESPERPIXEL, IFD::SHORT, 1);
     rawIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, bps);
     if (bps == 24) {
@@ -273,15 +281,18 @@ void DngFloatWriter::createRawIFD() {
     rawIFD.addEntry(TILEOFFSETS, IFD::LONG, numTiles, buffer);
     rawIFD.addEntry(TILEBYTES, IFD::LONG, numTiles, buffer);
 
-    rawIFD.addEntry(WHITELEVEL, IFD::SHORT, params->max);
-    uint16_t cfaPatternDim[] = { 2, 2 };
     rawIFD.addEntry(PHOTOINTERPRETATION, IFD::SHORT, TIFF_CFA);
     rawIFD.addEntry(CFAPATTERNDIM, IFD::SHORT, 2, cfaPatternDim);
-    uint8_t cfaPattern[] = { params->FC(0, 0), params->FC(1, 0), params->FC(0, 1), params->FC(1, 1) };
+    uint8_t cfaPattern[cfaRows * cfaCols];
+    for (int row = 0; row < cfaRows; ++row) {
+        for (int col = 0; col < cfaCols; ++col) {
+            cfaPattern[row*cfaCols + col] = params->FC(col, row);
+        }
+    }
     for (uint8_t & i : cfaPattern) {
         if (i == 3) i = 1;
     }
-    rawIFD.addEntry(CFAPATTERN, IFD::BYTE, 4, cfaPattern);
+    rawIFD.addEntry(CFAPATTERN, IFD::BYTE, cfaRows * cfaCols, cfaPattern);
     uint8_t cfaPlaneColor[] = { 0, 1, 2 };
     rawIFD.addEntry(CFAPLANECOLOR, IFD::BYTE, 3, cfaPlaneColor);
     rawIFD.addEntry(CFALAYOUT, IFD::SHORT, 1);

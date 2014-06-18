@@ -114,12 +114,17 @@ void RawParameters::adjustBlack() {
 void RawParameters::adjustWhite(const Array2D<uint16_t> & image) {
     if (camMul[0] == 0) {
         autoWB(image);
-    }
-    float green = camMul[1];
-    for (int c = 0; c < 3; ++c) {
-        camMul[c] /= green;
+    } else if (camMul[1] == 0) {
+        camMul[1] = 1;
     }
     camMul[3] = camMul[1];
+    float min = camMul[0];
+    for (int c = 1; c < 4; ++c) {
+        min = std::min(min, camMul[c]);
+    }
+    for (int c = 0; c < 4; ++c) {
+        camMul[c] /= min;
+    }
     Log::msg(Log::DEBUG, "Adjusted white balance: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
 }
 

@@ -164,10 +164,11 @@ Array2D<float> ImageStack::compose(const RawParameters & params) const {
         }
     }
     dst.displace(params.leftMargin, params.topMargin);
-    // Scale to params.max
+    // Scale to params.max and recover the black levels
     for (size_t y = 0; y < params.rawHeight; ++y) {
         for (size_t x = 0; x < params.rawWidth; ++x) {
-            dst(x, y) *= params.max / max;
+            dst(x, y) *= (params.max - params.maxBlack) / max;
+            dst(x, y) += params.blackAt(x - params.leftMargin, y - params.topMargin);
         }
     }
 

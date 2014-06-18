@@ -315,7 +315,7 @@ void MainWindow::saveResult() {
         QSettings settings;
         QVariant lastDirSetting = settings.value("lastSaveDirectory");
         // Take the prefix and add the first and last suffix
-        QString name = (io.buildOutputFileName() + ".dng").c_str();
+        QString name = io.buildOutputFileName().c_str();
         if (!lastDirSetting.isNull()) {
             size_t slashPos = name.lastIndexOf('/');
             if (slashPos > name.length()) slashPos = 0;

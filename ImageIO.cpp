@@ -23,6 +23,8 @@
 #include <cstdlib>
 #include <algorithm>
 #include <QImage>
+#include <QString>
+#include <QRegExp>
 #include <libraw/libraw.h>
 #include "ImageIO.hpp"
 #include "DngFloatWriter.hpp"
@@ -228,56 +230,98 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
 }
 
 
+class FileNameManipulator {
+public:
+    FileNameManipulator(const vector<unique_ptr<RawParameters>> & paramList) {
+        names.reserve(paramList.size());
+        for (auto & rp : paramList) {
+            names.push_back(rp->fileName.c_str());
+        }
+        sort(names.begin(), names.end());
+    }
+
+    QString getInputBaseName(int i) {
+        i = adjustIndex(i);
+        if (i == -1) return QString();
+        else return getBaseName(names[i]);
+    }
+
+    QString getInputBaseNameNoExt(int i) {
+        QString name = getInputBaseName(i);
+        return name.mid(0, name.lastIndexOf('.'));
+    }
+
+    QString getInputDirName(int i) {
+        i = adjustIndex(i);
+        if (i == -1) return QString();
+        else return getDirName(names[i]);
+    }
+
+    QString getInputNumberSuffix(int i) {
+        QString name = getInputBaseNameNoExt(i);
+        int pos = name.length() - 1;
+        while (pos >= 0 && name[pos] >= '0' && name[pos] <= '9') pos--;
+        return name.mid(pos + 1);
+    }
+
+    static QString getBaseName(const QString & name) {
+        int slashPosition = name.lastIndexOf('/');
+        return slashPosition == -1 ? name : name.mid(slashPosition + 1);
+    }
+
+    static QString getDirName(const QString & name) {
+        int slashPosition = name.lastIndexOf('/');
+        return slashPosition == -1 ? "." : name.mid(0, slashPosition);
+    }
+
+private:
+    vector<QString> names;
+    int adjustIndex(int i) {
+        if (i < 0)
+            i = names.size() + i;
+        return i < 0 || i >= names.size() ? -1 : i;
+    }
+};
+
+
 string ImageIO::buildOutputFileName() const {
-    string name;
-    vector<string> names;
-    for (auto & rp : rawParameters) {
-        name = rp->fileName;
-        name = name.substr(0, name.find_last_of('.'));
-        names.push_back(name);
-    }
-    sort(names.begin(), names.end());
-    if (names.size() > 1) {
-        string & last = names.back();
-        int pos = last.length() - 1;
-        while (last[pos] >= '0' && last[pos] <= '9') pos--;
-        name = names.front() + '-' + names.back().substr(pos + 1);
-    } else {
-        name = names.front();
-    }
-    return name;
+    if (rawParameters.size() > 1)
+        return replaceArguments("%id[-1]/%iF[0]-%in[-1].dng", "");
+    else
+        return replaceArguments("%id[-1]/%iF[0].dng", "");
 }
 
 
-string ImageIO::replaceArguments(const string & maskFileName, const string & outFileName) {
-    string result = maskFileName;
-    const char * specs[4] = {
-        "%if",
-        "%id",
-        "%of",
-        "%od"
-    };
-    string names[4];
-    string inFileName = rawParameters.back()->fileName;
-    size_t index = inFileName.find_last_of('/');
-    if (index != string::npos) {
-        names[1] = inFileName.substr(0, index);
-        names[0] = inFileName.substr(index + 1);
-    } else {
-        names[0] = inFileName;
-    }
-    index = outFileName.find_last_of('/');
-    if (index != string::npos) {
-        names[3] = outFileName.substr(0, index);
-        names[2] = outFileName.substr(index + 1);
-    } else {
-        names[2] = outFileName;
-    }
-    // Replace specifiers
-    for (int i = 0; i < 4; ++i) {
-        while ((index = result.find(specs[i])) != string::npos) {
-            result.replace(index, 3, names[i]);
+string ImageIO::replaceArguments(const string & pattern, const string & outFileName) const {
+    QString result(pattern.c_str());
+    QRegExp re("%(?:o[fd]|i[fFdn]\\[(-?[0-9]+)\\]|%)");
+    int index = 0;
+    FileNameManipulator fnm(rawParameters);
+    while ((index = result.indexOf(re, index)) != -1) {
+        // What was matched?
+        QString token = re.cap();
+        if (token[1] == '%') {
+            result.replace(index, 2, '%');
+        } else if (token[1] == 'o') {
+            if (token[2] == 'f') {
+                result.replace(index, 3, fnm.getBaseName(outFileName.c_str()));
+            } else {
+                result.replace(index, 3, fnm.getDirName(outFileName.c_str()));
+            }
+        } else { // 'i'
+            int imageIndex = re.cap(1).toInt();
+            int length = re.cap(1).length() + 5;
+            if (token[2] == 'f') {
+                result.replace(index, length, fnm.getInputBaseName(imageIndex));
+            } else if (token[2] == 'F') {
+                result.replace(index, length, fnm.getInputBaseNameNoExt(imageIndex));
+            } else if (token[2] == 'd') {
+                result.replace(index, length, fnm.getInputDirName(imageIndex));
+            } else { // 'n'
+                result.replace(index, length, fnm.getInputNumberSuffix(imageIndex));
+            }
         }
+        index++;
     }
-    return result;
+    return result.toUtf8().constData();
 }

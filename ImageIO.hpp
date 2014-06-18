@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <QImage>
+#include <QDateTime>
 #include "ImageStack.hpp"
 #include "ProgressIndicator.hpp"
 #include "LoadSaveOptions.hpp"
@@ -47,6 +48,7 @@ public:
     }
 
     std::string buildOutputFileName() const;
+    std::string replaceArguments(const std::string & pattern, const std::string & outFileName) const;
     static Image loadRawImage(RawParameters & rawParameters);
     static QImage renderPreview(const Array2D<float> & rawData, const RawParameters & rawParameters, float expShift);
 
@@ -54,7 +56,6 @@ private:
     ImageStack stack;
     std::vector<std::unique_ptr<RawParameters>> rawParameters;
 
-    std::string replaceArguments(const std::string & maskFileName, const std::string & outFileName);
     void writeMaskImage(const std::string & maskFile);
 };
 

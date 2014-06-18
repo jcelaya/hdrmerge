@@ -81,12 +81,13 @@ int Launcher::automaticMerge() {
         return 1;
     }
     if (!wOptions.fileName.empty()) {
+        wOptions.fileName = io.replaceArguments(wOptions.fileName, "");
         size_t extPos = wOptions.fileName.find_last_of('.');
         if (extPos > wOptions.fileName.length() || wOptions.fileName.substr(extPos) != ".dng") {
             wOptions.fileName += ".dng";
         }
     } else {
-        wOptions.fileName = io.buildOutputFileName() + ".dng";
+        wOptions.fileName = io.buildOutputFileName();
     }
     Log::msg(Log::PROGRESS, tr("Writing result to %1").arg(wOptions.fileName.c_str()));
     io.save(wOptions, progress);
@@ -104,6 +105,7 @@ void Launcher::parseCommandLine() {
         } else if (string("-m") == argv[i]) {
             if (++i < argc) {
                 wOptions.maskFileName = argv[i];
+                wOptions.saveMask = true;
             }
         } else if (string("-v") == argv[i]) {
             Log::setMinimumPriority(1);

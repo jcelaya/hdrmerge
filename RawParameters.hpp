@@ -45,7 +45,11 @@ public:
     }
     uint8_t FC(int x, int y) const {
         // (x, y) is relative to the ACTIVE AREA
-        return (filters >> (((y << 1 & 14) | (x & 1)) << 1) & 3);
+        if (filters == 9) {
+            return xtrans[(y + topMargin + 6) % 6][(x + leftMargin + 6) % 6];
+        } else {
+            return (filters >> (((y << 1 & 14) | (x & 1)) << 1) & 3);
+        }
     }
     double logExp() const;
     void dumpInfo() const;
@@ -61,12 +65,14 @@ public:
     void adjustBlack();
     void adjustWhite(const Array2D<uint16_t> & image);
     void autoWB(const Array2D<uint16_t> & image);
+    bool canAlign() const;
 
     std::string fileName;
     size_t width, height;
     size_t rawWidth, rawHeight, topMargin, leftMargin;
     std::string cdesc;
     uint32_t filters;
+    uint8_t xtrans[6][6];
     uint16_t max;
     uint16_t black;
     uint16_t maxBlack;

@@ -34,7 +34,7 @@ using namespace std;
 void adobe_cam_xyz(const string & t_make, const string & t_model, float * cam_xyz);
 
 
-RawParameters::RawParameters() : width(0), height(0), rawWidth(0), rawHeight(0), topMargin(0), leftMargin(0), filters(0), max(0),
+RawParameters::RawParameters() : width(0), height(0), rawWidth(0), rawHeight(0), topMargin(0), leftMargin(0), filters(0), xtrans{}, max(0),
 black(0), maxBlack(0), cblack{}, preMul{}, camMul{}, camXyz{}, rgbCam{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
@@ -47,6 +47,14 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
     topMargin = r.sizes.top_margin;
     leftMargin = r.sizes.left_margin;
     filters = r.idata.filters;
+    if (filters == 9) {
+        // Fujifilm X-Trans sensor
+        for (int row = 0; row < 6; ++row) {
+            for (int col = 0; col < 6; ++col) {
+                xtrans[row][col] = const_cast<LibRaw &>(rawData).fcol(row, col);
+            }
+        }
+    }
     cdesc = r.idata.cdesc;
     max = r.color.maximum;
     black = r.color.black;
@@ -96,6 +104,12 @@ double RawParameters::logExp() const {
 }
 
 
+bool RawParameters::canAlign() const {
+    uint8_t * f = (uint8_t *)&filters;
+    return f[0] == f[1] && f[0] == f[2] && f[0] == f[3];
+}
+
+
 void RawParameters::adjustBlack() {
     uint16_t minb = cblack[0] + black;
     maxBlack = minb;
@@ -117,7 +131,11 @@ void RawParameters::adjustWhite(const Array2D<uint16_t> & image) {
     } else if (camMul[1] == 0) {
         camMul[1] = 1;
     }
-    camMul[3] = camMul[1];
+    if (camMul[3] == 0) {
+        camMul[3] = 1;
+    }
+    if (colors == 3)
+        camMul[3] = camMul[1];
     float min = camMul[0];
     for (int c = 1; c < 4; ++c) {
         min = std::min(min, camMul[c]);

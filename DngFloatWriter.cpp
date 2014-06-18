@@ -175,25 +175,25 @@ void DngFloatWriter::createMainIFD() {
     if (params->camXyz[0][0]) {
         // TODO: Not including this tag breaks the DNG standard, but... don't know where to get it
         int32_t colorMatrix[18];
-        for (int row = 0, i = 0; row < 3; ++row) {
+        for (int row = 0, i = 0; row < params->colors; ++row) {
             for (int col = 0; col < 3; ++col) {
                 colorMatrix[i++] = std::round(params->camXyz[row][col] * 10000.0f);
                 colorMatrix[i++] = 10000;
             }
         }
-        mainIFD.addEntry(COLORMATRIX, IFD::SRATIONAL, 9, colorMatrix);
+        mainIFD.addEntry(COLORMATRIX, IFD::SRATIONAL, params->colors * 3, colorMatrix);
     }
 
     // Color
-    uint32_t analogBalance[] = { 1, 1, 1, 1, 1, 1 };
-    mainIFD.addEntry(ANALOGBALANCE, IFD::RATIONAL, 3, analogBalance);
-    double minWb = std::min(params->camMul[0], std::min(params->camMul[1], params->camMul[2]));
-    double wb[] = { minWb/params->camMul[0], minWb/params->camMul[1], minWb/params->camMul[2] };
+    uint32_t analogBalance[] = { 1, 1, 1, 1, 1, 1, 1, 1 };
+    mainIFD.addEntry(ANALOGBALANCE, IFD::RATIONAL, params->colors, analogBalance);
+    double wb[] = { 1.0/params->camMul[0], 1.0/params->camMul[1], 1.0/params->camMul[2], 1.0/params->camMul[3] };
     uint32_t cameraNeutral[] = {
         (uint32_t)std::round(1000000.0 * wb[0]), 1000000,
         (uint32_t)std::round(1000000.0 * wb[1]), 1000000,
-        (uint32_t)std::round(1000000.0 * wb[2]), 1000000};
-    mainIFD.addEntry(CAMERANEUTRAL, IFD::RATIONAL, 3, cameraNeutral);
+        (uint32_t)std::round(1000000.0 * wb[2]), 1000000,
+        (uint32_t)std::round(1000000.0 * wb[3]), 1000000};
+    mainIFD.addEntry(CAMERANEUTRAL, IFD::RATIONAL, params->colors, cameraNeutral);
     mainIFD.addEntry(ORIENTATION, IFD::SHORT, params->tiffOrientation);
     mainIFD.addEntry(UNIQUENAME, params->maker + " " + params->model);
     // TODO: Add Digest and Unique ID
@@ -234,7 +234,14 @@ void DngFloatWriter::calculateTiles() {
 
 void DngFloatWriter::createRawIFD() {
     uint16_t cfaRows, cfaCols;
-    cfaRows = cfaCols = 2;
+    if (params->filters == 9) {
+        cfaRows = cfaCols = 6;
+    } else if (params->colors == 3) {
+        cfaRows = cfaCols = 2;
+    } else {
+        cfaRows = 8;
+        cfaCols = 2;
+    }
     uint16_t cfaPatternDim[] = { cfaRows, cfaCols };
 
     rawIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 0);
@@ -289,12 +296,14 @@ void DngFloatWriter::createRawIFD() {
             cfaPattern[row*cfaCols + col] = params->FC(col, row);
         }
     }
-    for (uint8_t & i : cfaPattern) {
-        if (i == 3) i = 1;
+    if (params->colors == 3) {
+        for (uint8_t & i : cfaPattern) {
+            if (i == 3) i = 1;
+        }
     }
     rawIFD.addEntry(CFAPATTERN, IFD::BYTE, cfaRows * cfaCols, cfaPattern);
-    uint8_t cfaPlaneColor[] = { 0, 1, 2 };
-    rawIFD.addEntry(CFAPLANECOLOR, IFD::BYTE, 3, cfaPlaneColor);
+    uint8_t cfaPlaneColor[] = { 0, 1, 2, 3 };
+    rawIFD.addEntry(CFAPLANECOLOR, IFD::BYTE, params->colors, cfaPlaneColor);
     rawIFD.addEntry(CFALAYOUT, IFD::SHORT, 1);
 }
 

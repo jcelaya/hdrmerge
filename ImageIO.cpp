@@ -39,11 +39,17 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     if (rawProcessor.open_file(rawParameters.fileName.c_str()) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
         rawProcessor.get_decoder_info(&decoder_info);
-        if(decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD
-            && d.idata.colors == 3 && d.idata.filters > 1000
-            && rawProcessor.unpack() == LIBRAW_SUCCESS) {
+        if(!decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD) {
+            Log::msg(Log::DEBUG, "LibRaw decoder is not flatfield (", ios::hex, decoder_info.decoder_flags, ").");
+        } else if (d.idata.filters <= 1000 && d.idata.filters != 9) {
+            Log::msg(Log::DEBUG, "Unsupported filter array (", d.idata.filters, ").");
+        } else if (rawProcessor.unpack() != LIBRAW_SUCCESS) {
+            Log::msg(Log::DEBUG, "LibRaw::unpack() failed.");
+        } else {
             rawParameters.fromLibRaw(rawProcessor);
         }
+    } else {
+        Log::msg(Log::DEBUG, "LibRaw::open_file(", rawParameters.fileName, ") failed.");
     }
     return Image(d.rawdata.raw_image, rawParameters);
 }
@@ -100,7 +106,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
         return (failedImage << 1) + error - 1;
     }
     stack.setFlip(rawParameters.front()->flip);
-    if (options.align) {
+    if (options.align && rawParameters.front()->canAlign()) {
         Timer t("Align");
         progress.advance(p += step, "Aligning");
         stack.align();
@@ -208,7 +214,6 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
         // Assume the other sizes are the same as in the raw parameters
         d.sizes.width = params.width;
         d.sizes.height = params.height;
-        size_t oddx = params.leftMargin & 1, oddy = params.topMargin & 1;
         float scale = d.params.user_sat / (float)(params.max - params.black);
         for (size_t y = 0; y < params.rawHeight; ++y) {
             for (size_t x = 0; x < params.rawWidth; ++x) {

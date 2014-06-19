@@ -32,7 +32,9 @@ struct LoadOptions {
     std::vector<std::string> fileNames;
     bool align;
     bool crop;
-    LoadOptions() : align(true), crop(true) {}
+    bool batch;
+    double batchGap;
+    LoadOptions() : align(true), crop(true), batch(false), batchGap(2.0) {}
 };
 
 

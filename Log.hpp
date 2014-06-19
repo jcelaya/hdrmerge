@@ -46,6 +46,14 @@ public:
         }
     }
 
+    template <typename... Args>
+    static void msgN(int priority, const Args &... params) {
+        Log & l = getInstance();
+        if (l.out && priority >= l.minPriority) {
+            l.output(params...);
+        }
+    }
+
     static void setMinimumPriority(int p) {
         getInstance().minPriority = p;
     }

@@ -37,14 +37,14 @@ namespace hdrmerge {
 
 Launcher::Launcher(int argc, char * argv[]) : argc(argc), argv(argv), help(false) {
     Log::setOutputStream(cout);
-    wOptions.previewSize = 2;
+    saveOptions.previewSize = 2;
 }
 
 
 int Launcher::startGUI() {
     // Create main window
     MainWindow mw;
-    mw.preload(options.fileNames);
+    mw.preload(generalOptions.fileNames);
     mw.show();
 
     return QApplication::exec();
@@ -64,33 +64,77 @@ struct CoutProgressIndicator : public ProgressIndicator {
 };
 
 
+list<LoadOptions> Launcher::getBracketedSets() {
+    list<LoadOptions> result;
+    list<pair<ImageIO::QDateInterval, string>> dateNames;
+    for (string & name : generalOptions.fileNames) {
+        ImageIO::QDateInterval interval = ImageIO::getImageCreationInterval(name);
+        if (interval.start.isValid()) {
+            dateNames.emplace_back(interval, name);
+        } else {
+            result.push_back(generalOptions);
+            result.back().fileNames.clear();
+            result.back().fileNames.push_back(name);
+        }
+    }
+    dateNames.sort();
+    ImageIO::QDateInterval lastInterval;
+    for (auto & dateName : dateNames) {
+        if (lastInterval.start.isNull() || lastInterval.difference(dateName.first) > generalOptions.batchGap) {
+            result.push_back(generalOptions);
+            result.back().fileNames.clear();
+        }
+        result.back().fileNames.push_back(dateName.second);
+        lastInterval = dateName.first;
+    }
+    int setNum = 0;
+    for (auto & i : result) {
+        Log::msgN(Log::DEBUG, "Set ", setNum++, ":");
+        for (auto & j : i.fileNames) {
+            Log::msgN(Log::DEBUG, " ", j);
+        }
+        Log::msg(Log::DEBUG);
+    }
+    return result;
+}
+
+
 int Launcher::automaticMerge() {
     auto tr = [&] (const char * text) { return QCoreApplication::translate("LoadSave", text); };
-    CoutProgressIndicator progress;
-    ImageIO io;
-    int numImages = options.fileNames.size();
-    int result = io.load(options, progress);
-    if (result < numImages * 2) {
-        int format = result & 1;
-        int i = result >> 1;
-        if (format) {
-            cerr << tr("Error loading %1, it has a different format.").arg(options.fileNames[i].c_str()) << endl;
-        } else {
-            cerr << tr("Error loading %1, file not found.").arg(options.fileNames[i].c_str()) << endl;
-        }
-        return 1;
-    }
-    if (!wOptions.fileName.empty()) {
-        wOptions.fileName = io.replaceArguments(wOptions.fileName, "");
-        size_t extPos = wOptions.fileName.find_last_of('.');
-        if (extPos > wOptions.fileName.length() || wOptions.fileName.substr(extPos) != ".dng") {
-            wOptions.fileName += ".dng";
-        }
+    list<LoadOptions> optionsSet;
+    if (generalOptions.batch) {
+        optionsSet = getBracketedSets();
     } else {
-        wOptions.fileName = io.buildOutputFileName();
+        optionsSet.push_back(generalOptions);
     }
-    Log::msg(Log::PROGRESS, tr("Writing result to %1").arg(wOptions.fileName.c_str()));
-    io.save(wOptions, progress);
+    for (LoadOptions & options : optionsSet) {
+        ImageIO io;
+        CoutProgressIndicator progress;
+        int numImages = options.fileNames.size();
+        int result = io.load(options, progress);
+        if (result < numImages * 2) {
+            int format = result & 1;
+            int i = result >> 1;
+            if (format) {
+                cerr << tr("Error loading %1, it has a different format.").arg(options.fileNames[i].c_str()) << endl;
+            } else {
+                cerr << tr("Error loading %1, file not found.").arg(options.fileNames[i].c_str()) << endl;
+            }
+            return 1;
+        }
+        SaveOptions setOptions = saveOptions;
+        if (!setOptions.fileName.empty()) {
+            setOptions.fileName = io.replaceArguments(setOptions.fileName, "");
+            size_t extPos = setOptions.fileName.find_last_of('.');
+            if (extPos > setOptions.fileName.length() || setOptions.fileName.substr(extPos) != ".dng") {
+                setOptions.fileName += ".dng";
+            }
+        } else {
+            setOptions.fileName = io.buildOutputFileName();
+        }
+        Log::msg(Log::PROGRESS, tr("Writing result to %1").arg(setOptions.fileName.c_str()));
+        io.save(setOptions, progress);
+    }
     return 0;
 }
 
@@ -100,47 +144,57 @@ void Launcher::parseCommandLine() {
     for (int i = 1; i < argc; ++i) {
         if (string("-o") == argv[i]) {
             if (++i < argc) {
-                wOptions.fileName = argv[i];
+                saveOptions.fileName = argv[i];
             }
         } else if (string("-m") == argv[i]) {
             if (++i < argc) {
-                wOptions.maskFileName = argv[i];
-                wOptions.saveMask = true;
+                saveOptions.maskFileName = argv[i];
+                saveOptions.saveMask = true;
             }
         } else if (string("-v") == argv[i]) {
             Log::setMinimumPriority(1);
         } else if (string("-vv") == argv[i]) {
             Log::setMinimumPriority(0);
         } else if (string("--no-align") == argv[i]) {
-            options.align = false;
+            generalOptions.align = false;
         } else if (string("--no-crop") == argv[i]) {
-            options.crop = false;
+            generalOptions.crop = false;
+        } else if (string("--batch") == argv[i] || string("-B") == argv[i]) {
+            generalOptions.batch = true;
         } else if (string("--help") == argv[i]) {
             help = true;
         } else if (string("-b") == argv[i]) {
             if (++i < argc) {
                 try {
                     int value = stoi(argv[i]);
-                    if (value == 32 || value == 24 || value == 16) wOptions.bps = value;
+                    if (value == 32 || value == 24 || value == 16) saveOptions.bps = value;
                 } catch (std::invalid_argument & e) {
                     cerr << tr("Invalid %1 parameter, using default.").arg("-b") << endl;
+                }
+            }
+        } else if (string("-g") == argv[i]) {
+            if (++i < argc) {
+                try {
+                    generalOptions.batchGap = stod(argv[i]);
+                } catch (std::invalid_argument & e) {
+                    cerr << tr("Invalid %1 parameter, using default.").arg("-g") << endl;
                 }
             }
         } else if (string("-p") == argv[i]) {
             if (++i < argc) {
                 string previewWidth(argv[i]);
                 if (previewWidth == "full") {
-                    wOptions.previewSize = 2;
+                    saveOptions.previewSize = 2;
                 } else if (previewWidth == "half") {
-                    wOptions.previewSize = 1;
+                    saveOptions.previewSize = 1;
                 } else if (previewWidth == "none") {
-                    wOptions.previewSize = 0;
+                    saveOptions.previewSize = 0;
                 } else {
                     cerr << tr("Invalid %1 parameter, using default.").arg("-p") << endl;
                 }
             }
         } else if (argv[i][0] != '-') {
-            options.fileNames.push_back(argv[i]);
+            generalOptions.fileNames.push_back(argv[i]);
         }
     }
 }
@@ -150,21 +204,36 @@ void Launcher::showHelp() {
     auto tr = [&] (const char * text) { return QCoreApplication::translate("Help", text); };
     cout << tr("Usage") << ": HDRMerge [--help] [OPTIONS ...] [RAW_FILES ...]" << endl;
     cout << tr("Merges RAW_FILES into an HDR DNG raw image.") << endl;
-    cout << tr("If neither -a nor -o options are given, the GUI will be presented.") << endl;
+    cout << tr("If neither -a nor -o, nor --batch options are given, the GUI will be presented.") << endl;
     cout << tr("If similar options are specified, only the last one prevails.") << endl;
     cout << endl;
     cout << tr("Options:") << endl;
-    cout << "    " << "--help              " << tr("Shows this message.") << endl;
-    cout << "    " << "-a                  " << tr("Calculates the output file name automatically.") << endl;
-    cout << "    " << "-b BPS              " << tr("Bits per sample, can be 16, 24 or 32.") << endl;
-    cout << "    " << "-m MASK_FILE        " << tr("Saves the mask to MASK_FILE as a PNG image.") << endl;
-    cout << "    " << "--no-align          " << tr("Do not auto-align source images.") << endl;
-    cout << "    " << "--no-crop           " << tr("Do not crop the output image to the optimum size.") << endl;
-    cout << "    " << "-o OUT_FILE         " << tr("Sets OUT_FILE as the output file name.") << endl;
-    cout << "    " << "-p full|half|none   " << tr("Preview width.") << endl;
-    cout << "    " << "-v                  " << tr("Verbose mode.") << endl;
-    cout << "    " << "-vv                 " << tr("Debug mode.") << endl;
-    cout << "    " << "RAW_FILES           " << tr("The input raw files.") << endl;
+    cout << "    " << "--help        " << tr("Shows this message.") << endl;
+    cout << "    " << "-o OUT_FILE   " << tr("Sets OUT_FILE as the output file name.") << endl;
+    cout << "    " << "              " << tr("The following parameters are accepted, most useful in batch mode:") << endl;
+    cout << "    " << "              - %if[n]: " << tr("Replaced by the base file name of image n. Image file names") << endl;
+    cout << "    " << "                " << tr("are first sorted in lexicographical order. n = -1 is the last image,") << endl;
+    cout << "    " << "                " << tr("n = -2 is the previous to the last image, and so on.") << endl;
+    cout << "    " << "              - %iF[n]: " << tr("Replaced by the base file name of image n without the extension.") << endl;
+    cout << "    " << "              - %id[n]: " << tr("Replaced by the directory name of image n.") << endl;
+    cout << "    " << "              - %in[n]: " << tr("Replaced by the numerical suffix of image n, if it exists.") << endl;
+    cout << "    " << "                " << tr("For instance, in IMG_1234.CR2, the numerical suffix would be 1234.") << endl;
+    cout << "    " << "              - %%: " << tr("Replaced by a single %") << endl;
+    cout << "    " << "-a            " << tr("Calculates the output file name as %id[-1]/%iF[0]-%in[-1].dng.") << endl;
+    cout << "    " << "-B|--batch    " << tr("Batch mode: Input images are automatically grouped into bracketed sets,") << endl;
+    cout << "    " << "              " << tr("by comparing the creation time. Implies -a if no output file name is given.") << endl;
+    cout << "    " << "-g gap        " << tr("Batch gap, maximum difference in seconds between two images of the same set.") << endl;
+    cout << "    " << "-b BPS        " << tr("Bits per sample, can be 16, 24 or 32.") << endl;
+    cout << "    " << "--no-align    " << tr("Do not auto-align source images.") << endl;
+    cout << "    " << "--no-crop     " << tr("Do not crop the output image to the optimum size.") << endl;
+    cout << "    " << "-m MASK_FILE  " << tr("Saves the mask to MASK_FILE as a PNG image.") << endl;
+    cout << "    " << "              " << tr("Besides the parameters accepted by -o, it also accepts:") << endl;
+    cout << "    " << "              - %of: " << tr("Replaced by the base file name of the output file.") << endl;
+    cout << "    " << "              - %od: " << tr("Replaced by the directory name of the output file.") << endl;
+    cout << "    " << "-p size       " << tr("Preview width. size can be full, half or none,") << endl;
+    cout << "    " << "-v            " << tr("Verbose mode.") << endl;
+    cout << "    " << "-vv           " << tr("Debug mode.") << endl;
+    cout << "    " << "RAW_FILES     " << tr("The input raw files.") << endl;
 }
 
 
@@ -177,6 +246,10 @@ bool Launcher::checkGUI() {
                 result = false;
             }
         } else if (string("-a") == argv[i]) {
+            result = false;
+        } else if (string("--batch") == argv[i]) {
+            result = false;
+        } else if (string("-B") == argv[i]) {
             result = false;
         } else if (string("--help") == argv[i]) {
             return false;

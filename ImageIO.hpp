@@ -52,6 +52,17 @@ public:
     static Image loadRawImage(RawParameters & rawParameters);
     static QImage renderPreview(const Array2D<float> & rawData, const RawParameters & rawParameters, float expShift);
 
+    struct QDateInterval {
+        QDateTime start, end;
+        bool operator<(const QDateInterval & r) const {
+            return start < r.start;
+        }
+        double difference(const QDateInterval & r) const {
+            return end.msecsTo(r.start) / 1000.0;
+        }
+    };
+    static QDateInterval getImageCreationInterval(const std::string & fileName);
+
 private:
     ImageStack stack;
     std::vector<std::unique_ptr<RawParameters>> rawParameters;

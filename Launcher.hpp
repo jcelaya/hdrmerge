@@ -42,11 +42,12 @@ private:
     int startGUI();
     int automaticMerge();
     void showHelp();
+    std::list<LoadOptions> getBracketedSets();
 
     int argc;
     char ** argv;
-    LoadOptions options;
-    SaveOptions wOptions;
+    LoadOptions generalOptions;
+    SaveOptions saveOptions;
     bool help;
 };
 

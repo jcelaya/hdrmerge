@@ -49,6 +49,17 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
 }
 
 
+ImageIO::QDateInterval ImageIO::getImageCreationInterval(const std::string & fileName) {
+    LibRaw rawProcessor;
+    QDateInterval result;
+    if (rawProcessor.open_file(fileName.c_str()) == LIBRAW_SUCCESS) {
+        result.end = QDateTime::fromTime_t(rawProcessor.imgdata.other.timestamp);
+        result.start = result.end.addMSecs(-rawProcessor.imgdata.other.shutter * 1000.0);
+    }
+    return result;
+}
+
+
 int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
     int numImages = options.fileNames.size();
     int step = 100 / (numImages + 1);
@@ -294,7 +305,12 @@ string ImageIO::buildOutputFileName() const {
 
 string ImageIO::replaceArguments(const string & pattern, const string & outFileName) const {
     QString result(pattern.c_str());
-    QRegExp re("%(?:o[fd]|i[fFdn]\\[(-?[0-9]+)\\]|%)");
+    QRegExp re;
+    if (outFileName == "") {
+        re = QRegExp("%(?:i[fFdn]\\[(-?[0-9]+)\\]|%)");
+    } else {
+        re = QRegExp("%(?:o[fd]|i[fFdn]\\[(-?[0-9]+)\\]|%)");
+    }
     int index = 0;
     FileNameManipulator fnm(rawParameters);
     while ((index = result.indexOf(re, index)) != -1) {

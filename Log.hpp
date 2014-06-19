@@ -54,6 +54,26 @@ public:
         }
     }
 
+    template <typename... Args>
+    static void debug(const Args &... params) {
+        msg(DEBUG, params...);
+    }
+
+    template <typename... Args>
+    static void debugN(const Args &... params) {
+        msgN(DEBUG, params...);
+    }
+
+    template <typename... Args>
+    static void progress(const Args &... params) {
+        msg(PROGRESS, params...);
+    }
+
+    template <typename... Args>
+    static void progressN(const Args &... params) {
+        msgN(PROGRESS, params...);
+    }
+
     static void setMinimumPriority(int p) {
         getInstance().minPriority = p;
     }
@@ -96,7 +116,7 @@ public:
     ~Timer() {
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         double t = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
-        Log::msg(Log::DEBUG, name, ": ", t, " seconds");
+        Log::debug(name, ": ", t, " seconds");
     }
 
 private:

@@ -52,7 +52,7 @@ void ImageStack::align() {
         }
         for (int i = images.size() - 2; i >= 0; --i) {
             images[i].displace(images[i + 1].getDeltaX(), images[i + 1].getDeltaY());
-            Log::msg(Log::DEBUG, "Image ", i, " displaced to (", images[i].getDeltaX(), ", ", images[i].getDeltaY(),
+            Log::debug("Image ", i, " displaced to (", images[i].getDeltaX(), ", ", images[i].getDeltaY(),
                      ") with error ", errors[i]);
         }
         for (auto & i : images) {

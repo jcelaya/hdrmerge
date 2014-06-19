@@ -148,7 +148,7 @@ int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
 
 
 void ImageIO::writeMaskImage(const std::string & maskFile) {
-    Log::msg(Log::DEBUG, "Saving mask to ", maskFile);
+    Log::debug("Saving mask to ", maskFile);
     EditableMask & mask = stack.getMask();
     QImage maskImage(mask.getWidth(), mask.getHeight(), QImage::Format_Indexed8);
     int numColors = stack.size() - 1;
@@ -163,7 +163,7 @@ void ImageIO::writeMaskImage(const std::string & maskFile) {
         }
     }
     if (!maskImage.save(QString(maskFile.c_str()))) {
-        Log::msg(Log::PROGRESS, "Cannot save mask image to ", maskFile);
+        Log::progress("Cannot save mask image to ", maskFile);
     }
 }
 

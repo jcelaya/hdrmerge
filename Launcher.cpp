@@ -52,13 +52,11 @@ int Launcher::startGUI() {
 
 
 struct CoutProgressIndicator : public ProgressIndicator {
-    CoutProgressIndicator() {}
-
     virtual void advance(int percent, const char * message, const char * arg) {
         if (arg) {
-            Log::msg(Log::PROGRESS, '[', setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message).arg(arg));
+            Log::progress('[', setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message).arg(arg));
         } else {
-            Log::msg(Log::PROGRESS, '[', setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message));
+            Log::progress('[', setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message));
         }
     }
 };
@@ -72,6 +70,7 @@ list<LoadOptions> Launcher::getBracketedSets() {
         if (interval.start.isValid()) {
             dateNames.emplace_back(interval, name);
         } else {
+            // We cannot get time information, process it alone
             result.push_back(generalOptions);
             result.back().fileNames.clear();
             result.back().fileNames.push_back(name);
@@ -89,11 +88,11 @@ list<LoadOptions> Launcher::getBracketedSets() {
     }
     int setNum = 0;
     for (auto & i : result) {
-        Log::msgN(Log::DEBUG, "Set ", setNum++, ":");
+        Log::progressN("Set ", setNum++, ":");
         for (auto & j : i.fileNames) {
-            Log::msgN(Log::DEBUG, " ", j);
+            Log::progressN(" ", j);
         }
-        Log::msg(Log::DEBUG);
+        Log::progress();
     }
     return result;
 }
@@ -107,8 +106,9 @@ int Launcher::automaticMerge() {
     } else {
         optionsSet.push_back(generalOptions);
     }
+    ImageIO io;
+    int result = 0;
     for (LoadOptions & options : optionsSet) {
-        ImageIO io;
         CoutProgressIndicator progress;
         int numImages = options.fileNames.size();
         int result = io.load(options, progress);
@@ -120,7 +120,8 @@ int Launcher::automaticMerge() {
             } else {
                 cerr << tr("Error loading %1, file not found.").arg(options.fileNames[i].c_str()) << endl;
             }
-            return 1;
+            result = 1;
+            continue;
         }
         SaveOptions setOptions = saveOptions;
         if (!setOptions.fileName.empty()) {
@@ -132,10 +133,10 @@ int Launcher::automaticMerge() {
         } else {
             setOptions.fileName = io.buildOutputFileName();
         }
-        Log::msg(Log::PROGRESS, tr("Writing result to %1").arg(setOptions.fileName.c_str()));
+        Log::progress(tr("Writing result to %1").arg(setOptions.fileName.c_str()));
         io.save(setOptions, progress);
     }
-    return 0;
+    return result;
 }
 
 
@@ -239,25 +240,25 @@ void Launcher::showHelp() {
 
 bool Launcher::checkGUI() {
     int numFiles = 0;
-    bool result = true;
+    bool useGUI = true;
     for (int i = 1; i < argc; ++i) {
         if (string("-o") == argv[i]) {
             if (++i < argc) {
-                result = false;
+                useGUI = false;
             }
         } else if (string("-a") == argv[i]) {
-            result = false;
+            useGUI = false;
         } else if (string("--batch") == argv[i]) {
-            result = false;
+            useGUI = false;
         } else if (string("-B") == argv[i]) {
-            result = false;
+            useGUI = false;
         } else if (string("--help") == argv[i]) {
             return false;
         } else if (argv[i][0] != '-') {
             numFiles++;
         }
     }
-    return result || numFiles == 0;
+    return useGUI || numFiles == 0;
 }
 
 

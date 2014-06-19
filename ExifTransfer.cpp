@@ -50,8 +50,6 @@ void ExifTransfer::copyXMP() {
     for (const auto & datum : srcXmp) {
         if (datum.groupName() != "tiff" && dstXmp.findKey(Exiv2::XmpKey(datum.key())) == dstXmp.end()) {
             dstXmp.add(datum);
-        } else {
-            Log::msg(Log::DEBUG, "Ignore ", datum.key());
         }
     }
 }
@@ -63,8 +61,6 @@ void ExifTransfer::copyIPTC() {
     for (const auto & datum : srcIptc) {
         if (dstIptc.findKey(Exiv2::IptcKey(datum.key())) == dstIptc.end()) {
             dstIptc.add(datum);
-        } else {
-            Log::msg(Log::DEBUG, "Ignore ", datum.key());
         }
     }
 }
@@ -114,20 +110,16 @@ void ExifTransfer::copyEXIF() {
     // It is needed so that makernote tags are correctly copied
     auto makeIterator = srcExif.findKey(Exiv2::ExifKey("Exif.Image.Make"));
     if (makeIterator != srcExif.end()) {
-        Log::msg(Log::DEBUG, "Reset Exif.Image.Make to ", makeIterator->toString());
         dstExif["Exif.Image.Make"] = makeIterator->toString();
     }
     auto modelIterator = srcExif.findKey(Exiv2::ExifKey("Exif.Image.Model"));
     if (modelIterator != srcExif.end()) {
-        Log::msg(Log::DEBUG, "Reset Exif.Image.Model to ", modelIterator->toString());
         dstExif["Exif.Image.Model"] = modelIterator->toString();
     }
 
     for (const auto & datum : srcExif) {
         if (!excludeExifDatum(datum) && dstExif.findKey(Exiv2::ExifKey(datum.key())) == dstExif.end()) {
             dstExif.add(datum);
-        } else {
-            Log::msg(Log::DEBUG, "Ignore ", datum.key());
         }
     }
 }

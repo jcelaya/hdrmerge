@@ -55,7 +55,7 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
     copy_n(r.color.pre_mul, 4, preMul);
     copy_n(r.color.cam_mul, 4, camMul);
     if (camMul[0] == 0 || camMul[0] == -1) {
-        Log::msg(Log::DEBUG, "Invalid camera white balance: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
+        Log::debug("Invalid camera white balance: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
         camMul[0] = 0;
     }
     copy_n((float *)r.color.cam_xyz, 3*4, (float *)camXyz);
@@ -125,7 +125,7 @@ void RawParameters::adjustWhite(const Array2D<uint16_t> & image) {
     for (int c = 0; c < 4; ++c) {
         camMul[c] /= min;
     }
-    Log::msg(Log::DEBUG, "Adjusted white balance: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
+    Log::debug("Adjusted white balance: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
 }
 
 
@@ -154,11 +154,9 @@ void RawParameters::dumpInfo() const {
     size_t slashpos = fileName.find_last_of('/');
     slashpos = slashpos == string::npos ? 0 : slashpos + 1;
     // Show idata
-    Log::msg(Log::DEBUG,
-             fileName.substr(slashpos), ": ", width, 'x', height, " (", rawWidth, 'x', rawHeight, '+', leftMargin, '+', topMargin,
-             ", by ", maker, ' ' , model, ", ", isoSpeed, "ISO 1/", (1.0/shutter), "sec f", aperture, " EV:", logExp()
-    );
-    Log::msg(Log::DEBUG, hex, filters, dec, ' ', cdesc, ", sat ", max, ", black ", black, ", flip ", flip,
-             ", wb: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3],
-             ", cblack: ", cblack[0], ' ', cblack[1], ' ', cblack[2], ' ', cblack[3]);
+    Log::debugN(fileName.substr(slashpos), ": ", width, 'x', height, " (", rawWidth, 'x', rawHeight, '+', leftMargin, '+', topMargin);
+    Log::debug(", by ", maker, ' ' , model, ", ", isoSpeed, "ISO 1/", (1.0/shutter), "sec f", aperture, " EV:", logExp());
+    Log::debugN(hex, filters, dec, ' ', cdesc, ", sat ", max, ", black ", black, ", flip ", flip);
+    Log::debugN(", wb: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
+    Log::debug(", cblack: ", cblack[0], ' ', cblack[1], ' ', cblack[2], ' ', cblack[3]);
 }

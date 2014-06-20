@@ -67,7 +67,7 @@ void ExifTransfer::copyIPTC() {
 
 
 static bool excludeExifDatum(const Exifdatum & datum) {
-    const char * previewKeys[] {
+    static const char * previewKeys[] {
         "Exif.OlympusCs.PreviewImageStart",
         "Exif.OlympusCs.PreviewImageLength",
         "Exif.Thumbnail.JPEGInterchangeFormat",
@@ -103,18 +103,23 @@ static bool excludeExifDatum(const Exifdatum & datum) {
 
 
 void ExifTransfer::copyEXIF() {
+    static const char * includeImageKeys[] = {
+        // Correct Make and Model, from the input files
+        // It is needed so that makernote tags are correctly copied
+        "Exif.Image.Make",
+        "Exif.Image.Model",
+        "Exif.Image.Artist",
+        "Exif.Image.Copyright"
+    };
+
     const Exiv2::ExifData & srcExif = src->exifData();
     Exiv2::ExifData & dstExif = dst->exifData();
 
-    // Correct Make and Model, from the imput files
-    // It is needed so that makernote tags are correctly copied
-    auto makeIterator = srcExif.findKey(Exiv2::ExifKey("Exif.Image.Make"));
-    if (makeIterator != srcExif.end()) {
-        dstExif["Exif.Image.Make"] = makeIterator->toString();
-    }
-    auto modelIterator = srcExif.findKey(Exiv2::ExifKey("Exif.Image.Model"));
-    if (modelIterator != srcExif.end()) {
-        dstExif["Exif.Image.Model"] = modelIterator->toString();
+    for (const char * keyName : includeImageKeys) {
+        auto iterator = srcExif.findKey(Exiv2::ExifKey(keyName));
+        if (iterator != srcExif.end()) {
+            dstExif[keyName] = *iterator;
+        }
     }
 
     for (const auto & datum : srcExif) {

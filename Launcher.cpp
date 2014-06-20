@@ -213,14 +213,14 @@ void Launcher::showHelp() {
     cout << "    " << "-o OUT_FILE   " << tr("Sets OUT_FILE as the output file name.") << endl;
     cout << "    " << "              " << tr("The following parameters are accepted, most useful in batch mode:") << endl;
     cout << "    " << "              - %if[n]: " << tr("Replaced by the base file name of image n. Image file names") << endl;
-    cout << "    " << "                " << tr("are first sorted in lexicographical order. n = -1 is the last image,") << endl;
-    cout << "    " << "                " << tr("n = -2 is the previous to the last image, and so on.") << endl;
+    cout << "    " << "                " << tr("are first sorted in lexicographical order. Besides, n = -1 is the") << endl;
+    cout << "    " << "                " << tr("last image, n = -2 is the previous to the last image, and so on.") << endl;
     cout << "    " << "              - %iF[n]: " << tr("Replaced by the base file name of image n without the extension.") << endl;
     cout << "    " << "              - %id[n]: " << tr("Replaced by the directory name of image n.") << endl;
     cout << "    " << "              - %in[n]: " << tr("Replaced by the numerical suffix of image n, if it exists.") << endl;
     cout << "    " << "                " << tr("For instance, in IMG_1234.CR2, the numerical suffix would be 1234.") << endl;
-    cout << "    " << "              - %%: " << tr("Replaced by a single %") << endl;
-    cout << "    " << "-a            " << tr("Calculates the output file name as %id[-1]/%iF[0]-%in[-1].dng.") << endl;
+    cout << "    " << "              - %%: " << tr("Replaced by a single %.") << endl;
+    cout << "    " << "-a            " << tr("Calculates the output file name as") << " %id[-1]/%iF[0]-%in[-1].dng." << endl;
     cout << "    " << "-B|--batch    " << tr("Batch mode: Input images are automatically grouped into bracketed sets,") << endl;
     cout << "    " << "              " << tr("by comparing the creation time. Implies -a if no output file name is given.") << endl;
     cout << "    " << "-g gap        " << tr("Batch gap, maximum difference in seconds between two images of the same set.") << endl;

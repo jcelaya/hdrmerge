@@ -12,6 +12,14 @@
         <translation type="finished">Mezcla RAW_FILES en una imagen HDR DNG raw.</translation>
     </message>
     <message>
+        <source>If neither -a nor -o, nor --batch options are given, the GUI will be presented.</source>
+        <translation type="finished">Si no se dan las opciones -a, -o o --batch, se mostrará la GUI.</translation>
+    </message>
+    <message>
+        <source>If similar options are specified, only the last one prevails.</source>
+        <translation type="finished">Si se dan opciones similares, sólo la ultima de ellas se tiene en cuenta.</translation>
+    </message>
+    <message>
         <source>Options:</source>
         <translation type="finished">Opciones:</translation>
     </message>
@@ -24,8 +32,56 @@
         <translation type="finished">Establece OUT_FILE como el nombre del fichero de salida.</translation>
     </message>
     <message>
-        <source>Calculates the output file name automatically.</source>
-        <translation type="finished">Calcula el nombre del fichero de salida automáticamente.</translation>
+        <source>The following parameters are accepted, most useful in batch mode:</source>
+        <translation type="finished">Se aceptan los siguientes parámetros, especialmente útiles en modo lote:</translation>
+    </message>
+    <message>
+        <source>Replaced by the base file name of image n. Image file names</source>
+        <translation type="finished">Sustituido por el nombre de fichero base de la imagen n.</translation>
+    </message>
+    <message>
+        <source>are first sorted in lexicographical order. Besides, n = -1 is the</source>
+        <translation type="finished">Los nombres de los ficheros se ordenan primero en orden lexicográfico.</translation>
+    </message>
+    <message>
+        <source>last image, n = -2 is the previous to the last image, and so on.</source>
+        <translation type="finished">Además, n = -1 es la última imagen, n = -2 es la penúltima, etc.</translation>
+    </message>
+    <message>
+        <source>Replaced by the base file name of image n without the extension.</source>
+        <translation type="finished">Sustituido por el nombre de fichero base de la imagen n sin extensión.</translation>
+    </message>
+    <message>
+        <source>Replaced by the directory name of image n.</source>
+        <translation type="finished">Sustituido por el nombre del directorio de la imagen n.</translation>
+    </message>
+    <message>
+        <source>Replaced by the numerical suffix of image n, if it exists.</source>
+        <translation type="finished">Sustituido por el sufijo numérico de la imagen n, si existe.</translation>
+    </message>
+    <message>
+        <source>For instance, in IMG_1234.CR2, the numerical suffix would be 1234.</source>
+        <translation type="finished">Por ejemplo, en IMG_1234.CR2, el sufijo numérico sería 1234.</translation>
+    </message>
+    <message>
+        <source>Replaced by a single %.</source>
+        <translation type="finished">Sustituido por un único %.</translation>
+    </message>
+    <message>
+        <source>Calculates the output file name as</source>
+        <translation type="finished">Calcula el nombre del fichero de salida como</translation>
+    </message>
+    <message>
+        <source>Batch mode: Input images are automatically grouped into bracketed sets,</source>
+        <translation type="finished">Modo lote: las imágenes de entrada se agrupan automáticamente comparando su</translation>
+    </message>
+    <message>
+        <source>by comparing the creation time. Implies -a if no output file name is given.</source>
+        <translation type="finished">fecha de creación. Implica -a si no se da un nombre de fichero de salida.</translation>
+    </message>
+    <message>
+        <source>Batch gap, maximum difference in seconds between two images of the same set.</source>
+        <translation type="finished">Diferencia máxima en segundos entre dos imágenes del mismo grupo.</translation>
     </message>
     <message>
         <source>Bits per sample, can be 16, 24 or 32.</source>
@@ -44,6 +100,18 @@
         <translation type="finished">Guarda la máscara en MASK_FILE como imagen PNG.</translation>
     </message>
     <message>
+        <source>Besides the parameters accepted by -o, it also accepts:</source>
+        <translation type="finished">Además de los parámetros aceptados por -o, también acepta:</translation>
+    </message>
+    <message>
+        <source>Replaced by the base file name of the output file.</source>
+        <translation type="finished">Sustituido por el nombre de fichero base del fichero de salida.</translation>
+    </message>
+    <message>
+        <source>Replaced by the directory name of the output file.</source>
+        <translation type="finished">Sustituido por el nombre del directorio de salida.</translation>
+    </message>
+    <message>
         <source>Do not auto-align source images.</source>
         <translation type="finished">No auto-alinear las imágenes de origen.</translation>
     </message>
@@ -60,16 +128,8 @@
         <translation type="finished">Modo depuración.</translation>
     </message>
     <message>
-        <source>If similar options are specified, only the last one prevails.</source>
-        <translation type="finished">Si se dan opciones similares, sólo la ultima de ellas se tiene en cuenta.</translation>
-    </message>
-    <message>
         <source>Invalid %1 parameter, using default.</source>
         <translation type="finished">Parámetro %1 inválido, se usará el valor por defecto.</translation>
-    </message>
-    <message>
-        <source>If neither -a nor -o options are given, the GUI will be presented.</source>
-        <translation type="finished">Si no se dan las opciones -a o -o, se mostrará la GUI.</translation>
     </message>
 </context>
 <context>

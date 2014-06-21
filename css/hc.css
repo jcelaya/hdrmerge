@@ -75,10 +75,20 @@ p
   display: none;
 }
 
+.navbar-nav a
+{
+    text-decoration: none;
+    border-bottom: 1px #b1b1b1 solid;
+}
+
 .navbar a
 {
-  text-decoration: none;
-  border-bottom: 1px #b1b1b1 solid;
+    border-bottom:0px;
+}
+
+.navbar img
+{
+    width:180px
 }
 
 #sidebar-wrapper
@@ -115,6 +125,11 @@ p
   font-weight:200;
   color:#9c9c9c;
   text-shadow:1px 1px #fff
+}
+
+.sidebar-nav li img
+{
+    width:180px
 }
 
 .sidebar-nav li a

@@ -3,6 +3,12 @@
     <title>{{ page.title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{{ site.description }}">
+    <!-- Facebook Open Graph properties -->
+    <meta property="og:title" content="{{ page.title }}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{ site.gitpagesurl }}{{ page.url }}" />
+    <meta property="og:image" content="{{ site.gitpagesurl }}/images/logo.png" />
+    <link href="{{ site.baseurl }}/images/icon.png" rel="icon" type="image/png">
     <link href="{{ site.baseurl }}/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ site.baseurl }}/css/hc.css" rel="stylesheet">
     <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">

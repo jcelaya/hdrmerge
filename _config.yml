@@ -3,12 +3,11 @@ author: Javier Celaya
 markdown: redcarpet
 pygments: true
 baseurl: /hdrmerge
+gitpagesurl: http://jcelaya.github.io/hdrmerge
 description: HDR raw exposure merging
 github: http://www.github.com/jcelaya/hdrmerge
 twitter: http://www.twitter.com/
 facebook: http://www.facebook.com
 linkedin: http://www.linkedin.com
 email: jcelaya[at]gmail.com
-
-##Make sure to edit the above fields, especially for disqus.
 

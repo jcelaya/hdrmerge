@@ -71,7 +71,7 @@ MainWindow::MainWindow() : QMainWindow() {
     createMenus();
 
     setWindowTitle(tr("HDRMerge v%1.%2 - Raw image fusion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
-    setWindowIcon(QIcon(":/images/logo.png"));
+    setWindowIcon(QIcon(":/images/icon.png"));
 
     QSettings settings;
     restoreGeometry(settings.value("windowGeometry").toByteArray());

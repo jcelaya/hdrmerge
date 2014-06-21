@@ -109,7 +109,8 @@ void ExifTransfer::copyEXIF() {
         "Exif.Image.Make",
         "Exif.Image.Model",
         "Exif.Image.Artist",
-        "Exif.Image.Copyright"
+        "Exif.Image.Copyright",
+        "Exif.Image.DNGPrivateData"
     };
 
     const Exiv2::ExifData & srcExif = src->exifData();

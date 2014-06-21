@@ -34,7 +34,7 @@ AboutDialog::AboutDialog(QWidget * parent, Qt::WindowFlags f) : QDialog(parent, 
     QWidget * logoText = new QWidget(this);
     QHBoxLayout * layout = new QHBoxLayout(logoText);
     QLabel * logoLabel = new QLabel(logoText);
-    logoLabel->setPixmap(QPixmap(":/images/logo.png"));
+    logoLabel->setPixmap(QPixmap(":/images/logo.png").scaledToWidth(400, Qt::SmoothTransformation));
     layout->addWidget(logoLabel);
     layout->addSpacing(12);
     QLabel * text = new QLabel("<h1>HDRMerge</h1>"

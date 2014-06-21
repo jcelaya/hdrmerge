@@ -31,6 +31,8 @@ class AboutDialog : public QDialog {
 public:
     explicit AboutDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
     void closeEvent(QCloseEvent * event) { accept(); }
+
+    Q_OBJECT
 };
 
 } // namespace hdrmerge

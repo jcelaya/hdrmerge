@@ -1,0 +1,13 @@
+[Desktop Entry]
+Value=1.0
+Type=Application
+Name=HDRMerge
+GenericName=HDR raw image merge
+GenericName[es]=Mezcla de imágenes HDR raw
+Comment=Merge several raw images into a single DNG raw image with high dynamic range.
+Comment[es]=Mezcla varias imágenes raw en una única imagen DNG raw de alto rango dinámico.
+Icon=hdrmerge-icon
+Exec=@CMAKE_INSTALL_PREFIX@/bin/hdrmerge %F
+Categories=Graphics
+MimeType=image/x-dcraw;image/x-adobe-dng
+Terminal=false

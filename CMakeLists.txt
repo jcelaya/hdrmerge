@@ -79,7 +79,23 @@ add_library(hdrmerge-objects OBJECT ${hdrmerge_sources} ${hdrmerge_moc} ${hdrmer
 add_executable(hdrmerge ${PLATFORM} main.cpp $<TARGET_OBJECTS:hdrmerge-objects>)
 target_link_libraries(hdrmerge ${hdrmerge_libs})
 
-install(TARGETS hdrmerge RUNTIME DESTINATION bin)
+if (NOT WIN32)
+    install(TARGETS hdrmerge RUNTIME DESTINATION bin)
+    find_program(XDG-DESKTOP-MENU_EXECUTABLE xdg-desktop-menu)
+    find_program(XDG-ICON-RESOURCE_EXECUTABLE xdg-icon-resource)
+    if (XDG-DESKTOP-MENU_EXECUTABLE AND XDG-ICON-RESOURCE_EXECUTABLE)
+        configure_file (
+            "${PROJECT_SOURCE_DIR}/hdrmerge.desktop"
+            "${PROJECT_BINARY_DIR}/hdrmerge.desktop"
+        )
+        install(CODE "
+            execute_process(COMMAND ${XDG-ICON-RESOURCE_EXECUTABLE} install --novendor
+                --size 32 ${PROJECT_SOURCE_DIR}/images/icon.png hdrmerge-icon)
+            execute_process(COMMAND ${XDG-DESKTOP-MENU_EXECUTABLE} install --novendor
+                ${PROJECT_BINARY_DIR}/hdrmerge.desktop)"
+        )
+    endif (XDG-DESKTOP-MENU_EXECUTABLE AND XDG-ICON-RESOURCE_EXECUTABLE)
+endif (NOT WIN32)
 
 if (Boost_FOUND)
     add_subdirectory(test)

@@ -172,17 +172,14 @@ void DngFloatWriter::createMainIFD() {
     mainIFD.addEntry(CALIBRATIONILLUMINANT, IFD::SHORT, TIFF_D65);
     string profName(params->maker + " " + params->model);
     mainIFD.addEntry(PROFILENAME, profName);
-    if (params->camXyz[0][0]) {
-        // TODO: Not including this tag breaks the DNG standard, but... don't know where to get it
-        int32_t colorMatrix[18];
-        for (int row = 0, i = 0; row < params->colors; ++row) {
-            for (int col = 0; col < 3; ++col) {
-                colorMatrix[i++] = std::round(params->camXyz[row][col] * 10000.0f);
-                colorMatrix[i++] = 10000;
-            }
+    int32_t colorMatrix[24];
+    for (int row = 0, i = 0; row < params->colors; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            colorMatrix[i++] = std::round(params->camXyz[row][col] * 10000.0f);
+            colorMatrix[i++] = 10000;
         }
-        mainIFD.addEntry(COLORMATRIX, IFD::SRATIONAL, params->colors * 3, colorMatrix);
     }
+    mainIFD.addEntry(COLORMATRIX, IFD::SRATIONAL, params->colors * 3, colorMatrix);
 
     // Color
     uint32_t analogBalance[] = { 1, 1, 1, 1, 1, 1, 1, 1 };
@@ -293,11 +290,7 @@ void DngFloatWriter::createRawIFD() {
     uint8_t cfaPattern[cfaRows * cfaCols];
     for (int row = 0; row < cfaRows; ++row) {
         for (int col = 0; col < cfaCols; ++col) {
-            if (params->filters == 9) {
-                cfaPattern[row*cfaCols + col] = params->FC(col - params->leftMargin, row - params->topMargin);
-            } else {
-                cfaPattern[row*cfaCols + col] = params->FC(col, row);
-            }
+            cfaPattern[row*cfaCols + col] = params->FC(col, row);
         }
     }
     if (params->colors == 3) {

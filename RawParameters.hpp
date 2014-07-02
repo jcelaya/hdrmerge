@@ -62,7 +62,6 @@ public:
     float whiteMultAt(int x, int y) const {
         return camMul[FC(x, y)];
     }
-    void adjustBlack();
     void adjustWhite(const Array2D<uint16_t> & image);
     void autoWB(const Array2D<uint16_t> & image);
     bool canAlign() const;
@@ -88,6 +87,12 @@ public:
     int colors;
     int flip;
     int tiffOrientation;
+
+private:
+    void adjustBlack();
+    void calculateCamXyz();
+    void loadCamXyzFromDng();
+    void camXyzFromRgbCam();
 };
 
 } // namespace hdrmerge

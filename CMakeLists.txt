@@ -52,7 +52,7 @@ include_directories("${PROJECT_BINARY_DIR}")
 set(hdrmerge_sources
     Launcher.cpp MainWindow.cpp PreviewWidget.cpp DraggableScrollArea.cpp DngPropertiesDialog.cpp LoadOptionsDialog.cpp
     Image.cpp ImageStack.cpp Bitmap.cpp RawParameters.cpp EditableMask.cpp DngFloatWriter.cpp
-    camxyz.cpp TiffDirectory.cpp AboutDialog.cpp BoxBlur.cpp ExifTransfer.cpp ImageIO.cpp)
+    TiffDirectory.cpp AboutDialog.cpp BoxBlur.cpp ExifTransfer.cpp ImageIO.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp PreviewWidget.hpp LoadOptionsDialog.hpp
     DraggableScrollArea.hpp DngPropertiesDialog.hpp AboutDialog.hpp)
 set(hdrmerge_translations hdrmerge_es.ts)

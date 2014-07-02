@@ -293,7 +293,11 @@ void DngFloatWriter::createRawIFD() {
     uint8_t cfaPattern[cfaRows * cfaCols];
     for (int row = 0; row < cfaRows; ++row) {
         for (int col = 0; col < cfaCols; ++col) {
-            cfaPattern[row*cfaCols + col] = params->FC(col, row);
+            if (params->filters == 9) {
+                cfaPattern[row*cfaCols + col] = params->FC(col - params->leftMargin, row - params->topMargin);
+            } else {
+                cfaPattern[row*cfaCols + col] = params->FC(col, row);
+            }
         }
     }
     if (params->colors == 3) {

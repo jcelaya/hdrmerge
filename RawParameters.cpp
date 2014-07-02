@@ -51,7 +51,7 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
         // Fujifilm X-Trans sensor
         for (int row = 0; row < 6; ++row) {
             for (int col = 0; col < 6; ++col) {
-                xtrans[row][col] = const_cast<LibRaw &>(rawData).fcol(row, col);
+                xtrans[(row + topMargin) % 6][(col + leftMargin) % 6] = const_cast<LibRaw &>(rawData).fcol(row, col);
             }
         }
     }

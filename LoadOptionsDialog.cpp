@@ -44,6 +44,7 @@ public:
 
 LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
         : QDialog(parent, f), LoadOptions() {
+    QSettings settings;
     QVBoxLayout * layout = new QVBoxLayout(this);
 
     QWidget * fileSelector = new QWidget(this);
@@ -67,11 +68,11 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     connect(removeButton, SIGNAL(clicked(bool)), this, SLOT(removeFiles()));
 
     alignBox = new QCheckBox(tr("Align source images."), this);
-    alignBox->setChecked(true);
+    alignBox->setChecked(settings.value("alignOnLoad", true).toBool());
     layout->addWidget(alignBox, 0);
 
     cropBox = new QCheckBox(tr("Crop result image to optimal size."), this);
-    cropBox->setChecked(true);
+    cropBox->setChecked(settings.value("cropOnLoad", true).toBool());
     layout->addWidget(cropBox, 0);
 
     QWidget * buttons = new QWidget(this);
@@ -149,8 +150,11 @@ void LoadOptionsDialog::removeFiles() {
 
 
 void LoadOptionsDialog::accept() {
+    QSettings settings;
     align = alignBox->isChecked();
+    settings.setValue("alignOnLoad", align);
     crop = cropBox->isChecked();
+    settings.setValue("cropOnLoad", crop);
     for (int i = 0; i < fileList->count(); ++i) {
         fileNames.push_back(fileList->item(i)->data(Qt::UserRole).toString().toUtf8().constData());
     }

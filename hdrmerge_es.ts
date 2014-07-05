@@ -279,22 +279,6 @@
         <source>You can use the following tokens:</source>
         <translation type="finished">Puede utilizar los siguientes símbolos:</translation>
     </message>
-    <message>
-        <source>for the file name of the least exposed image.</source>
-        <translation type="finished">para el nombre de fichero de la imagen menos expuesta.</translation>
-    </message>
-    <message>
-        <source>for the directory name of the least exposed image.</source>
-        <translation type="finished">para el nombre de directorio de la imagen menos expuesta.</translation>
-    </message>
-    <message>
-        <source>for the file name of the result image.</source>
-        <translation type="finished">para el nombre de fichero de la imagen resultado.</translation>
-    </message>
-    <message>
-        <source>for the directory name of the result image.</source>
-        <translation type="finished">para el nombre de directorio de la imagen resultado.</translation>
-    </message>
 </context>
 <context>
     <name>hdrmerge::MainWindow</name>

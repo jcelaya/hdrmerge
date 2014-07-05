@@ -20,6 +20,7 @@
  *
  */
 
+#include <QCoreApplication>
 #include <QFormLayout>
 #include <QVBoxLayout>
 #include <QRadioButton>
@@ -71,11 +72,18 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     maskFileSelectorLayout->setMargin(0);
     maskFileEditor = new QLineEdit(maskFileSelector);
     maskFileEditor->setMinimumWidth(200);
+    auto trHelp = [&] (const char * text) { return QCoreApplication::translate("Help", text); };
     maskFileEditor->setToolTip(tr("You can use the following tokens:") + "\n" +
-        "- %if " + tr("for the file name of the least exposed image.") + "\n" +
-        "- %id " + tr("for the directory name of the least exposed image.") + "\n" +
-        "- %of " + tr("for the file name of the result image.") + "\n" +
-        "- %od " + tr("for the directory name of the result image."));
+        "- %if[n]: " + trHelp("Replaced by the base file name of image n. Image file names") + "\n" +
+        "  " + trHelp("are first sorted in lexicographical order. Besides, n = -1 is the") + "\n" +
+        "  " + trHelp("last image, n = -2 is the previous to the last image, and so on.") + "\n" +
+        "- %iF[n]: " + trHelp("Replaced by the base file name of image n without the extension.") + "\n" +
+        "- %id[n]: " + trHelp("Replaced by the directory name of image n.") + "\n" +
+        "- %in[n]: " + trHelp("Replaced by the numerical suffix of image n, if it exists.") + "\n" +
+        "  " + trHelp("For instance, in IMG_1234.CR2, the numerical suffix would be 1234.") + "\n" +
+        "- %of " + trHelp("Replaced by the base file name of the output file.") + "\n" +
+        "- %od " + trHelp("Replaced by the directory name of the output file.") + "\n" +
+        "- %%: " + trHelp("Replaced by a single %.") + "\n");
     maskFileEditor->setText(maskFileName.c_str());
     QPushButton * showFileDialog = new QPushButton("...", maskFileSelector);
     connect(showFileDialog, SIGNAL(clicked(bool)), this, SLOT(setMaskFileName()));

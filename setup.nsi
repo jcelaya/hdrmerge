@@ -79,6 +79,7 @@ Section "HDRMerge (required)"
         "@PROJECT_SOURCE_DIR@/LICENSE" \
         "@PROJECT_SOURCE_DIR@/LICENSE_icons" \
         "@PROJECT_SOURCE_DIR@/README.md"
+    File /oname=hdrmerge.com "hdrmerge-nogui.exe"
     CreateDirectory $INSTDIR\imageformats
     File /oname=$INSTDIR\imageformats\qjpeg4.dll "@QT_JPEG_DLL@"
 

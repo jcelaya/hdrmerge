@@ -48,24 +48,20 @@ set (WIN_RES_FILE "")
 if (WIN32)
     # This is required by libraw.h
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32")
-    # TODO: right now, we prefer a console application
-    #set(PLATFORM WIN32)
+    set(PLATFORM WIN32)
     configure_file (
         "${PROJECT_SOURCE_DIR}/winres.rc"
         "${PROJECT_BINARY_DIR}/winres.rc"
     )
-    set(WIN_RES_FILE "${PROJECT_BINARY_DIR}/winres.res")
-    add_custom_command(OUTPUT "${WIN_RES_FILE}"
-        COMMAND "${CMAKE_RC_COMPILER}" "${PROJECT_BINARY_DIR}/winres.rc" -O coff -o "${WIN_RES_FILE}"
-        MAIN_DEPENDENCY "${PROJECT_BINARY_DIR}/winres.rc"
-        DEPENDS "images/icon.ico")
+    set(WIN_RES_FILE "${PROJECT_BINARY_DIR}/winres.rc")
 endif (WIN32)
 
 # Sources and headers
 set(hdrmerge_sources
-    Launcher.cpp MainWindow.cpp PreviewWidget.cpp DraggableScrollArea.cpp DngPropertiesDialog.cpp LoadOptionsDialog.cpp
     Image.cpp ImageStack.cpp Bitmap.cpp RawParameters.cpp EditableMask.cpp DngFloatWriter.cpp
-    TiffDirectory.cpp AboutDialog.cpp BoxBlur.cpp ExifTransfer.cpp ImageIO.cpp)
+    TiffDirectory.cpp BoxBlur.cpp ExifTransfer.cpp ImageIO.cpp)
+set(hdrmerge_gui_sources
+    AboutDialog.cpp MainWindow.cpp PreviewWidget.cpp DraggableScrollArea.cpp DngPropertiesDialog.cpp LoadOptionsDialog.cpp)
 set(hdrmerge_qobject_headers MainWindow.hpp PreviewWidget.hpp LoadOptionsDialog.hpp
     DraggableScrollArea.hpp DngPropertiesDialog.hpp AboutDialog.hpp)
 set(hdrmerge_translations hdrmerge_es.ts)
@@ -88,11 +84,17 @@ configure_file (
 )
 QT4_ADD_RESOURCES(hdrmerge_rsrc "${PROJECT_BINARY_DIR}/translations.qrc" resources.qrc)
 
-add_library(hdrmerge-objects OBJECT ${hdrmerge_sources} ${hdrmerge_moc} ${hdrmerge_rsrc})
-add_executable(hdrmerge ${PLATFORM} main.cpp $<TARGET_OBJECTS:hdrmerge-objects> "${WIN_RES_FILE}")
+add_library(hdrmerge-objects OBJECT ${hdrmerge_sources} ${hdrmerge_rsrc})
+add_library(hdrmerge-gui-objects OBJECT ${hdrmerge_gui_sources} ${hdrmerge_moc})
+add_executable(hdrmerge ${PLATFORM} main.cpp Launcher.cpp
+    $<TARGET_OBJECTS:hdrmerge-objects> $<TARGET_OBJECTS:hdrmerge-gui-objects> "${WIN_RES_FILE}")
 target_link_libraries(hdrmerge ${hdrmerge_libs})
 
 if (WIN32)
+    # Compile a target without GUI, for the .com executable
+    add_executable(hdrmerge-nogui main.cpp Launcher.cpp $<TARGET_OBJECTS:hdrmerge-objects> "${WIN_RES_FILE}")
+    target_link_libraries(hdrmerge-nogui ${hdrmerge_libs})
+    set_target_properties(hdrmerge-nogui PROPERTIES COMPILE_DEFINITIONS "NO_GUI")
     # Create the installer with makensis
     find_program(MAKENSIS_EXECUTABLE makensis)
     if (MAKENSIS_EXECUTABLE)
@@ -114,7 +116,7 @@ if (WIN32)
             "${PROJECT_BINARY_DIR}/setup.nsi" @ONLY
         )
         add_custom_command(OUTPUT ${SETUP_PROG}
-            COMMAND "${MAKENSIS_EXECUTABLE}" setup.nsi#-V2 setup.nsi
+            COMMAND "${MAKENSIS_EXECUTABLE}" -V2 setup.nsi
             MAIN_DEPENDENCY setup.nsi
             DEPENDS "${PROJECT_BINARY_DIR}/hdrmerge.exe"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")

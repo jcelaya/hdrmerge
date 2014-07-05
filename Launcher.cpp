@@ -29,7 +29,9 @@
 #include <QLocale>
 #include "Launcher.hpp"
 #include "ImageIO.hpp"
+#ifndef NO_GUI
 #include "MainWindow.hpp"
+#endif
 #include "Log.hpp"
 using namespace std;
 
@@ -42,12 +44,16 @@ Launcher::Launcher(int argc, char * argv[]) : argc(argc), argv(argv), help(false
 
 
 int Launcher::startGUI() {
+#ifndef NO_GUI
     // Create main window
     MainWindow mw;
     mw.preload(generalOptions.fileNames);
     mw.show();
 
     return QApplication::exec();
+#else
+    return 0;
+#endif
 }
 
 
@@ -205,7 +211,9 @@ void Launcher::showHelp() {
     auto tr = [&] (const char * text) { return QCoreApplication::translate("Help", text); };
     cout << tr("Usage") << ": HDRMerge [--help] [OPTIONS ...] [RAW_FILES ...]" << endl;
     cout << tr("Merges RAW_FILES into an HDR DNG raw image.") << endl;
+#ifndef NO_GUI
     cout << tr("If neither -a nor -o, nor --batch options are given, the GUI will be presented.") << endl;
+#endif
     cout << tr("If similar options are specified, only the last one prevails.") << endl;
     cout << endl;
     cout << tr("Options:") << endl;
@@ -263,8 +271,12 @@ bool Launcher::checkGUI() {
 
 
 int Launcher::run() {
+#ifndef NO_GUI
     bool useGUI = checkGUI();
-
+#else
+    bool useGUI = false;
+    help = checkGUI();
+#endif
     QApplication app(argc, argv, useGUI);
 
     // Settings

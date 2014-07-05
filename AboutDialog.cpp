@@ -20,6 +20,7 @@
  *
  */
 
+#include "config.h"
 #include <QLabel>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -37,7 +38,7 @@ AboutDialog::AboutDialog(QWidget * parent, Qt::WindowFlags f) : QDialog(parent, 
     logoLabel->setPixmap(QPixmap(":/images/logo.png").scaledToWidth(400, Qt::SmoothTransformation));
     layout->addWidget(logoLabel);
     layout->addSpacing(12);
-    QLabel * text = new QLabel("<h1>HDRMerge</h1>"
+    QLabel * text = new QLabel("<h1>HDRMerge " HDRMERGE_VERSION_STRING "</h1>"
     "<p><a href=\"http://jcelaya.github.io/hdrmerge/\">http://jcelaya.github.io/hdrmerge/</a></p>"
     "<p>" + tr("A software for the fusion of multiple raw images into a single high dynamic range image.") + "</p>"
         "<p>Copyright &copy; 2012 Javier Celaya (jcelaya@gmail.com)</p>"

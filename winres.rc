@@ -1,0 +1,26 @@
+iconId ICON "@PROJECT_SOURCE_DIR@/images/icon.ico"
+
+1 VERSIONINFO
+FILEVERSION     @HDRMERGE_VERSION_MAJOR@,@HDRMERGE_VERSION_MINOR@,@HDRMERGE_VERSION_REV@,0
+PRODUCTVERSION  @HDRMERGE_VERSION_MAJOR@,@HDRMERGE_VERSION_MINOR@,@HDRMERGE_VERSION_REV@,0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "CompanyName", "Javier Celaya"
+            VALUE "FileDescription", "HDRMerge@WIN_ARCH@"
+            VALUE "FileVersion", "@HDRMERGE_VERSION@"
+            VALUE "InternalName", "hdrmerge"
+            VALUE "LegalCopyright", "Javier Celaya"
+            VALUE "OriginalFilename", "hdrmerge.exe"
+            VALUE "ProductName", "HDRMerge"
+            VALUE "ProductVersion", "@HDRMERGE_VERSION@"
+        END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END

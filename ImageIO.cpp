@@ -94,7 +94,8 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
                     } else {
                         int pos = stack.addImage(std::move(image));
                         rawParameters.emplace_back(std::move(params));
-                        rawParameters[pos].swap(rawParameters.back());
+                        for (int j = rawParameters.size() - 1; j > pos; --j)
+                            rawParameters[j - 1].swap(rawParameters[j]);
                     }
                 }
             }

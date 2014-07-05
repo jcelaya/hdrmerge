@@ -70,7 +70,7 @@ MainWindow::MainWindow() : QMainWindow() {
     createToolbars();
     createMenus();
 
-    setWindowTitle(tr("HDRMerge v%1.%2 - Raw image fusion").arg(HDRMERGE_VERSION_MAJOR).arg(HDRMERGE_VERSION_MINOR));
+    setWindowTitle(tr("HDRMerge %1 - Raw image fusion").arg(HDRMERGE_VERSION_STRING));
     setWindowIcon(QIcon(":/images/icon.png"));
 
     QSettings settings;

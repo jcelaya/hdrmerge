@@ -3,6 +3,7 @@
 
 # this one is important
 SET(CMAKE_SYSTEM_NAME Windows)
+SET(WIN_ARCH "")
 
 # specify the cross compiler
 SET(CMAKE_C_COMPILER   /usr/bin/i686-w64-mingw32-gcc)

@@ -239,6 +239,7 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
                     interpolated.setPixel(x, y, qRgb(r, g, b));
                 }
             }
+            LibRaw::dcraw_clear_mem(image);
             // The result may be some pixels bigger than the original...
             return interpolated.copy(0, 0, params.width, params.height);
         }

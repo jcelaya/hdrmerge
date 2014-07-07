@@ -67,6 +67,7 @@ public slots:
 
 signals:
     void radiusChanged(int r);
+    void pixelUnderMouse(int x, int y);
 
 protected:
     void paintEvent(QPaintEvent * event);

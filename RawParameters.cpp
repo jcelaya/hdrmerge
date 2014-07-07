@@ -77,16 +77,13 @@ void RawParameters::loadCamXyzFromDng() {
             cmData = srcExif.findKey(Exiv2::ExifKey("Exif.Image.ColorMatrix2"));
         }
         if (cmData != srcExif.end() && cmData->count() == 3*colors) {
-            Log::debug("camXyz values found in metadata.");
             for (int c = 0; c < colors; ++c) {
                 for (int i = 0; i < 3; ++i) {
                     camXyz[c][i] = 0.0;
                     for (int j = 0; j < colors; ++j) {
                         camXyz[c][i] += cc[c][j] * cmData->toFloat(j*3 + i) * xyz[i];
                     }
-                    Log::debugN(" ", camXyz[c][i]);
                 }
-                Log::debug();
             }
         }
     } catch (Exiv2::Error & e) {

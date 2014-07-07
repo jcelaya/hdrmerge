@@ -197,12 +197,13 @@ void PreviewWidget::setShowBrush() {
 
 void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
     int rx = mouseX = event->x(), ry = mouseY = event->y();
+    rotate(rx, ry);
+    emit pixelUnderMouse(rx, ry);
     if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
         event->accept();
         if (pressed) {
             stack.getMask().startAction(addPixels, layer);
         }
-        rotate(rx, ry);
         stack.getMask().editPixels(rx, ry, radius);
         render(QRect(mouseX - radius, mouseY - radius, 2*radius + 1, 2*radius + 1));
     } else {

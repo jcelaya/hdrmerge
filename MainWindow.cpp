@@ -80,10 +80,16 @@ MainWindow::MainWindow() : QMainWindow() {
 
 
 void MainWindow::createWidgets() {
+    statusBar = new QStatusBar(this);
+    setStatusBar(statusBar);
+    statusLabel = new QLabel(statusBar);
+    statusBar->addWidget(statusLabel);
+
     previewArea = new DraggableScrollArea(this);
     setCentralWidget(previewArea);
     preview = new PreviewWidget(io.getImageStack(), previewArea);
     previewArea->setWidget(preview);
+    connect(preview, SIGNAL(pixelUnderMouse(int, int)), this, SLOT(setPixelStatus(int, int)));
 
     radiusBox = new QSpinBox();
     radiusBox->setRange(0, 200);
@@ -200,6 +206,19 @@ void MainWindow::createToolbars() {
     layerSelector->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     layerSelectorGroup = new QActionGroup(layerSelector);
     connect(layerSelectorGroup, SIGNAL(triggered(QAction *)), this, SLOT(layerSelected(QAction *)));
+}
+
+
+void MainWindow::setPixelStatus(int x, int y) {
+    int l = io.getImageStack().getImageAt(x, y);
+    Image & img = io.getImageStack().getImage(l);
+    setStatus(tr("Layer %1: displaced %2,%3,%4 cropped | src. value = %5 ; result = %6")
+        .arg(l + 1)
+        .arg(img.getDeltaX())
+        .arg(img.getDeltaY())
+        .arg(io.getImageStack().isCropped() ? "" : " not")
+        .arg(io.getImageStack().getImage(l)(x, y))
+        .arg(io.getImageStack().value(x, y)));
 }
 
 

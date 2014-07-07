@@ -41,7 +41,7 @@ public:
     void fromLibRaw(const LibRaw & rawData);
 
     bool isSameFormat(const RawParameters & r) const {
-        return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc && flip == r.flip;
+        return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc;
     }
     uint8_t FC(int x, int y) const {
         // (x, y) is relative to the ACTIVE AREA

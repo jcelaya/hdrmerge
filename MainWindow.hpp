@@ -33,6 +33,7 @@
 #include <QToolBar>
 #include <QSpinBox>
 #include <QSlider>
+#include <QStatusBar>
 #include "ImageIO.hpp"
 
 
@@ -50,6 +51,15 @@ public:
     void preload(const std::vector<std::string> & o) {
         preloadFiles = o;
     }
+
+public slots:
+    void setStatus(const QString & status) {
+        statusLabel->setText(status);
+    }
+    void showTemporaryStatus(const QString & status) {
+        statusBar->showMessage(status, 3000);
+    }
+    void setPixelStatus(int x, int y);
 
 protected:
     void keyPressEvent(QKeyEvent * event) { setToolFromKey(); }
@@ -97,6 +107,8 @@ private:
     QActionGroup * layerSelectorGroup;
     QToolBar * layerSelector;
     QSlider * exposureSlider;
+    QStatusBar * statusBar;
+    QLabel * statusLabel;
 
     ImageIO io;
     std::vector<std::string> preloadFiles;

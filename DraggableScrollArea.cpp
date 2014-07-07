@@ -36,7 +36,7 @@ void DraggableScrollArea::show(int x, int y) {
 void DraggableScrollArea::toggleMoveViewport(bool toggle) {
     moveViewport = toggle;
     if (toggle)
-        widget()->setCursor(QCursor(Qt::OpenHandCursor));
+        widget()->setCursor(QCursor(Qt::CrossCursor));
 }
 
 
@@ -50,7 +50,7 @@ void DraggableScrollArea::mousePressEvent(QMouseEvent * event) {
 
 void DraggableScrollArea::mouseReleaseEvent(QMouseEvent * event) {
     if (moveViewport && event->button() == Qt::LeftButton) {
-        widget()->setCursor(QCursor(Qt::OpenHandCursor));
+        widget()->setCursor(QCursor(Qt::CrossCursor));
     }
 }
 

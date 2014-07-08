@@ -48,7 +48,7 @@ public:
     void crop();
     void computeRelExposures();
     void generateMask();
-    Array2D<float> compose(const RawParameters & md) const;
+    Array2D<float> compose(const RawParameters & md, int featherRadius) const;
 
     size_t size() const { return images.size(); }
 
@@ -89,6 +89,7 @@ public:
     bool isLayerValidAt(int layer, size_t x, size_t y) const {
         return images[layer].contains(x, y);
     }
+    void calculateSaturationLevel(const RawParameters & params);
 
 private:
     class EditableMaskImpl : public EditableMask {
@@ -106,6 +107,7 @@ private:
     size_t width;
     size_t height;
     int flip;
+    uint16_t satThreshold;
 };
 
 } // namespace hdrmerge

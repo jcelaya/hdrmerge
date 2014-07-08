@@ -176,7 +176,7 @@ void Launcher::parseCommandLine() {
                     int value = stoi(argv[i]);
                     if (value == 32 || value == 24 || value == 16) saveOptions.bps = value;
                 } catch (std::invalid_argument & e) {
-                    cerr << tr("Invalid %1 parameter, using default.").arg("-b") << endl;
+                    cerr << tr("Invalid %1 parameter, using default.").arg(argv[i - 1]) << endl;
                 }
             }
         } else if (string("-g") == argv[i]) {
@@ -184,7 +184,15 @@ void Launcher::parseCommandLine() {
                 try {
                     generalOptions.batchGap = stod(argv[i]);
                 } catch (std::invalid_argument & e) {
-                    cerr << tr("Invalid %1 parameter, using default.").arg("-g") << endl;
+                    cerr << tr("Invalid %1 parameter, using default.").arg(argv[i - 1]) << endl;
+                }
+            }
+        } else if (string("-r") == argv[i]) {
+            if (++i < argc) {
+                try {
+                    saveOptions.featherRadius = stoi(argv[i]);
+                } catch (std::invalid_argument & e) {
+                    cerr << tr("Invalid %1 parameter, using default.").arg(argv[i - 1]) << endl;
                 }
             }
         } else if (string("-p") == argv[i]) {
@@ -197,7 +205,7 @@ void Launcher::parseCommandLine() {
                 } else if (previewWidth == "none") {
                     saveOptions.previewSize = 0;
                 } else {
-                    cerr << tr("Invalid %1 parameter, using default.").arg("-p") << endl;
+                    cerr << tr("Invalid %1 parameter, using default.").arg(argv[i - 1]) << endl;
                 }
             }
         } else if (argv[i][0] != '-') {

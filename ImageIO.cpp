@@ -107,6 +107,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
         return (failedImage << 1) + error - 1;
     }
     stack.setFlip(rawParameters.front()->flip);
+    stack.calculateSaturationLevel(*rawParameters.front());
     if (options.align && rawParameters.front()->canAlign()) {
         Timer t("Align");
         progress.advance(p += step, "Aligning");
@@ -131,7 +132,7 @@ int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     params.width = stack.getWidth();
     params.height = stack.getHeight();
     params.adjustWhite(stack.getImage(stack.size() - 1));
-    Array2D<float> composedImage = stack.compose(params);
+    Array2D<float> composedImage = stack.compose(params, options.featherRadius);
 
     progress.advance(33, "Rendering preview");
     QImage preview = renderPreview(composedImage, params, stack.getMaxExposure());

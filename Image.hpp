@@ -52,14 +52,21 @@ public:
     double exposureAt(size_t x, size_t y) const {
         return (*this)(x, y) * relExp;
     }
-    bool isSaturated(size_t x, size_t y) const {
-        return (*this)(x, y) >= satThreshold;
+    uint16_t getMaxAround(size_t x, size_t y) const;
+    bool isSaturated(uint16_t v) const {
+        return v >= satThreshold;
     }
-    bool isSaturatedAround(size_t x, size_t y) const;
+    bool isSaturated(size_t x, size_t y) const {
+        return isSaturated((*this)(x, y));
+    }
+    bool isSaturatedAround(size_t x, size_t y) const {
+        return isSaturated(getMaxAround(x, y));
+    }
     double getRelativeExposure() const {
         return relExp;
     }
     size_t alignWith(const Image & r);
+    void preScale();
     void releaseAlignData() {
         scaled.reset();
     }
@@ -67,10 +74,10 @@ public:
     bool operator<(const Image & r) {
         return brightness > r.brightness;
     }
+    void setSaturationThreshold(uint16_t sat);
 
 private:
     std::unique_ptr<Array2D<uint16_t>[]> scaled;
-    uint16_t max;
     uint16_t satThreshold;
     double brightness;
     double relExp;
@@ -78,7 +85,6 @@ private:
 
     void subtractBlack(const RawParameters & params);
     void buildImage(uint16_t * rawImage, const RawParameters & params);
-    void preScale();
 };
 
 } // namespace hdrmerge

@@ -20,9 +20,11 @@
  *
  */
 
+#include <exiv2/error.hpp>
 #include "Launcher.hpp"
 
 int main(int argc, char * argv[]) {
+    Exiv2::LogMsg::setLevel(Exiv2::LogMsg::mute);
     hdrmerge::Launcher launcher(argc, argv);
     return launcher.run();
 }

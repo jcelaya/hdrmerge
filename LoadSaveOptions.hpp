@@ -44,7 +44,8 @@ struct SaveOptions {
     std::string fileName;
     bool saveMask;
     std::string maskFileName;
-    SaveOptions() : bps(16), previewSize(0), saveMask(false) {}
+    int featherRadius;
+    SaveOptions() : bps(16), previewSize(0), saveMask(false), featherRadius(3) {}
 };
 
 } // namespace hdrmerge

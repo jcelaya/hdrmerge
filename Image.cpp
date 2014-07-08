@@ -32,7 +32,6 @@ using namespace hdrmerge;
 Image & Image::operator=(Image && move) {
     *static_cast<Array2D<uint16_t> *>(this) = (Array2D<uint16_t> &&)std::move(move);
     scaled.swap(move.scaled);
-    max = move.max;
     satThreshold = move.satThreshold;
     brightness = move.brightness;
     relExp = move.relExp;
@@ -44,28 +43,21 @@ void Image::buildImage(uint16_t * rawImage, const RawParameters & params) {
     resize(params.width, params.height);
     size_t size = width*height;
     brightness = 0.0;
-    uint16_t maxPerColor[4] = {0, 0, 0, 0};
     for (size_t y = 0, ry = params.topMargin; y < height; ++y, ++ry) {
         for (size_t x = 0, rx = params.leftMargin; x < width; ++x, ++rx) {
             uint16_t v = rawImage[ry*params.rawWidth + rx];
             (*this)(x, y) = v;
             brightness += v;
-            if (v > maxPerColor[params.FC(x, y)]) {
-                maxPerColor[params.FC(x, y)] = v;
-            }
         }
     }
-    max = params.max == 0 ? maxPerColor[0] : params.max;
-    for (int c = 0; c < 4; ++c) {
-        if (maxPerColor[c] < max) {
-            max = maxPerColor[c];
-        }
-    }
-    relExp = max == 0 ? 1.0 : 65535.0 / max;
     brightness /= size;
     subtractBlack(params);
-    satThreshold = 0.99*max;
-    preScale();
+    relExp = params.max == 0 ? 1.0 : 65535.0 / params.max;
+}
+
+
+void Image::setSaturationThreshold(uint16_t sat) {
+    satThreshold = sat;
 }
 
 
@@ -80,7 +72,6 @@ void Image::subtractBlack(const RawParameters & params) {
                 }
             }
         }
-        max -= params.black;
     }
 }
 
@@ -93,16 +84,16 @@ void Image::relativeExposure(const Image & r) {
     int relrdy = r.dy - std::max(dy, r.dy);
     int h = height + reldy + relrdy;
     uint16_t * usePixels = &data[-reldy*width - reldx];
-    const uint16_t * rusePixels = &r.data[-relrdy*width - relrdx];
+    const uint16_t * rUsePixels = &r.data[-relrdy*width - relrdx];
     // Minimize square error between images:
     // min. C(n) = sum(n*f(x) - g(x))^2  ->  n = sum(f(x)*g(x)) / sum(f(x)^2)
-    double numerator = 0, denom = 0, threshold = max * 0.9;
+    double numerator = 0, denom = 0;
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
             int pos = y * width + x;
             double v = usePixels[pos];
-            if (v > 0 && v < threshold) {
-                double nv = rusePixels[pos];
+            if (v > 0 && v < satThreshold) {
+                double nv = rUsePixels[pos];
                 numerator += v * nv;
                 denom += v * v;
             }
@@ -117,7 +108,7 @@ size_t Image::alignWith(const Image & r) {
     dx = dy = 0;
     const double tolerance = 1.0/16;
     Histogram histFull(begin(), end());
-    double halfLightPercent = histFull.getFraction(max * 0.9) / 2.0;
+    double halfLightPercent = histFull.getFraction(satThreshold) / 2.0;
     size_t totalError = 0;
     for (int s = scaleSteps - 1; s >= 0; --s) {
         size_t curWidth = width >> (s + 1);
@@ -182,24 +173,20 @@ void Image::preScale() {
 }
 
 
-bool Image::isSaturatedAround(size_t x, size_t y) const {
+uint16_t Image::getMaxAround(size_t x, size_t y) const {
+    uint16_t result = 0;
     if (y > dy) {
-        if ((x > dx && !isSaturated(x - 1, y - 1)) ||
-            !isSaturated(x, y - 1) ||
-            (x < width + dx - 1 && !isSaturated(x + 1, y - 1))) {
-            return false;
-        }
+        if (x > dx) result = std::max(result, (*this)(x - 1, y - 1));
+        result = std::max(result, (*this)(x, y - 1));
+        if (x < width + dx - 1) result = std::max(result, (*this)(x + 1, y - 1));
     }
-    if ((x > dx && !isSaturated(x - 1, y)) ||
-        (x < width + dx - 1 && !isSaturated(x + 1, y))) {
-        return false;
-    }
+    if (x > dx) result = std::max(result, (*this)(x - 1, y));
+    result = std::max(result, (*this)(x, y));
+    if (x < width + dx - 1) result = std::max(result, (*this)(x + 1, y));
     if (y < height + dy - 1) {
-        if ((x > dx && !isSaturated(x - 1, y + 1)) ||
-            !isSaturated(x, y + 1) ||
-            (x < width + dx - 1 && !isSaturated(x + 1, y + 1))) {
-            return false;
-        }
+        if (x > dx) result = std::max(result, (*this)(x - 1, y + 1));
+        result = std::max(result, (*this)(x, y + 1));
+        if (x < width + dx - 1) result = std::max(result, (*this)(x + 1, y + 1));
     }
-    return true;
+    return result;
 }

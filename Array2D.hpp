@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <cstdint>
+#include <bits/algorithmfwd.h>
 
 namespace hdrmerge {
 
@@ -33,6 +34,9 @@ class Array2D {
 public:
     Array2D(size_t w, size_t h) { resize(w, h); }
     Array2D() : Array2D(0, 0) {}
+    Array2D(const Array2D<T> & copy) {
+        (*this) = copy;
+    }
     template <typename Y> Array2D(const Array2D<Y> & copy) {
         (*this) = copy;
     }
@@ -49,6 +53,12 @@ public:
         dx = move.dx;
         dy = move.dy;
         move.resize(0, 0);
+        return *this;
+    }
+    Array2D<T> & operator=(const Array2D<T> & copy) {
+        resize(copy.getWidth(), copy.getHeight());
+        std::copy_n(copy.data.get(), width*height, data.get());
+        displace(copy.getDeltaX(), copy.getDeltaY());
         return *this;
     }
     template <typename Y> Array2D<T> & operator=(const Array2D<Y> & copy) {
@@ -111,7 +121,7 @@ public:
     const_iterator cbegin() const { return data.get(); }
     const_iterator cend() const { return data.get() + width*height; }
 
-    template <typename F> void traceCircle(int x, int y, int radius, F function) {
+    template <typename F> void traceCircle(int x, int y, int radius, const F & function) {
         int r2 = radius * radius;
         int ymin = std::max(-y, -radius), ymax = std::min(height - y, radius + 1);
         int xmin = std::max(-x, -radius), xmax = std::min(width - x, radius + 1);
@@ -120,6 +130,16 @@ public:
                 if (row*row + col*col <= r2) {
                     function(rcol, rrow, operator()(rcol, rrow));
                 }
+            }
+        }
+    }
+
+    template <typename F> void traceSquare(int x, int y, int radius, const F & function) {
+        int ymin = std::max(-y, -radius), ymax = std::min(height - y, radius + 1);
+        int xmin = std::max(-x, -radius), xmax = std::min(width - x, radius + 1);
+        for (int rrow = y + ymin; rrow < y + ymax; ++rrow) {
+            for (int rcol = x + xmin; rcol < x + xmax; ++rcol) {
+                function(rcol, rrow, operator()(rcol, rrow));
             }
         }
     }

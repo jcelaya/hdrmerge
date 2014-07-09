@@ -45,7 +45,6 @@ int ImageStack::addImage(Image && i) {
 
 
 void ImageStack::calculateSaturationLevel(const RawParameters & params) {
-    Timer t("Sat level");
     // Calculate max value of brightest image and assume it is saturated
     uint16_t maxPerColor[4] = { 0, 0, 0, 0 };
     Image & brightest = images.front();
@@ -60,7 +59,7 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params) {
     }
     satThreshold = params.max == 0 ? maxPerColor[0] : params.max;
     for (int c = 0; c < 4; ++c) {
-        if (maxPerColor[c] < sat) {
+        if (maxPerColor[c] < satThreshold) {
             satThreshold = maxPerColor[c];
         }
     }
@@ -73,6 +72,7 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params) {
 
 void ImageStack::align() {
     if (images.size() > 1) {
+        Timer t("Align");
         size_t errors[images.size()];
         #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < images.size(); ++i) {
@@ -111,9 +111,17 @@ void ImageStack::crop() {
 }
 
 
-void ImageStack::computeRelExposures() {
-    for (auto cur = images.rbegin(), next = cur++; cur != images.rend(); next = cur++) {
-        cur->relativeExposure(*next);
+void ImageStack::computeRelExposures(double baseExposure) {
+    Timer t("Compute relative exposures");
+    double mult[images.size()];
+    mult[images.size() - 1] = baseExposure;
+    #pragma omp parallel for schedule(dynamic)
+    for (int i = 0; i < images.size() - 1; ++i) {
+        mult[i] = images[i].relativeExposure(images[i + 1]);
+    }
+    for (int i = images.size() - 2; i >= 0; --i) {
+        mult[i] *= mult[i + 1];
+        images[i].setRelativeExposure(mult[i]);
     }
 }
 

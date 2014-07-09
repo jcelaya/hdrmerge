@@ -106,17 +106,17 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
         rawParameters.clear();
         return (failedImage << 1) + error - 1;
     }
-    stack.setFlip(rawParameters.front()->flip);
-    stack.calculateSaturationLevel(*rawParameters.front());
-    if (options.align && rawParameters.front()->canAlign()) {
-        Timer t("Align");
+    RawParameters & params = *rawParameters.front();
+    stack.setFlip(params.flip);
+    stack.calculateSaturationLevel(params);
+    if (options.align && params.canAlign()) {
         progress.advance(p += step, "Aligning");
         stack.align();
         if (options.crop) {
             stack.crop();
         }
     }
-    stack.computeRelExposures();
+    stack.computeRelExposures(params.max == 0 ? 1.0 : 65535.0 / params.max);
     stack.generateMask();
     progress.advance(100, "Done loading!");
     return numImages << 1;

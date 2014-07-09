@@ -70,7 +70,10 @@ public:
     void releaseAlignData() {
         scaled.reset();
     }
-    void relativeExposure(const Image & nextImage);
+    double relativeExposure(const Image & nextImage) const;
+    void setRelativeExposure(double r) {
+        relExp = r;
+    }
     bool operator<(const Image & r) {
         return brightness > r.brightness;
     }

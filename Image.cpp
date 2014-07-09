@@ -76,7 +76,7 @@ void Image::subtractBlack(const RawParameters & params) {
 }
 
 
-void Image::relativeExposure(const Image & r) {
+double Image::relativeExposure(const Image & r) const {
     int reldx = dx - std::max(dx, r.dx);
     int relrdx = r.dx - std::max(dx, r.dx);
     int w = width + reldx + relrdx;
@@ -99,8 +99,7 @@ void Image::relativeExposure(const Image & r) {
             }
         }
     }
-    double immExp = numerator / denom;
-    relExp = immExp * r.relExp;
+    return numerator / denom;
 }
 
 

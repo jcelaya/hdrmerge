@@ -198,7 +198,8 @@ void PreviewWidget::setShowBrush() {
 void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
     int rx = mouseX = event->x(), ry = mouseY = event->y();
     rotate(rx, ry);
-    emit pixelUnderMouse(rx, ry);
+    if (rx >= 0 && rx < stack.getWidth() && ry >= 0 && ry < stack.getHeight())
+        emit pixelUnderMouse(rx, ry);
     if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
         event->accept();
         if (pressed) {

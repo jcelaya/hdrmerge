@@ -28,6 +28,7 @@
 #include <QPushButton>
 #include <QFileDialog>
 #include <QSettings>
+#include <QSpinBox>
 #include "DngPropertiesDialog.hpp"
 
 namespace hdrmerge {
@@ -65,6 +66,11 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     }
     connect(previewGroup, SIGNAL(buttonClicked( int)), this, SLOT(setPreviewSize(int)));
 
+    QSpinBox * radiusSelector = new QSpinBox(this);
+    radiusSelector->setRange(0, 1000);
+    radiusSelector->setValue(featherRadius);
+    connect(radiusSelector, SIGNAL(valueChanged(int)), this, SLOT(setFeatherRadius(int)));
+
     QCheckBox * saveMaskFile = new QCheckBox(tr("Save"), this);
 
     maskFileSelector = new QWidget(this);
@@ -97,6 +103,7 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
     QFormLayout * formLayout = new QFormLayout(formWidget);
     formLayout->addRow(tr("Bits per sample:"), bpsSelector);
     formLayout->addRow(tr("Preview size:"), previewSelector);
+    formLayout->addRow(tr("Mask blur radius:"), radiusSelector);
     formLayout->addRow(tr("Mask image:"), saveMaskFile);
     formLayout->addRow("", maskFileSelector);
     formWidget->setLayout(formLayout);
@@ -130,6 +137,7 @@ void DngPropertiesDialog::accept() {
         settings.setValue("previewSize", previewSize);
         settings.setValue("saveMask", saveMask);
         settings.setValue("maskFileName", maskFileName.c_str());
+        settings.setValue("featherRadius", featherRadius);
     }
     QDialog::accept();
 }
@@ -141,6 +149,7 @@ void DngPropertiesDialog::loadDefaultOptions() {
     previewSize = settings.value("previewSize", 2).toInt();
     saveMask = settings.value("saveMask", false).toBool();
     maskFileName = settings.value("maskFileName", "%od/%of_mask.png").toString().toUtf8().constData();
+    featherRadius = settings.value("featherRadius", 3).toInt();
 }
 
 
@@ -167,6 +176,11 @@ void DngPropertiesDialog::setMaskFileName() {
 
 void DngPropertiesDialog::setMaskFileSelectorEnabled(int state) {
     maskFileSelector->setEnabled(state == 2);
+}
+
+
+void DngPropertiesDialog::setFeatherRadius(int r) {
+    featherRadius = r;
 }
 
 

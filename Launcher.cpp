@@ -247,7 +247,8 @@ void Launcher::showHelp() {
     cout << "    " << "              " << tr("Besides the parameters accepted by -o, it also accepts:") << endl;
     cout << "    " << "              - %of: " << tr("Replaced by the base file name of the output file.") << endl;
     cout << "    " << "              - %od: " << tr("Replaced by the directory name of the output file.") << endl;
-    cout << "    " << "-p size       " << tr("Preview width. size can be full, half or none,") << endl;
+    cout << "    " << "-r radius     " << tr("Mask blur radius, to soften transitions between images. Default is 3 pixels.") << endl;
+    cout << "    " << "-p size       " << tr("Preview size. Can be full, half or none.") << endl;
     cout << "    " << "-v            " << tr("Verbose mode.") << endl;
     cout << "    " << "-vv           " << tr("Debug mode.") << endl;
     cout << "    " << "RAW_FILES     " << tr("The input raw files.") << endl;

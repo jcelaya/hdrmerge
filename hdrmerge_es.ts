@@ -92,8 +92,12 @@
         <translation type="finished">Los ficheros raw de entrada.</translation>
     </message>
     <message>
-        <source>Preview width.</source>
-        <translation type="finished">Ancho de la vista previa.</translation>
+        <source>Preview size. Can be full, half or none.</source>
+        <translation type="finished">Tamaño de la vista previa. Puede ser full, half o none.</translation>
+    </message>
+    <message>
+        <source>Mask blur radius, to soften transitions between images. Default is 3 pixels.</source>
+        <translation type="finished">Radio de difuminado de la máscara, para suavizar transiciones. 3 pixels por defecto.</translation>
     </message>
     <message>
         <source>Saves the mask to MASK_FILE as a PNG image.</source>
@@ -258,6 +262,10 @@
     <message>
         <source>Preview size:</source>
         <translation type="finished">Tamaño de la vista previa:</translation>
+    </message>
+    <message>
+        <source>Mask blur radius:</source>
+        <translation type="finished">Radio de difuminado de la máscara:</translation>
     </message>
     <message>
         <source>Mask image:</source>

@@ -48,10 +48,11 @@ private slots:
     void setPreviewSize(int i);
     void setMaskFileName();
     void setMaskFileSelectorEnabled(int state);
+    void setFeatherRadius(int r);
 
 private:
     Q_OBJECT
-    
+
     void loadDefaultOptions();
 
     QLineEdit * maskFileEditor;

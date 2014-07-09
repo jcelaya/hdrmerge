@@ -62,6 +62,15 @@ If you want to tone-map an image resulting from HDRMerge with a program like Lum
 
 # Feature List
 
+### v0.4.5:
+
+* Better compatibility with other programs, by producing a DNG file that maintains the original layout: frame and active area sizes, black and white levels, etc. *Note that, if you use RawTherapee, you need v4.1.23 or higher to open these files.*
+* Batch mode in command line! Merge several sets of HDR images at once.
+* Creation of menu launchers and a Windows installer.
+* Support for CYGM and Fujifilm X-Trans sensors (experimental).
+* Several bug-fixes.
+* Improved accuracy and performance.
+
 ### v0.4.4:
 
 * Better support for more camera models.

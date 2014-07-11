@@ -16,10 +16,19 @@ HDRMerge is currently supported in Linux and Windows, with the Mac version on it
 
 # Getting started
 
-You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-05-24-using-hdrmerge %}), or jump directly to the command line help with `hdrmerge --help`.
+You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-07-11-user-manual %}), or jump directly to the command line help with `hdrmerge --help`.
 
 
 # Feature List
+
+### v0.4.5:
+
+* Better compatibility with other programs, by producing a DNG file that maintains the original layout: frame and active area sizes, black and white levels, etc. *Note that, if you use RawTherapee, you need v4.1.23 or higher to open these files.*
+* Batch mode in command line! Merge several sets of HDR images at once.
+* Creation of menu launchers and a Windows installer.
+* Support for CYGM and Fujifilm X-Trans sensors (experimental).
+* Several bug-fixes.
+* Improved accuracy and performance.
 
 ### v0.4.4:
 

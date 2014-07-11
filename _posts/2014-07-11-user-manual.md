@@ -1,7 +1,7 @@
 ---
 layout: post
 image: using-hdrmerge.jpg
-title: HDRMerge User Manual v0.4.4
+title: HDRMerge User Manual v0.4.5
 categories: documentation
 ---
 # Understanding HDRMerge
@@ -42,7 +42,7 @@ Once aligned, the program can crop the output image to just the area of the imag
 You can select not to do so, in which case the output image will cover the same area as the least exposed input, to avoid burnt areas of more exposed shots.
 The main reasons for not aligning and/or cropping the images are:
 
-* Because the alignment algorithm can sometimes fail to detect perfectly aligned images, mostly with highly exposed shots.
+* Because the alignment algorithm may fail due to lack of detail, e.g. with highly exposed shots or out of focus areas.
 * Because the user wants to apply a flat-field correction later. RawTherapee only applies this correction to images that have the same dimensions as the flat-field image.
 
 When you accept a list of input images, the application will show a progress dialog with information of each load step.
@@ -57,9 +57,10 @@ Once the input images are loaded, the interface presents you with the main windo
 
 Most of its space is occupied by a 100% preview of the result.
 There, input images are stacked on top of each other, and you can see the selected pixels from each layer painted with a different color.
-You can then pan the result to inspect it.
+The set of pixels of each layer that end in the final output is called the _merge mask_, and HDRMerge's GUI allows you to modify it.
+But first, you can then pan the result to inspect it.
 
-The tools to modify which pixels of each layer end in the final output are located in the toolbars.
+The tools to modify the mask are located in the toolbars.
 They appear at the top by default, but you can move them to any edge of the main window.
 From left to right, the three main tools allows you to pan the preview, add pixels to the current layer, and remove pixels from it.
 You can quickly change to the add and remove tools by holding down the `Shift` and `Control` keys, respectively.
@@ -91,32 +92,51 @@ These operations can be undone and redone with the actions of the `Edit` menu, o
 Once you are satisfied with the preview, the `Save HDR` command of the `File` menu generates the output DNG file.
 It will first ask you for a file name, and then it will present the Save dialog:
 
-![Save dialog]({{ site.baseurl }}/images/save_dialog_0.4.4.png)
+![Save dialog]({{ site.baseurl }}/images/save_dialog_0.4.5.png)
 
-You can select the number of bits per sample (16, 24 or 32), the size of the embedded preview (full, half or no preview) and whether to save an image with the mask that was used to merge the input files.
+You can first select the number of bits per sample (16, 24 or 32).
 The number of bits per sample has an important impact in the output file size.
 As a rule of thumb, the default value of 16 bits will be enough most of the time.
 Empirical tests (thanks to DrSlony) show no apparent difference between 16- and 32-bit images, after merging 5 exposures with 2EV steps, despite strong manipulation of shadows/mid-tones/highlights.
 Nevertheless, if you see some unexpected noise in the shadows of the output image, you can try a 24-bit output.
 32 bits will almost never be necessary, but it can be selected anyway.
+Then, you can also select the size of the embedded preview (full, half or no preview).
+To avoid hard transitions in certain rare situations, HDRMerge applies a blur filter to the mask.
+The default value of 3 pixels is enough most of the time, but in some rare occasions you may need to increment it.
+Finally, you can select whether to save an image with the mask that was used to merge the input files.
 
 ## The command line interface
 
-You can also run HDRMerge without GUI, in batch mode.
+You can also run HDRMerge without GUI.
 With the command line switches, you can control all the process described before, except for the edition tools.
 In this way, HDR images can be created with very little interaction.
 
 The main arguments of the batch mode is a list of raw files to be loaded, and an output switch.
-The "-o file" switch specifies that "file" will be the name of the output file.
-The "-a" switch generates this name from the names of the input files.
+The `-o file` switch specifies that `file` will be the name of the output file.
+Since version 0.4.5, this name can contain certain tokens that will be replaced by parts of the input file names:
 
-The rest of the switches control the rest of the process:
+* `%if[n]` is replaced by the base file name of image _n_. Image file names are first sorted in lexicographical order. Besides, _n = -1_ is the last image, _n = -2_ is the previous to the last image, and so on.
+* `%iF[n]` is replaced by the base file name of image _n_ without the extension.
+* `%id[n]` is replaced by the directory name of image _n_.
+* `%in[n]` is replaced by the numerical suffix of image _n_, if it exists. For instance, in IMG_1234.CR2, the numerical suffix would be 1234.
+* Finally, `%%` is replaced by a single `%`.
 
-* The MTB alignment and crop algorithms are enabled by default, and can be disabled with the switches "--no-align" and "--no-crop", respectively.
-* The "-b bps" switch selects the output bits per sample. The allowed values are 16, 24 and 32.
-* The "-p size" switch selects the size of the embedded preview. The allowed values are full, half and none.
-* The "-m mask" switch selects the name of the mask file, if you want to save it.
+The `-a` switch is the same as `-o %id[-1]/%iF[0]-%in[-1].dng`.
+The rest of the switches control other details of the process:
 
-You can also control the level of verbosity of the program with the "-v" and "-vv" switches.
-The "-v" switch shows progress information, and the "-vv" switch also shows debug information.
-Finally, the "--help" switch presents a short guide to the command line interface.
+* The MTB alignment and crop algorithms are enabled by default, and can be disabled with the switches `--no-align` and `--no-crop`, respectively.
+* The `-b bps` switch selects the output bits per sample. The allowed values are 16, 24 and 32.
+* The `-p size` switch selects the size of the embedded preview. The allowed values are full, half and none.
+* The `-m mask` switch selects the name of the mask file, if you want to save it. It accepts the same tokens as the `-o` switch, plus:
+  * `%of` is replaced by the base file name of the output file.
+  * `%od` is replaced by the output directory.
+
+The command line interface also offers a powerful functionality since version 0.4.5: the batch mode.
+With the `-B` switch, HDRMerge will take a long list of input files and group them into exposure sets.
+The grouping is done based on the time interval between shots.
+Shots that are no more than 3 seconds apart will be considered part of the same set.
+This time gap is more than enough for shots taken in burst mode, but it can be changed with switch `-g gap` for shots taken manually.
+
+You can also control the level of verbosity of the program with the `-v` and `-vv` switches.
+The `-v` switch shows progress information, and the `-vv` switch also shows debug information.
+Finally, the `--help` switch presents a short guide to the command line interface.

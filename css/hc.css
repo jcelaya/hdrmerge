@@ -55,7 +55,7 @@ p
 {
   width:90%;
   padding-right:0;
-  padding-top:30px
+  padding-top:0
 }
 
 .container a
@@ -277,10 +277,11 @@ pre
   font-size:3em;
   font-family:"Helvetica Neue", helvetica, "Open Sans", sans-serif;
   font-weight:bolder;
-  color:#404040;
+  color:#d90006;
   text-align:left;
-  padding-top:5%;
-  padding-left:10%;
+  padding-top:15px;
+  padding-left:0;
+  padding-bottom:30px;
   text-shadow:1px 1px #fff
 }
 
@@ -364,7 +365,7 @@ img
   margin-bottom:30px;
   background-color:#f9f9f9;
   box-shadow:1px 1px 0 1px #e8e8e8;
-  padding:10px 40px 0
+  padding:10px 40px
 }
 
 .post

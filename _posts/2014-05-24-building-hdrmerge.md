@@ -1,5 +1,6 @@
 ---
 layout: post
+image: museum.jpg
 title: Building HDRMerge
 categories: internals
 ---

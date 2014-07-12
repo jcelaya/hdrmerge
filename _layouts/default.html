@@ -8,12 +8,11 @@
     {% if page.image %}<style>.showcase-wrapper {background-image: url("{{ site.baseurl }}/images/{{ page.image }}");}</style>
     {% else %}<style>.showcase-wrapper {background-image: url("{{ site.baseurl }}/images/index.jpg");}</style>{% endif %}
     <div class="showcase-wrapper sticky">
-        <div class="showcase-text">
-            {{ page.title }}{% if page.subtitle %}<br />
-            <smaller>{{ page.subtitle }}</smaller>{% endif %}
-        </div>
     </div>
     <div class="container">
+        {% if page.title %}<div class="showcase-text">
+            {{ page.title }}
+        </div>{% endif %}
 {{ content }}
     </div>
 {% include foot.html %}

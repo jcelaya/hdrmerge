@@ -53,7 +53,7 @@ The size, orientation, Bayer pattern and black and white levels must be the same
 
 Once the input images are loaded, the interface presents you with the main window:
 
-![Main window]({{ site.baseurl }}/images/main_window.png)
+![Main window]({{ site.baseurl }}/images/main_window.jpg)
 
 Most of its space is occupied by a 100% preview of the result.
 There, input images are stacked on top of each other, and you can see the selected pixels from each layer painted with a different color.

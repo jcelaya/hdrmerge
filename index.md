@@ -2,10 +2,7 @@
 layout: default
 image: index.jpg
 title: HDRMerge
-subtitle: HDR raw exposure merging
 ---
-# What is HDRMerge?
-
 [HDRMerge](https://github.com/jcelaya/hdrmerge) combines two or more raw images into a single raw with an extended dynamic range. It can import any raw image supported by LibRaw, and outputs a DNG 1.4 image with floating point data. The output raw is built from the less noisy pixels of the input, so that shadows maintain as much detail as possible. This tool also offers a GUI to remove 'ghosts' from the resulting image. [Discover more about HDRMerge]({% post_url 2014-05-24-what-is-hdrmerge %})
 
 

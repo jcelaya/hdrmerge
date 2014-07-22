@@ -24,24 +24,12 @@
 #define _EXIFTRANSFER_HPP_
 
 #include <string>
-#include <exiv2/image.hpp>
 
 namespace hdrmerge {
 
-class ExifTransfer {
-public:
-    ExifTransfer(const std::string & srcFile, const std::string & dstFile) : srcFile(srcFile), dstFile(dstFile) {}
-
-    void copyMetadata();
-
-private:
-    std::string srcFile, dstFile;
-    Exiv2::Image::AutoPtr src, dst;
-
-    void copyXMP();
-    void copyIPTC();
-    void copyEXIF();
-};
+    namespace Exif {
+        void transfer(const std::string & srcFile, const std::string & dstFile);
+    }
 
 }
 

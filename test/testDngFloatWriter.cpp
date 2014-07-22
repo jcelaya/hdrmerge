@@ -55,8 +55,7 @@ BOOST_AUTO_TEST_CASE(testDngFloatWriter) {
             string title = string("Save Dng Float with ") + to_string(bps) + " bps and preview width " + to_string(width);
             measureTime(title.c_str(), [&] () {
                 writer.write(std::move(result), params, fileName);
-                ExifTransfer exif(params.fileName, fileName);
-                exif.copyMetadata();
+                Exif::transfer(params.fileName, fileName);
             });
 //         }
 //     }

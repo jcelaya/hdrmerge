@@ -144,8 +144,7 @@ int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     writer.setPreview(preview);
     writer.write(std::move(composedImage), params, options.fileName);
 
-    ExifTransfer exif(params.fileName, options.fileName);
-    exif.copyMetadata();
+    Exif::transfer(params.fileName, options.fileName);
     progress.advance(100, "Done writing!");
 
     if (options.saveMask) {

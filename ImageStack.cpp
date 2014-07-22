@@ -203,19 +203,22 @@ static Array2D<uint8_t> fattenMask(const Array2D<uint8_t> & mask, int radius) {
 
         #pragma omp for schedule(dynamic)
         for (size_t y = 0; y < height; y++) {
+            uint8_t rowMax = 0;
             for (size_t x = 0; x < width; x++) { // compute max array
                 max[x][0] = buf[y][x];
-                for (int i = 1; i <= radius; i++)
+                for (int i = 1; i <= radius; i++) {
                     max[x][i] = std::max(std::max(max[x][i - 1], buf[y + i][x]), buf[y - i][x]);
+                    rowMax = std::max(max[x][i], rowMax);
+                }
             }
 
-            int last_max = max[0][circ[-1]];
+            uint8_t last_max = max[0][circ[-1]];
             int last_index = 1;
             for (size_t x = 0; x < width; x++) { // render scan line
                 last_index--;
                 if (last_index >= 0) {
-                    if (last_max == 255) {
-                        result(x, y) = 255;
+                    if (last_max == rowMax) {
+                        result(x, y) = rowMax;
                     } else {
                         last_max = 0;
                         for (int i = radius; i >= 0; i--)

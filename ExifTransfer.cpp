@@ -28,6 +28,28 @@ using namespace Exiv2;
 using namespace std;
 
 
+class ExifTransfer {
+public:
+    ExifTransfer(const std::string & srcFile, const std::string & dstFile) : srcFile(srcFile), dstFile(dstFile) {}
+
+    void copyMetadata();
+
+private:
+    std::string srcFile, dstFile;
+    Exiv2::Image::AutoPtr src, dst;
+
+    void copyXMP();
+    void copyIPTC();
+    void copyEXIF();
+};
+
+
+void hdrmerge::Exif::transfer(const std::string & srcFile, const std::string & dstFile) {
+    ExifTransfer exif(srcFile, dstFile);
+    exif.copyMetadata();
+}
+
+
 void ExifTransfer::copyMetadata() {
     try {
         src = Exiv2::ImageFactory::open(srcFile);

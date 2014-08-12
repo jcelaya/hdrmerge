@@ -25,6 +25,7 @@
 #include <QImage>
 #include <QString>
 #include <QRegExp>
+#include <QFileInfo>
 #include <libraw/libraw.h>
 #include "ImageIO.hpp"
 #include "DngFloatWriter.hpp"
@@ -283,13 +284,11 @@ public:
     }
 
     static QString getBaseName(const QString & name) {
-        int slashPosition = name.lastIndexOf('/');
-        return slashPosition == -1 ? name : name.mid(slashPosition + 1);
+        return QFileInfo(name).fileName();
     }
 
     static QString getDirName(const QString & name) {
-        int slashPosition = name.lastIndexOf('/');
-        return slashPosition == -1 ? "." : name.mid(0, slashPosition);
+        return QFileInfo(name).canonicalPath();
     }
 
 private:

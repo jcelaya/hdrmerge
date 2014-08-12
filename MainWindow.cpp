@@ -32,6 +32,7 @@
 #include <QMenuBar>
 #include <QProgressDialog>
 #include <QSettings>
+#include <QUrl>
 #include "config.h"
 #include "AboutDialog.hpp"
 #include "DngFloatWriter.hpp"
@@ -336,13 +337,22 @@ void MainWindow::saveResult() {
         // Take the prefix and add the first and last suffix
         QString name = io.buildOutputFileName().c_str();
         if (!lastDirSetting.isNull()) {
-            size_t slashPos = name.lastIndexOf('/');
-            if (slashPos > name.length()) slashPos = 0;
-            name = QDir(lastDirSetting.toString()).absolutePath() + "/" + name.right(name.size() - slashPos);
+            name = QDir(lastDirSetting.toString()).absolutePath() + "/" + QFileInfo(name).fileName();
         }
-        QString file = QFileDialog::getSaveFileName(this, tr("Save DNG file"), name,
-            tr("Digital Negatives (*.dng)"), NULL, QFileDialog::DontUseNativeDialog);
-        if (!file.isEmpty()) {
+
+        QFileDialog saveDialog(this, tr("Save DNG file"), name, tr("Digital Negatives (*.dng)"));
+        saveDialog.setAcceptMode(QFileDialog::AcceptSave);
+        saveDialog.setFileMode(QFileDialog::AnyFile);
+        saveDialog.setConfirmOverwrite(true);
+        QList<QUrl> urls;
+        urls << QUrl::fromLocalFile("")
+        << QUrl::fromLocalFile(QDir::homePath())
+            << QUrl::fromLocalFile(io.getInputPath());
+        saveDialog.setSidebarUrls(urls);
+        saveDialog.setOptions(QFileDialog::DontUseNativeDialog);
+
+        if (saveDialog.exec()) {
+            QString file = saveDialog.selectedFiles().front();
             std::string fileName = QDir::toNativeSeparators(file).toUtf8().constData();
             size_t extPos = fileName.find_last_of('.');
             if (extPos > fileName.length() || fileName.substr(extPos) != ".dng") {
@@ -350,9 +360,7 @@ void MainWindow::saveResult() {
             }
             DngPropertiesDialog dpd(this);
             if (dpd.exec()) {
-                QString lastDir = QDir(file).absolutePath();
-                lastDir.truncate(lastDir.lastIndexOf('/'));
-                settings.setValue("lastSaveDirectory", lastDir);
+                settings.setValue("lastSaveDirectory", QFileInfo(file).absolutePath());
                 dpd.fileName = fileName;
                 ProgressDialog pd(this);
                 pd.setWindowTitle(tr("Save DNG file"));

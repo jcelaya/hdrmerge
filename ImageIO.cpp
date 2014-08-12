@@ -309,6 +309,11 @@ string ImageIO::buildOutputFileName() const {
 }
 
 
+QString ImageIO::getInputPath() const {
+    return FileNameManipulator::getDirName(QString(rawParameters[0]->fileName.c_str()));
+}
+
+
 string ImageIO::replaceArguments(const string & pattern, const string & outFileName) const {
     QString result(pattern.c_str());
     QRegExp re;

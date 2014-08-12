@@ -34,8 +34,7 @@ namespace hdrmerge {
 class FileItem : public QListWidgetItem {
 public:
     FileItem(const QString & filename, QListWidget * parent) : QListWidgetItem(parent, 1000) {
-        QDir file(filename);
-        setText(file.path().section('/', -1));
+        setText(QFileInfo(filename).fileName());
         setData(Qt::UserRole, QVariant(filename));
         setSizeHint(QSize(0, 24));
     }
@@ -131,8 +130,7 @@ void LoadOptionsDialog::addFiles() {
         lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
         filter, NULL, QFileDialog::DontUseNativeDialog);
     if (!files.empty()) {
-        QString lastDir = QDir(files.front()).absolutePath();
-        lastDir.truncate(lastDir.lastIndexOf('/'));
+        QString lastDir = QFileInfo(files.front()).absolutePath();
         settings.setValue("lastOpenDirectory", lastDir);
         for (auto & i : files) {
             new FileItem(i, fileList);

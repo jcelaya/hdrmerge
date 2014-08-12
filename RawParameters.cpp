@@ -24,6 +24,7 @@
 #include <cmath>
 #include <algorithm>
 #include <QDateTime>
+#include <QFileInfo>
 #include <libraw/libraw.h>
 #include <exiv2/exiv2.hpp>
 #include "Log.hpp"
@@ -329,10 +330,7 @@ void RawParameters::autoWB(const Array2D<uint16_t> & image) {
 
 
 void RawParameters::dumpInfo() const {
-    size_t slashpos = fileName.find_last_of('/');
-    slashpos = slashpos == string::npos ? 0 : slashpos + 1;
-    // Show idata
-    Log::debugN(fileName.substr(slashpos), ": ", width, 'x', height, " (", rawWidth, 'x', rawHeight, '+', leftMargin, '+', topMargin);
+    Log::debugN(QFileInfo(fileName.c_str()).fileName(), ": ", width, 'x', height, " (", rawWidth, 'x', rawHeight, '+', leftMargin, '+', topMargin);
     Log::debug(", by ", maker, ' ' , model, ", ", isoSpeed, "ISO 1/", (1.0/shutter), "sec f", aperture, " EV:", logExp());
     Log::debugN(hex, filters, dec, ' ', cdesc, ", sat ", max, ", black ", black, ", flip ", flip);
     Log::debugN(", wb: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);

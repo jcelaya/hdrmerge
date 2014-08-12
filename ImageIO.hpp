@@ -48,6 +48,7 @@ public:
     }
 
     std::string buildOutputFileName() const;
+    QString getInputPath() const;
     std::string replaceArguments(const std::string & pattern, const std::string & outFileName) const;
     static Image loadRawImage(RawParameters & rawParameters);
     static QImage renderPreview(const Array2D<float> & rawData, const RawParameters & rawParameters, float expShift);

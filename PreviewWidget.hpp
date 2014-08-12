@@ -59,8 +59,10 @@ public slots:
         setShowBrush();
     }
     void setExposureMultiplier(int e) {
-        expMult = 1.0 + e * stack.getMaxExposure() / (stack.size() * 1000.0);
-        repaintAsync();
+        if (stack.size() > 0) {
+            expMult = 1.0 + e * stack.getMaxExposure() / (stack.size() * 1000.0);
+            repaintAsync();
+        }
     }
     void undo();
     void redo();

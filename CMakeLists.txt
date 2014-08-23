@@ -47,8 +47,8 @@ include_directories("${PROJECT_BINARY_DIR}")
 set (WIN_RES_FILE "")
 if (WIN32)
     # This is required by libraw.h
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32")
-    set(PLATFORM WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32 -DLIBRAW_NODLL")
+    set(PLATFORM WIN32 )
     configure_file (
         "${PROJECT_SOURCE_DIR}/winres.rc"
         "${PROJECT_BINARY_DIR}/winres.rc"
@@ -67,7 +67,15 @@ set(hdrmerge_qobject_headers MainWindow.hpp PreviewWidget.hpp LoadOptionsDialog.
 set(hdrmerge_translations hdrmerge_es.ts)
 
 # Libs
-set(hdrmerge_libs "${QT_LIBRARIES}" "${EXIV2_LIBRARY}" "${LibRaw_r_LIBRARIES}" "${ZLIB_LIBRARIES}")
+set(hdrmerge_libs "${LibRaw_r_LIBRARIES}" "${QT_LIBRARIES}" "${EXIV2_LIBRARY}" "${ZLIB_LIBRARIES}")
+if (WIN32)
+    get_filename_component(LIB_PATH "${EXIV2_LIBRARY}" PATH)
+    find_library(EXPAT_LIBRARY libexpat.a "${LIB_PATH}")
+    find_library(ICONV_LIBRARY libiconv.a "${LIB_PATH}")
+    find_library(GETTEXT_LIBRARY libintl.a "${LIB_PATH}")
+    set(hdrmerge_libs -static ${hdrmerge_libs} "${EXPAT_LIBRARY}" "${GETTEXT_LIBRARY}" "${ICONV_LIBRARY}" psapi)
+    message(${hdrmerge_libs})
+endif (WIN32)
 
 # Qt4 intermediate files
 QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})
@@ -88,29 +96,17 @@ add_library(hdrmerge-objects OBJECT ${hdrmerge_sources} ${hdrmerge_rsrc})
 add_library(hdrmerge-gui-objects OBJECT ${hdrmerge_gui_sources} ${hdrmerge_moc})
 add_executable(hdrmerge ${PLATFORM} main.cpp Launcher.cpp
     $<TARGET_OBJECTS:hdrmerge-objects> $<TARGET_OBJECTS:hdrmerge-gui-objects> "${WIN_RES_FILE}")
-target_link_libraries(hdrmerge ${hdrmerge_libs})
+target_link_libraries(hdrmerge -s ${hdrmerge_libs})
 
 if (WIN32)
     # Compile a target without GUI, for the .com executable
     add_executable(hdrmerge-nogui main.cpp Launcher.cpp $<TARGET_OBJECTS:hdrmerge-objects> "${WIN_RES_FILE}")
-    target_link_libraries(hdrmerge-nogui ${hdrmerge_libs})
+    target_link_libraries(hdrmerge-nogui -s ${hdrmerge_libs})
     set_target_properties(hdrmerge-nogui PROPERTIES COMPILE_DEFINITIONS "NO_GUI")
     # Create the installer with makensis
     find_program(MAKENSIS_EXECUTABLE makensis)
     if (MAKENSIS_EXECUTABLE)
-        get_filename_component(LIBEXIV2_PATH "${EXIV2_LIBRARY}" PATH)
-        find_library(ZLIB_DLL zlib1.dll)
-        find_library(EXPAT_DLL libexpat-1.dll "${LIBEXIV2_PATH}")
-        find_library(ICONV_DLL libiconv-2.dll "${LIBEXIV2_PATH}")
-        set(QT_JPEG_DLL "${QT_ROOT}/plugins/imageformats/qjpeg4.dll")
-        set(QT_CORE_DLL "${QT_ROOT}/lib/QtCore4.dll")
-        set(QT_GUI_DLL "${QT_ROOT}/lib/QtGui4.dll")
-        execute_process(COMMAND "${CMAKE_CXX_COMPILER}" -print-file-name=libgcc_s_seh-1.dll OUTPUT_VARIABLE MINGW_SJLJ OUTPUT_STRIP_TRAILING_WHITESPACE)
-        execute_process(COMMAND "${CMAKE_CXX_COMPILER}" -print-file-name=libgomp-1.dll OUTPUT_VARIABLE MINGW_GOMP OUTPUT_STRIP_TRAILING_WHITESPACE)
-        execute_process(COMMAND "${CMAKE_CXX_COMPILER}" -print-file-name=libstdc++-6.dll OUTPUT_VARIABLE MINGW_STDCPP OUTPUT_STRIP_TRAILING_WHITESPACE)
-        execute_process(COMMAND "${CMAKE_CXX_COMPILER}" -print-file-name=libwinpthread-1.dll OUTPUT_VARIABLE MINGW_WINPT OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-        set (SETUP_PROG hdrmerge-setup${WIN_ARCH}-${HDRMERGE_VERSION}.exe)
+        set(SETUP_PROG hdrmerge-setup${WIN_ARCH}-${HDRMERGE_VERSION}.exe)
         configure_file (
             "${PROJECT_SOURCE_DIR}/setup.nsi"
             "${PROJECT_BINARY_DIR}/setup.nsi" @ONLY

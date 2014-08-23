@@ -65,23 +65,10 @@ Section "HDRMerge (required)"
 
     ; Put file there
     File "hdrmerge.exe" \
-        "@QT_CORE_DLL@" \
-        "@QT_GUI_DLL@" \
-        "@EXIV2_LIBRARY@" \
-        "@LibRaw_r_LIBRARIES@" \
-        "@ZLIB_DLL@" \
-        "@EXPAT_DLL@" \
-        "@ICONV_DLL@" \
-        "@MINGW_SJLJ@" \
-        "@MINGW_GOMP@" \
-        "@MINGW_STDCPP@" \
-        "@MINGW_WINPT@" \
         "@PROJECT_SOURCE_DIR@/LICENSE" \
         "@PROJECT_SOURCE_DIR@/LICENSE_icons" \
         "@PROJECT_SOURCE_DIR@/README.md"
     File /oname=hdrmerge.com "hdrmerge-nogui.exe"
-    CreateDirectory $INSTDIR\imageformats
-    File /oname=$INSTDIR\imageformats\qjpeg4.dll "@QT_JPEG_DLL@"
 
     ; Write the installation path into the registry
     WriteRegStr HKLM SOFTWARE\${APPNAME} "Install_Dir" "$INSTDIR"

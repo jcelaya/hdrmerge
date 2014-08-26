@@ -113,7 +113,7 @@ enum {
 } Constant;
 
 
-void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p, const string & filename) {
+void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p, const QString & filename) {
     params = &p;
     rawData = std::move(rawPixels);
     width = rawData.getWidth();
@@ -121,7 +121,7 @@ void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p,
 
     renderPreviews();
 
-    file.open(filename, ios_base::binary);
+    file.open(filename.toLocal8Bit().constData(), ios_base::binary);
     createMainIFD();
     subIFDoffsets[0] = 8 + mainIFD.length();
     createRawIFD();

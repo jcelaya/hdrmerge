@@ -30,12 +30,12 @@ using namespace std;
 
 class ExifTransfer {
 public:
-    ExifTransfer(const std::string & srcFile, const std::string & dstFile) : srcFile(srcFile), dstFile(dstFile) {}
+    ExifTransfer(const QString & srcFile, const QString & dstFile) : srcFile(srcFile), dstFile(dstFile) {}
 
     void copyMetadata();
 
 private:
-    std::string srcFile, dstFile;
+    QString srcFile, dstFile;
     Exiv2::Image::AutoPtr src, dst;
 
     void copyXMP();
@@ -44,7 +44,7 @@ private:
 };
 
 
-void hdrmerge::Exif::transfer(const std::string & srcFile, const std::string & dstFile) {
+void hdrmerge::Exif::transfer(const QString & srcFile, const QString & dstFile) {
     ExifTransfer exif(srcFile, dstFile);
     exif.copyMetadata();
 }
@@ -52,9 +52,9 @@ void hdrmerge::Exif::transfer(const std::string & srcFile, const std::string & d
 
 void ExifTransfer::copyMetadata() {
     try {
-        src = Exiv2::ImageFactory::open(srcFile);
+        src = Exiv2::ImageFactory::open(srcFile.toLocal8Bit().constData());
         src->readMetadata();
-        dst = Exiv2::ImageFactory::open(dstFile);
+        dst = Exiv2::ImageFactory::open(dstFile.toLocal8Bit().constData());
         dst->readMetadata();
         copyXMP();
         copyIPTC();

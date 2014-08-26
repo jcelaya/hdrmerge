@@ -37,7 +37,7 @@ using namespace hdrmerge;
 Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
-    if (rawProcessor.open_file(rawParameters.fileName.c_str()) == LIBRAW_SUCCESS) {
+    if (rawProcessor.open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
         rawProcessor.get_decoder_info(&decoder_info);
         if(!decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD) {
@@ -56,10 +56,10 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
 }
 
 
-ImageIO::QDateInterval ImageIO::getImageCreationInterval(const std::string & fileName) {
+ImageIO::QDateInterval ImageIO::getImageCreationInterval(const QString & fileName) {
     LibRaw rawProcessor;
     QDateInterval result;
-    if (rawProcessor.open_file(fileName.c_str()) == LIBRAW_SUCCESS) {
+    if (rawProcessor.open_file(fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
         result.end = QDateTime::fromTime_t(rawProcessor.imgdata.other.timestamp);
         result.start = result.end.addMSecs(-rawProcessor.imgdata.other.shutter * 1000.0);
     }
@@ -79,9 +79,9 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
         #pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < numImages; ++i) {
             if (!error) { // We cannot break from the for loop if we are using OpenMP
-                string name = options.fileNames[i];
+                QString name = options.fileNames[i];
                 #pragma omp critical
-                progress.advance(p += step, "Loading %1", name.c_str());
+                progress.advance(p += step, "Loading %1", name.toLocal8Bit().constData());
                 unique_ptr<RawParameters> params(new RawParameters(name));
                 Image image = loadRawImage(*params);
                 #pragma omp critical
@@ -149,13 +149,13 @@ int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     progress.advance(100, "Done writing!");
 
     if (options.saveMask) {
-        string name = replaceArguments(options.maskFileName, options.fileName);
+        QString name = replaceArguments(options.maskFileName, options.fileName);
         writeMaskImage(name);
     }
 }
 
 
-void ImageIO::writeMaskImage(const std::string & maskFile) {
+void ImageIO::writeMaskImage(const QString & maskFile) {
     Log::debug("Saving mask to ", maskFile);
     EditableMask & mask = stack.getMask();
     QImage maskImage(mask.getWidth(), mask.getHeight(), QImage::Format_Indexed8);
@@ -170,7 +170,7 @@ void ImageIO::writeMaskImage(const std::string & maskFile) {
             maskImage.setPixel(x, y, mask[pos]);
         }
     }
-    if (!maskImage.save(QString(maskFile.c_str()))) {
+    if (!maskImage.save(maskFile)) {
         Log::progress("Cannot save mask image to ", maskFile);
     }
 }
@@ -210,7 +210,7 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
     d.params.exp_correc = 1;
     d.params.exp_shift = expShift;
     d.params.exp_preser = 1.0;
-    if (rawProcessor.open_file(params.fileName.c_str()) == LIBRAW_SUCCESS) {
+    if (rawProcessor.open_file(params.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
 //             && rawProcessor.unpack() == LIBRAW_SUCCESS) {
         prepareRawBuffer(rawProcessor);
         // Assume the other sizes are the same as in the raw parameters
@@ -254,7 +254,7 @@ public:
     FileNameManipulator(const vector<unique_ptr<RawParameters>> & paramList) {
         names.reserve(paramList.size());
         for (auto & rp : paramList) {
-            names.push_back(rp->fileName.c_str());
+            names.push_back(rp->fileName);
         }
         sort(names.begin(), names.end());
     }
@@ -301,7 +301,7 @@ private:
 };
 
 
-string ImageIO::buildOutputFileName() const {
+QString ImageIO::buildOutputFileName() const {
     if (rawParameters.size() > 1)
         return replaceArguments("%id[-1]/%iF[0]-%in[-1].dng", "");
     else
@@ -310,12 +310,12 @@ string ImageIO::buildOutputFileName() const {
 
 
 QString ImageIO::getInputPath() const {
-    return FileNameManipulator::getDirName(QString(rawParameters[0]->fileName.c_str()));
+    return FileNameManipulator::getDirName(rawParameters[0]->fileName);
 }
 
 
-string ImageIO::replaceArguments(const string & pattern, const string & outFileName) const {
-    QString result(pattern.c_str());
+QString ImageIO::replaceArguments(const QString & pattern, const QString & outFileName) const {
+    QString result(pattern);
     QRegExp re;
     if (outFileName == "") {
         re = QRegExp("%(?:i[fFdn]\\[(-?[0-9]+)\\]|%)");
@@ -331,9 +331,9 @@ string ImageIO::replaceArguments(const string & pattern, const string & outFileN
             result.replace(index, 2, '%');
         } else if (token[1] == 'o') {
             if (token[2] == 'f') {
-                result.replace(index, 3, fnm.getBaseName(outFileName.c_str()));
+                result.replace(index, 3, fnm.getBaseName(outFileName));
             } else {
-                result.replace(index, 3, fnm.getDirName(outFileName.c_str()));
+                result.replace(index, 3, fnm.getDirName(outFileName));
             }
         } else { // 'i'
             int imageIndex = re.cap(1).toInt();
@@ -350,5 +350,5 @@ string ImageIO::replaceArguments(const string & pattern, const string & outFileN
         }
         index++;
     }
-    return result.toUtf8().constData();
+    return result;
 }

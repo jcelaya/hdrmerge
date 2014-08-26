@@ -24,12 +24,12 @@
 #define _LOADSAVEOPTIONS_H_
 
 #include <vector>
-#include <string>
+#include <QString>
 
 namespace hdrmerge {
 
 struct LoadOptions {
-    std::vector<std::string> fileNames;
+    std::vector<QString> fileNames;
     bool align;
     bool crop;
     bool batch;
@@ -41,9 +41,9 @@ struct LoadOptions {
 struct SaveOptions {
     int bps;
     int previewSize;
-    std::string fileName;
+    QString fileName;
     bool saveMask;
-    std::string maskFileName;
+    QString maskFileName;
     int featherRadius;
     SaveOptions() : bps(16), previewSize(0), saveMask(false), featherRadius(3) {}
 };

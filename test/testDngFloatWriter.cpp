@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(testDngFloatWriter) {
             writer.setBitsPerSample(bps);
             writer.setPreviewWidth(width);
             writer.setPreview(preview);
-            string fileName = QDir::tempPath().toStdString() + "/testDngFloat_" + to_string(bps) + "_" + to_string(width) + ".dng";
+            QString fileName = QDir::tempPath() + QString("/testDngFloat_%1_%2.dng").arg(bps).arg(width);
             string title = string("Save Dng Float with ") + to_string(bps) + " bps and preview width " + to_string(width);
             measureTime(title.c_str(), [&] () {
                 writer.write(std::move(result), params, fileName);

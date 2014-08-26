@@ -246,6 +246,7 @@ void MainWindow::loadImages() {
     LoadOptionsDialog lod(this);
     if (!preloadFiles.empty()) {
         lod.fileNames = preloadFiles;
+        preloadFiles.clear();
     }
     if (lod.exec() && !lod.fileNames.empty()) {
         unsigned int numImages = lod.fileNames.size();
@@ -258,8 +259,8 @@ void MainWindow::loadImages() {
         if (result < numImages * 2) {
             int i = result >> 1;
             QString message = result & 1 ?
-            tr("File %1 has not the same format as the previous ones.").arg(lod.fileNames[i].c_str()) :
-            tr("Unable to open file %1.").arg(lod.fileNames[i].c_str());
+            tr("File %1 has not the same format as the previous ones.").arg(lod.fileNames[i]) :
+            tr("Unable to open file %1.").arg(lod.fileNames[i]);
             QMessageBox::warning(this, tr("Error opening file"), message);
         }
 
@@ -302,7 +303,7 @@ void MainWindow::createLayerSelector() {
     if (numImages > 1) {
         double logLeastExp = std::log2(images.getImage(numImages - 1).getRelativeExposure());
         for (unsigned int i = 1; i < numImages; i++) {
-            QAction * action = new QAction(QIcon(getColorIcon(i)), std::to_string(i).c_str(), layerSelectorGroup);
+            QAction * action = new QAction(QIcon(getColorIcon(i)), QString::number(i), layerSelectorGroup);
             action->setCheckable(true);
             double logExp = logLeastExp - std::log2(images.getImage(i - 1).getRelativeExposure());
             action->setToolTip(QString("+%1 EV").arg(logExp, 0, 'f', 2));
@@ -323,7 +324,7 @@ void MainWindow::createLayerSelector() {
         QLabel * lastIcon = new QLabel(lastLayer);
         lastIcon->setPixmap(getColorIcon(numImages));
         lastLayer->layout()->addWidget(lastIcon);
-        lastLayer->layout()->addWidget(new QLabel(std::to_string(numImages).c_str()));
+        lastLayer->layout()->addWidget(new QLabel(QString::number(numImages)));
         //lastLayer->setMinimumHeight(layerSelector->widgetForAction(firstAction)->height());
         layerSelector->addWidget(lastLayer);
     }
@@ -335,7 +336,7 @@ void MainWindow::saveResult() {
         QSettings settings;
         QVariant lastDirSetting = settings.value("lastSaveDirectory");
         // Take the prefix and add the first and last suffix
-        QString name = io.buildOutputFileName().c_str();
+        QString name = io.buildOutputFileName();
         if (!lastDirSetting.isNull()) {
             name = QDir(lastDirSetting.toString()).absolutePath() + "/" + QFileInfo(name).fileName();
         }
@@ -344,24 +345,22 @@ void MainWindow::saveResult() {
         saveDialog.setAcceptMode(QFileDialog::AcceptSave);
         saveDialog.setFileMode(QFileDialog::AnyFile);
         saveDialog.setConfirmOverwrite(true);
-        QList<QUrl> urls;
-        urls << QUrl::fromLocalFile("")
-        << QUrl::fromLocalFile(QDir::homePath())
-            << QUrl::fromLocalFile(io.getInputPath());
+        QList<QUrl> urls, urlsBak;
+        urlsBak = saveDialog.sidebarUrls();
+        urls << urlsBak << QUrl::fromLocalFile(io.getInputPath());
         saveDialog.setSidebarUrls(urls);
         saveDialog.setOptions(QFileDialog::DontUseNativeDialog);
 
         if (saveDialog.exec()) {
             QString file = saveDialog.selectedFiles().front();
-            std::string fileName = QDir::toNativeSeparators(file).toUtf8().constData();
-            size_t extPos = fileName.find_last_of('.');
-            if (extPos > fileName.length() || fileName.substr(extPos) != ".dng") {
-                fileName += ".dng";
+            size_t extPos = file.lastIndexOf('.');
+            if (extPos > file.length() || file.mid(extPos) != ".dng") {
+                file += ".dng";
             }
             DngPropertiesDialog dpd(this);
             if (dpd.exec()) {
                 settings.setValue("lastSaveDirectory", QFileInfo(file).absolutePath());
-                dpd.fileName = fileName;
+                dpd.fileName = file;
                 ProgressDialog pd(this);
                 pd.setWindowTitle(tr("Save DNG file"));
                 QFuture<void> result = QtConcurrent::run([&]() {
@@ -371,6 +370,7 @@ void MainWindow::saveResult() {
                     QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
             }
         }
+        saveDialog.setSidebarUrls(urlsBak);
     }
     setToolFromKey();
 }

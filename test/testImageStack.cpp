@@ -184,11 +184,11 @@ BOOST_AUTO_TEST_CASE(output_filename) {
     NullProgressIndicator npi;
     lo.fileNames.push_back(image1);
     BOOST_REQUIRE_EQUAL(io.load(lo, npi), 2);
-    string oneFile = io.buildOutputFileName();
+    string oneFile = io.buildOutputFileName().toLocal8Bit().constData();
     BOOST_CHECK_EQUAL(oneFile, "test/sample1");
     lo.fileNames.push_back(image2);
     lo.fileNames.push_back(image3);
     BOOST_REQUIRE_EQUAL(io.load(lo, npi), 6);
-    string threeFile = io.buildOutputFileName();
+    string threeFile = io.buildOutputFileName().toLocal8Bit().constData();
     BOOST_CHECK_EQUAL(threeFile, "test/sample1-3");
 }

@@ -115,6 +115,12 @@ Section "Uninstall"
 
     ; Remove directories used
     RMDir "$SMPROGRAMS\${APPNAME}"
-    RMDir /r /REBOOTOK $INSTDIR
+    Delete "$INSTDIR\hdrmerge.exe"
+    Delete "$INSTDIR\hdrmerge.com"
+    Delete "$INSTDIR\LICENSE"
+    Delete "$INSTDIR\LICENSE_icons"
+    Delete "$INSTDIR\README.md"
+    Delete "$INSTDIR\uninstall.exe"
+    RMDir /REBOOTOK $INSTDIR
 
 SectionEnd

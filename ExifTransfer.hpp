@@ -23,12 +23,12 @@
 #ifndef _EXIFTRANSFER_HPP_
 #define _EXIFTRANSFER_HPP_
 
-#include <string>
+#include <QString>
 
 namespace hdrmerge {
 
     namespace Exif {
-        void transfer(const std::string & srcFile, const std::string & dstFile);
+        void transfer(const QString & srcFile, const QString & dstFile);
     }
 
 }

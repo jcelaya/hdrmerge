@@ -70,8 +70,8 @@ struct CoutProgressIndicator : public ProgressIndicator {
 
 list<LoadOptions> Launcher::getBracketedSets() {
     list<LoadOptions> result;
-    list<pair<ImageIO::QDateInterval, string>> dateNames;
-    for (string & name : generalOptions.fileNames) {
+    list<pair<ImageIO::QDateInterval, QString>> dateNames;
+    for (QString & name : generalOptions.fileNames) {
         ImageIO::QDateInterval interval = ImageIO::getImageCreationInterval(name);
         if (interval.start.isValid()) {
             dateNames.emplace_back(interval, name);
@@ -122,24 +122,24 @@ int Launcher::automaticMerge() {
             int format = result & 1;
             int i = result >> 1;
             if (format) {
-                cerr << tr("Error loading %1, it has a different format.").arg(options.fileNames[i].c_str()) << endl;
+                cerr << tr("Error loading %1, it has a different format.").arg(options.fileNames[i]) << endl;
             } else {
-                cerr << tr("Error loading %1, file not found.").arg(options.fileNames[i].c_str()) << endl;
+                cerr << tr("Error loading %1, file not found.").arg(options.fileNames[i]) << endl;
             }
             result = 1;
             continue;
         }
         SaveOptions setOptions = saveOptions;
-        if (!setOptions.fileName.empty()) {
+        if (!setOptions.fileName.isEmpty()) {
             setOptions.fileName = io.replaceArguments(setOptions.fileName, "");
-            size_t extPos = setOptions.fileName.find_last_of('.');
-            if (extPos > setOptions.fileName.length() || setOptions.fileName.substr(extPos) != ".dng") {
+            size_t extPos = setOptions.fileName.lastIndexOf('.');
+            if (extPos > setOptions.fileName.length() || setOptions.fileName.mid(extPos) != ".dng") {
                 setOptions.fileName += ".dng";
             }
         } else {
             setOptions.fileName = io.buildOutputFileName();
         }
-        Log::progress(tr("Writing result to %1").arg(setOptions.fileName.c_str()));
+        Log::progress(tr("Writing result to %1").arg(setOptions.fileName));
         io.save(setOptions, progress);
     }
     return result;
@@ -209,7 +209,7 @@ void Launcher::parseCommandLine() {
                 }
             }
         } else if (argv[i][0] != '-') {
-            generalOptions.fileNames.push_back(argv[i]);
+            generalOptions.fileNames.push_back(QString::fromLocal8Bit(argv[i]));
         }
     }
 }

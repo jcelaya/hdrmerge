@@ -90,7 +90,7 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
         "- %of " + trHelp("Replaced by the base file name of the output file.") + "\n" +
         "- %od " + trHelp("Replaced by the directory name of the output file.") + "\n" +
         "- %%: " + trHelp("Replaced by a single %.") + "\n");
-    maskFileEditor->setText(maskFileName.c_str());
+    maskFileEditor->setText(maskFileName);
     QPushButton * showFileDialog = new QPushButton("...", maskFileSelector);
     connect(showFileDialog, SIGNAL(clicked(bool)), this, SLOT(setMaskFileName()));
     maskFileSelectorLayout->addWidget(maskFileEditor);
@@ -130,13 +130,13 @@ DngPropertiesDialog::DngPropertiesDialog(QWidget * parent, Qt::WindowFlags f)
 
 void DngPropertiesDialog::accept() {
     saveMask = maskFileSelector->isEnabled();
-    maskFileName = QDir::toNativeSeparators(maskFileEditor->text()).toUtf8().constData();
+    maskFileName = QDir::toNativeSeparators(maskFileEditor->text()).toLocal8Bit().constData();
     if (saveOptions->isChecked()) {
         QSettings settings;
         settings.setValue("bps", bps);
         settings.setValue("previewSize", previewSize);
         settings.setValue("saveMask", saveMask);
-        settings.setValue("maskFileName", maskFileName.c_str());
+        settings.setValue("maskFileName", maskFileName);
         settings.setValue("featherRadius", featherRadius);
     }
     QDialog::accept();
@@ -148,7 +148,7 @@ void DngPropertiesDialog::loadDefaultOptions() {
     bps = settings.value("bps", 16).toInt();
     previewSize = settings.value("previewSize", 2).toInt();
     saveMask = settings.value("saveMask", false).toBool();
-    maskFileName = settings.value("maskFileName", "%od/%of_mask.png").toString().toUtf8().constData();
+    maskFileName = settings.value("maskFileName", "%od/%of_mask.png").toString().toLocal8Bit().constData();
     featherRadius = settings.value("featherRadius", 3).toInt();
 }
 

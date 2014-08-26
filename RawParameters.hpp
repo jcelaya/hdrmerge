@@ -23,7 +23,7 @@
 #ifndef _RAWPARAMETERS_H_
 #define _RAWPARAMETERS_H_
 
-#include <string>
+#include <QString>
 #include "Array2D.hpp"
 
 class LibRaw;
@@ -33,7 +33,7 @@ namespace hdrmerge {
 class RawParameters {
 public:
     RawParameters();
-    RawParameters(const std::string & f) : RawParameters() {
+    RawParameters(const QString & f) : RawParameters() {
         fileName = f;
     }
     virtual ~RawParameters() {}
@@ -66,7 +66,7 @@ public:
     void autoWB(const Array2D<uint16_t> & image);
     bool canAlign() const;
 
-    std::string fileName;
+    QString fileName;
     size_t width, height;
     size_t rawWidth, rawHeight, topMargin, leftMargin;
     std::string cdesc;

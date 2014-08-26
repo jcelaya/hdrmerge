@@ -24,7 +24,7 @@
 #define _DNGFLOATWRITER_HPP_
 
 #include <fstream>
-#include <string>
+#include <QString>
 #include <QImage>
 #include "config.h"
 #include "Array2D.hpp"
@@ -45,7 +45,7 @@ public:
         bps = b;
     }
     void setPreview(const QImage & p);
-    void write(Array2D<float> && rawPixels, const RawParameters & p, const std::string & filename);
+    void write(Array2D<float> && rawPixels, const RawParameters & p, const QString & filename);
 
 private:
     uint32_t previewWidth;

@@ -24,7 +24,7 @@
 #define _HDRMERGEMAINWINDOW_H
 
 #include <list>
-#include <string>
+#include <QString>
 #include <QAction>
 #include <QLabel>
 #include <QMainWindow>
@@ -48,7 +48,7 @@ public:
 
     void showEvent(QShowEvent * event);
     void closeEvent(QCloseEvent * event);
-    void preload(const std::vector<std::string> & o) {
+    void preload(const std::vector<QString> & o) {
         preloadFiles = o;
     }
 
@@ -111,7 +111,7 @@ private:
     QLabel * statusLabel;
 
     ImageIO io;
-    std::vector<std::string> preloadFiles;
+    std::vector<QString> preloadFiles;
 };
 
 } // namespace hdrmerge

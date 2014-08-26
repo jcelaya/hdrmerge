@@ -47,7 +47,7 @@ void RawParameters::loadCamXyzFromDng() {
                 cc[j][i] = i == j ? 1.0 : 0.0;
             }
         }
-        Exiv2::Image::AutoPtr src = Exiv2::ImageFactory::open(fileName);
+        Exiv2::Image::AutoPtr src = Exiv2::ImageFactory::open(fileName.toLocal8Bit().constData());
         src->readMetadata();
         const Exiv2::ExifData & srcExif = src->exifData();
 
@@ -330,7 +330,7 @@ void RawParameters::autoWB(const Array2D<uint16_t> & image) {
 
 
 void RawParameters::dumpInfo() const {
-    Log::debugN(QFileInfo(fileName.c_str()).fileName(), ": ", width, 'x', height, " (", rawWidth, 'x', rawHeight, '+', leftMargin, '+', topMargin);
+    Log::debugN(QFileInfo(fileName).fileName(), ": ", width, 'x', height, " (", rawWidth, 'x', rawHeight, '+', leftMargin, '+', topMargin);
     Log::debug(", by ", maker, ' ' , model, ", ", isoSpeed, "ISO 1/", (1.0/shutter), "sec f", aperture, " EV:", logExp());
     Log::debugN(hex, filters, dec, ' ', cdesc, ", sat ", max, ", black ", black, ", flip ", flip);
     Log::debugN(", wb: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);

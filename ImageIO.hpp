@@ -26,6 +26,7 @@
 #include <vector>
 #include <QImage>
 #include <QDateTime>
+#include <QString>
 #include "ImageStack.hpp"
 #include "ProgressIndicator.hpp"
 #include "LoadSaveOptions.hpp"
@@ -47,9 +48,9 @@ public:
         return stack;
     }
 
-    std::string buildOutputFileName() const;
+        QString buildOutputFileName() const;
     QString getInputPath() const;
-    std::string replaceArguments(const std::string & pattern, const std::string & outFileName) const;
+    QString replaceArguments(const QString & pattern, const QString & outFileName) const;
     static Image loadRawImage(RawParameters & rawParameters);
     static QImage renderPreview(const Array2D<float> & rawData, const RawParameters & rawParameters, float expShift);
 
@@ -62,13 +63,13 @@ public:
             return end.msecsTo(r.start) / 1000.0;
         }
     };
-    static QDateInterval getImageCreationInterval(const std::string & fileName);
+    static QDateInterval getImageCreationInterval(const QString & fileName);
 
 private:
     ImageStack stack;
     std::vector<std::unique_ptr<RawParameters>> rawParameters;
 
-    void writeMaskImage(const std::string & maskFile);
+    void writeMaskImage(const QString & maskFile);
 };
 
 } // namespace hdrmerge

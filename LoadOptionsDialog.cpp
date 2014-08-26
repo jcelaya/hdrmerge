@@ -95,7 +95,7 @@ void LoadOptionsDialog::showEvent(QShowEvent * event) {
         addFiles();
     } else {
         for (auto & i : fileNames) {
-            new FileItem(i.c_str(), fileList);
+            new FileItem(i, fileList);
         }
         fileNames.clear();
     }
@@ -154,7 +154,7 @@ void LoadOptionsDialog::accept() {
     crop = cropBox->isChecked();
     settings.setValue("cropOnLoad", crop);
     for (int i = 0; i < fileList->count(); ++i) {
-        fileNames.push_back(fileList->item(i)->data(Qt::UserRole).toString().toUtf8().constData());
+        fileNames.push_back(fileList->item(i)->data(Qt::UserRole).toString());
     }
     QDialog::accept();
 }

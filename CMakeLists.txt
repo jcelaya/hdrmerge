@@ -14,18 +14,20 @@ add_definitions(${QT_DEFINITIONS})
 find_package(LibRaw REQUIRED)
 find_package(Exiv2 REQUIRED)
 find_package(ZLIB REQUIRED)
+find_package(Alglib REQUIRED)
 find_package(Boost 1.46 COMPONENTS unit_test_framework)
-include_directories("${LibRaw_INCLUDE_DIR}" "${EXIV2_INCLUDE_DIR}" "${ZLIB_INCLUDE_DIRS}")
-
-# OpenMP
 find_package(OpenMP)
-if(OPENMP_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif()
+include_directories("${LibRaw_INCLUDE_DIR}" "${EXIV2_INCLUDE_DIR}" "${ZLIB_INCLUDE_DIRS}")
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    if(OPENMP_FOUND)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    endif()
+    set(STRIP -s)
+endif (CMAKE_BUILD_TYPE STREQUAL "Release")
 
 # The version number.
 set (HDRMERGE_VERSION_MAJOR 0)
@@ -67,7 +69,7 @@ set(hdrmerge_qobject_headers MainWindow.hpp PreviewWidget.hpp LoadOptionsDialog.
 set(hdrmerge_translations hdrmerge_es.ts)
 
 # Libs
-set(hdrmerge_libs "${LibRaw_r_LIBRARIES}" "${QT_LIBRARIES}" "${EXIV2_LIBRARY}" "${ZLIB_LIBRARIES}")
+set(hdrmerge_libs "${LibRaw_r_LIBRARIES}" "${QT_LIBRARIES}" "${EXIV2_LIBRARY}" "${ZLIB_LIBRARIES}" "${ALGLIB_LIBRARIES}")
 if (WIN32)
     get_filename_component(LIB_PATH "${EXIV2_LIBRARY}" PATH)
     find_library(EXPAT_LIBRARY libexpat.a "${LIB_PATH}")
@@ -96,12 +98,12 @@ add_library(hdrmerge-objects OBJECT ${hdrmerge_sources} ${hdrmerge_rsrc})
 add_library(hdrmerge-gui-objects OBJECT ${hdrmerge_gui_sources} ${hdrmerge_moc})
 add_executable(hdrmerge ${PLATFORM} main.cpp Launcher.cpp
     $<TARGET_OBJECTS:hdrmerge-objects> $<TARGET_OBJECTS:hdrmerge-gui-objects> "${WIN_RES_FILE}")
-target_link_libraries(hdrmerge -s ${hdrmerge_libs})
+target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs})
 
 if (WIN32)
     # Compile a target without GUI, for the .com executable
     add_executable(hdrmerge-nogui main.cpp Launcher.cpp $<TARGET_OBJECTS:hdrmerge-objects> "${WIN_RES_FILE}")
-    target_link_libraries(hdrmerge-nogui -s ${hdrmerge_libs})
+    target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs})
     set_target_properties(hdrmerge-nogui PROPERTIES COMPILE_DEFINITIONS "NO_GUI")
     # Create the installer with makensis
     find_program(MAKENSIS_EXECUTABLE makensis)

@@ -230,15 +230,7 @@ void DngFloatWriter::calculateTiles() {
 
 
 void DngFloatWriter::createRawIFD() {
-    uint16_t cfaRows, cfaCols;
-    if (params->filters == 9) {
-        cfaRows = cfaCols = 6;
-    } else if (params->colors == 3) {
-        cfaRows = cfaCols = 2;
-    } else {
-        cfaRows = 8;
-        cfaCols = 2;
-    }
+    uint16_t cfaRows = params->FC.getRows(), cfaCols = params->FC.getColumns();
     uint16_t cfaPatternDim[] = { cfaRows, cfaCols };
 
     rawIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 0);

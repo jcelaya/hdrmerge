@@ -29,13 +29,13 @@ using namespace std;
 using namespace hdrmerge;
 
 
-Image & Image::operator=(Image && move) {
-    *static_cast<Array2D<uint16_t> *>(this) = (Array2D<uint16_t> &&)std::move(move);
-    scaled.swap(move.scaled);
-    satThreshold = move.satThreshold;
-    brightness = move.brightness;
-    relExp = move.relExp;
-    halfLightPercent = move.halfLightPercent;
+void Image::ResponseFunction::setLinear(double slope) {
+    threshold = 65535;
+    linear = slope;
+    alglib::real_1d_array x = "[0.0, 0.0]";
+    alglib::real_1d_array f = "[0.0, 65535.0]";
+    x[1] = 65535.0 / linear;
+    alglib::spline1dbuildlinear(x, f, 2, nonLinear);
 }
 
 
@@ -43,21 +43,35 @@ void Image::buildImage(uint16_t * rawImage, const RawParameters & params) {
     resize(params.width, params.height);
     size_t size = width*height;
     brightness = 0.0;
+    max = 0;
     for (size_t y = 0, ry = params.topMargin; y < height; ++y, ++ry) {
         for (size_t x = 0, rx = params.leftMargin; x < width; ++x, ++rx) {
             uint16_t v = rawImage[ry*params.rawWidth + rx];
             (*this)(x, y) = v;
             brightness += v;
+            if (v > max) max = v;
         }
     }
     brightness /= size;
+    response.setLinear(params.max == 0 ? 1.0 : 65535.0 / params.max);
     subtractBlack(params);
-    relExp = params.max == 0 ? 1.0 : 65535.0 / params.max;
+}
+
+
+Image & Image::operator=(Image && move) {
+    *static_cast<Array2D<uint16_t> *>(this) = (Array2D<uint16_t> &&)std::move(move);
+    scaled.swap(move.scaled);
+    satThreshold = move.satThreshold;
+    max = move.max;
+    brightness = move.brightness;
+    response = move.response;
+    halfLightPercent = move.halfLightPercent;
 }
 
 
 void Image::setSaturationThreshold(uint16_t sat) {
     satThreshold = sat;
+    response.threshold = 0.9*sat;
 }
 
 
@@ -76,7 +90,12 @@ void Image::subtractBlack(const RawParameters & params) {
 }
 
 
-double Image::relativeExposure(const Image & r) const {
+double Image::getRelativeExposure() const {
+    return response.linear;
+}
+
+
+void Image::computeResponseFunction(const Image & r) {
     int reldx = dx - std::max(dx, r.dx);
     int relrdx = r.dx - std::max(dx, r.dx);
     int w = width + reldx + relrdx;
@@ -85,21 +104,39 @@ double Image::relativeExposure(const Image & r) const {
     int h = height + reldy + relrdy;
     uint16_t * usePixels = &data[-reldy*width - reldx];
     const uint16_t * rUsePixels = &r.data[-relrdy*width - relrdx];
-    // Minimize square error between images:
-    // min. C(n) = sum(n*f(x) - g(x))^2  ->  n = sum(f(x)*g(x)) / sum(f(x)^2)
-    double numerator = 0, denom = 0;
+
+    // Get average relative values between this image and the last one
+    std::pair<int, double> histogram[max + 1];
+    for (auto & i : histogram) i = { 0, 0.0 };
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
             int pos = y * width + x;
-            double v = usePixels[pos];
-            if (v > 0 && v < satThreshold) {
-                double nv = rUsePixels[pos];
-                numerator += v * nv;
-                denom += v * v;
+            uint16_t v = usePixels[pos];
+            uint16_t nv = rUsePixels[pos];
+            if (v >= nv && v < satThreshold) {
+                histogram[v].first++;
+                histogram[v].second += r.response(nv);
             }
         }
     }
-    return numerator / denom;
+
+    alglib::real_1d_array values, adjValues;
+    values.setlength(max);
+    adjValues.setlength(max);
+    values[0] = 0;
+    adjValues[0] = 0;
+    int i = 1;
+    for (int v = max*0.75; v < max; ++v) {
+        if (histogram[v].first > 0) {
+            values[i] = v;
+            adjValues[i] = histogram[v].second / histogram[v].first;
+            ++i;
+        }
+    }
+    alglib::ae_int_t info;
+    alglib::spline1dfitreport rep;
+    alglib::spline1dfitpenalized(values, adjValues, i, 200, 3, info, response.nonLinear, rep);
+    response.linear = alglib::spline1dcalc(response.nonLinear, response.threshold) / response.threshold;
 }
 
 

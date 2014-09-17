@@ -25,6 +25,7 @@
 
 #include <QString>
 #include "Array2D.hpp"
+#include "CFAPattern.hpp"
 
 class LibRaw;
 
@@ -38,18 +39,10 @@ public:
     }
     virtual ~RawParameters() {}
 
-    void fromLibRaw(const LibRaw & rawData);
+    void fromLibRaw(LibRaw & rawData);
 
     bool isSameFormat(const RawParameters & r) const {
-        return width == r.width && height == r.height && filters == r.filters && cdesc == r.cdesc;
-    }
-    uint8_t FC(int x, int y) const {
-        // (x, y) is relative to the ACTIVE AREA
-        if (filters == 9) {
-            return xtrans[(y + topMargin + 6) % 6][(x + leftMargin + 6) % 6];
-        } else {
-            return (filters >> (((y << 1 & 14) | (x & 1)) << 1) & 3);
-        }
+        return width == r.width && height == r.height && FC == r.FC && cdesc == r.cdesc;
     }
     double logExp() const;
     void dumpInfo() const;
@@ -64,14 +57,13 @@ public:
     }
     void adjustWhite(const Array2D<uint16_t> & image);
     void autoWB(const Array2D<uint16_t> & image);
-    bool canAlign() const;
+    bool canAlign() const { return FC.canAlign(); }
 
     QString fileName;
     size_t width, height;
     size_t rawWidth, rawHeight, topMargin, leftMargin;
     std::string cdesc;
-    uint32_t filters;
-    uint8_t xtrans[6][6];
+    CFAPattern FC;
     uint16_t max;
     uint16_t black;
     uint16_t maxBlack;

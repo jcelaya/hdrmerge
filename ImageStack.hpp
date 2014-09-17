@@ -46,7 +46,7 @@ public:
     int addImage(Image && i);
     void align();
     void crop();
-    void computeRelExposures(double baseExposure);
+    void computeResponseFunctions();
     void generateMask();
     Array2D<float> compose(const RawParameters & md, int featherRadius) const;
 

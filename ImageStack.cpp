@@ -48,7 +48,6 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params) {
     // Calculate max value of brightest image and assume it is saturated
     uint16_t maxPerColor[4] = { 0, 0, 0, 0 };
     Image & brightest = images.front();
-    #pragma omp parallel for schedule(dynamic)
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
             uint16_t v = brightest(x, y);
@@ -63,7 +62,7 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params) {
             satThreshold = maxPerColor[c];
         }
     }
-    satThreshold *= 0.9;
+    satThreshold *= 0.99;
     for (auto & i : images) {
         i.setSaturationThreshold(satThreshold);
     }
@@ -111,17 +110,10 @@ void ImageStack::crop() {
 }
 
 
-void ImageStack::computeRelExposures(double baseExposure) {
-    Timer t("Compute relative exposures");
-    double mult[images.size()];
-    mult[images.size() - 1] = baseExposure;
-    #pragma omp parallel for schedule(dynamic)
-    for (int i = 0; i < images.size() - 1; ++i) {
-        mult[i] = images[i].relativeExposure(images[i + 1]);
-    }
+void ImageStack::computeResponseFunctions() {
+    Timer t("Compute response functions");
     for (int i = images.size() - 2; i >= 0; --i) {
-        mult[i] *= mult[i + 1];
-        images[i].setRelativeExposure(mult[i]);
+        images[i].computeResponseFunction(images[i + 1]);
     }
 }
 

@@ -24,6 +24,7 @@
 #define _IMAGE_H_
 
 #include <memory>
+#include <interpolation.h>
 #include "Array2D.hpp"
 
 
@@ -50,7 +51,7 @@ public:
         return width > 0;
     }
     double exposureAt(size_t x, size_t y) const {
-        return (*this)(x, y) * relExp;
+        return response((*this)(x, y));
     }
     uint16_t getMaxAround(size_t x, size_t y) const;
     bool isSaturated(uint16_t v) const {
@@ -62,28 +63,33 @@ public:
     bool isSaturatedAround(size_t x, size_t y) const {
         return isSaturated(getMaxAround(x, y));
     }
-    double getRelativeExposure() const {
-        return relExp;
-    }
+    double getRelativeExposure() const;
     size_t alignWith(const Image & r);
     void preScale();
     void releaseAlignData() {
         scaled.reset();
     }
-    double relativeExposure(const Image & nextImage) const;
-    void setRelativeExposure(double r) {
-        relExp = r;
-    }
+    void computeResponseFunction(const Image & nextImage);
     bool operator<(const Image & r) {
         return brightness > r.brightness;
     }
     void setSaturationThreshold(uint16_t sat);
 
 private:
+    struct ResponseFunction {
+        uint16_t threshold;
+        double linear;
+        alglib::spline1dinterpolant nonLinear;
+        double operator()(uint16_t v) const {
+            return v <= threshold ? v * linear : alglib::spline1dcalc(nonLinear, v);
+        }
+        void setLinear(double slope);
+    };
+
     std::unique_ptr<Array2D<uint16_t>[]> scaled;
-    uint16_t satThreshold;
+    uint16_t satThreshold, max;
     double brightness;
-    double relExp;
+    ResponseFunction response;
     double halfLightPercent;
 
     void subtractBlack(const RawParameters & params);

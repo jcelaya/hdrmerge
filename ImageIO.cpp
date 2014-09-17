@@ -117,7 +117,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
             stack.crop();
         }
     }
-    stack.computeRelExposures(params.max == 0 ? 1.0 : 65535.0 / params.max);
+    stack.computeResponseFunctions();
     stack.generateMask();
     progress.advance(100, "Done loading!");
     return numImages << 1;

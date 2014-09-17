@@ -51,7 +51,7 @@ public:
         params.width = params.rawWidth = width;
         params.height = height;
         params.max = 255;
-        params.filters = 0x4b4b4b4b;
+        params.FC.setPattern(0x4b4b4b4b, (uint8_t (*)(int, int))0);
     }
 
     void save(const std::string & f) {

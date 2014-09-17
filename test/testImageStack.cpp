@@ -162,8 +162,8 @@ BOOST_AUTO_TEST_CASE(auto_exposure) {
         images.align();
     });
 
-    measureTime("Compute relative exposures", [&] () {
-        images.computeRelExposures(65535.0);
+    measureTime("Compute response functions", [&] () {
+        images.computeResponseFunctions();
     });
     double metaImmExp = 1.0 / (1 << (int)(m1.logExp() - m2.logExp()));
     double dataImmExp = e1ref.getRelativeExposure() / e2ref.getRelativeExposure();

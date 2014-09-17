@@ -23,6 +23,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <functional>
 #include <QDateTime>
 #include <QFileInfo>
 #include <libraw/libraw.h>
@@ -31,9 +32,10 @@
 #include "RawParameters.hpp"
 using namespace hdrmerge;
 using namespace std;
+using namespace std::placeholders;
 
 
-RawParameters::RawParameters() : width(0), height(0), rawWidth(0), rawHeight(0), topMargin(0), leftMargin(0), filters(0), xtrans{}, max(0),
+RawParameters::RawParameters() : width(0), height(0), rawWidth(0), rawHeight(0), topMargin(0), leftMargin(0), max(0),
 black(0), maxBlack(0), cblack{}, preMul{}, camMul{}, camXyz{}, rgbCam{}, isoSpeed(0.0), shutter(0.0), aperture(0.0), colors(0) {}
 
 
@@ -179,7 +181,7 @@ void RawParameters::calculateCamXyz() {
 }
 
 
-void RawParameters::fromLibRaw(const LibRaw & rawData) {
+void RawParameters::fromLibRaw(LibRaw & rawData) {
     auto & r = rawData.imgdata;
     width = r.sizes.width;
     height = r.sizes.height;
@@ -187,15 +189,8 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
     rawHeight = r.sizes.raw_height;
     topMargin = r.sizes.top_margin;
     leftMargin = r.sizes.left_margin;
-    filters = r.idata.filters;
-    if (filters == 9) {
-        // Fujifilm X-Trans sensor
-        for (int row = 0; row < 6; ++row) {
-            for (int col = 0; col < 6; ++col) {
-                xtrans[(row + topMargin) % 6][(col + leftMargin) % 6] = const_cast<LibRaw &>(rawData).fcol(row, col);
-            }
-        }
-    }
+    auto fcol = std::bind(&LibRaw::fcol, &rawData, _1, _2);
+    FC.setPattern(r.idata.filters, fcol);
     colors = r.idata.colors;
     cdesc = r.idata.cdesc;
     max = r.color.maximum;
@@ -241,12 +236,6 @@ void RawParameters::fromLibRaw(const LibRaw & rawData) {
 
 double RawParameters::logExp() const {
     return std::log2(isoSpeed * shutter / (100.0 * aperture * aperture));
-}
-
-
-bool RawParameters::canAlign() const {
-    uint8_t * f = (uint8_t *)&filters;
-    return f[0] == f[1] && f[0] == f[2] && f[0] == f[3];
 }
 
 
@@ -332,7 +321,7 @@ void RawParameters::autoWB(const Array2D<uint16_t> & image) {
 void RawParameters::dumpInfo() const {
     Log::debugN(QFileInfo(fileName).fileName(), ": ", width, 'x', height, " (", rawWidth, 'x', rawHeight, '+', leftMargin, '+', topMargin);
     Log::debug(", by ", maker, ' ' , model, ", ", isoSpeed, "ISO 1/", (1.0/shutter), "sec f", aperture, " EV:", logExp());
-    Log::debugN(hex, filters, dec, ' ', cdesc, ", sat ", max, ", black ", black, ", flip ", flip);
+    Log::debugN(hex, FC.getFilters(), dec, ' ', cdesc, ", sat ", max, ", black ", black, ", flip ", flip);
     Log::debugN(", wb: ", camMul[0], ' ', camMul[1], ' ', camMul[2], ' ', camMul[3]);
     Log::debug(", cblack: ", cblack[0], ' ', cblack[1], ' ', cblack[2], ' ', cblack[3]);
 }

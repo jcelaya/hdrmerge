@@ -17,7 +17,7 @@ find_package(ZLIB REQUIRED)
 find_package(Alglib REQUIRED)
 find_package(Boost 1.46 COMPONENTS unit_test_framework)
 find_package(OpenMP)
-include_directories("${LibRaw_INCLUDE_DIR}" "${EXIV2_INCLUDE_DIR}" "${ZLIB_INCLUDE_DIRS}")
+include_directories("${LibRaw_INCLUDE_DIR}" "${EXIV2_INCLUDE_DIR}" "${ZLIB_INCLUDE_DIRS}" "${ALGLIB_INCLUDES}")
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -76,7 +76,6 @@ if (WIN32)
     find_library(ICONV_LIBRARY libiconv.a "${LIB_PATH}")
     find_library(GETTEXT_LIBRARY libintl.a "${LIB_PATH}")
     set(hdrmerge_libs -static ${hdrmerge_libs} "${EXPAT_LIBRARY}" "${GETTEXT_LIBRARY}" "${ICONV_LIBRARY}" psapi)
-    message(${hdrmerge_libs})
 endif (WIN32)
 
 # Qt4 intermediate files

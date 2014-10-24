@@ -1,9 +1,9 @@
 # - Find ALGLIB
 # Find the native ALGLIB includes and library
 #
-#  ALGLIB_INCLUDES    - where to find fftw3.h
-#  ALGLIB_LIBRARIES   - List of libraries when using FFTW.
-#  ALGLIB_FOUND       - True if FFTW found.
+#  ALGLIB_INCLUDES    - where to find Alglib includes
+#  ALGLIB_LIBRARIES   - List of libraries when using Alglib.
+#  ALGLIB_FOUND       - True if Alglib found.
 
 if (ALGLIB_INCLUDES)
   # Already in cache, be silent

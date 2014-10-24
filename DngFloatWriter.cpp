@@ -233,7 +233,7 @@ void DngFloatWriter::createRawIFD() {
     uint16_t cfaRows = params->FC.getRows(), cfaCols = params->FC.getColumns();
     uint16_t cfaPatternDim[] = { cfaRows, cfaCols };
 
-    rawIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 0);
+    rawIFD.addEntry(NEWSUBFILETYPE, IFD::LONG, 0x10001); // Fix it later in ExifTransfer.cpp
     rawIFD.addEntry(IMAGEWIDTH, IFD::LONG, width);
     rawIFD.addEntry(IMAGELENGTH, IFD::LONG, height);
 

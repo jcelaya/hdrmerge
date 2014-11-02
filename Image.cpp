@@ -126,7 +126,7 @@ void Image::computeResponseFunction(const Image & r) {
     values[0] = 0;
     adjValues[0] = 0;
     int i = 1;
-    for (int v = max*0.75; v < max; ++v) {
+    for (int v = max - 1; v >= 0 && (v >= max*0.75 || i < (max - v) / 2); --v) {
         if (histogram[v].first > 0) {
             values[i] = v;
             adjValues[i] = histogram[v].second / histogram[v].first;

@@ -30,6 +30,12 @@
 
 namespace hdrmerge {
 
+
+inline std::ostream & operator<<(std::ostream & os, const QString & s) {
+    return os << std::string(s.toLocal8Bit().constData());
+}
+
+
 class Log {
 public:
     enum {
@@ -102,10 +108,6 @@ private:
     }
 };
 
-
-inline std::ostream & operator<<(std::ostream & os, const QString & s) {
-    return os << std::string(s.toLocal8Bit().constData());
-}
 
 
 class Timer {

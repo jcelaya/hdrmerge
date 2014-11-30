@@ -25,12 +25,13 @@
 
 #include <cmath>
 #include <cstdint>
+#include <vector>
 
 namespace hdrmerge {
 
 class Histogram {
 public:
-    Histogram() : bins{}, numSamples(0) {}
+    Histogram() : bins(65536), numSamples(0) {}
     template <typename Iterator> Histogram(Iterator start, Iterator end) : Histogram() {
         while (start != end) {
             addValue((uint16_t)*start++);
@@ -60,7 +61,7 @@ public:
     }
 
 private:
-    unsigned int bins[65536];
+    std::vector<unsigned int> bins; // 65536 elements
     std::size_t numSamples;
 };
 

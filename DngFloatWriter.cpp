@@ -21,6 +21,7 @@
  */
 
 #include <iostream>
+#include <cmath>
 #include <QBuffer>
 #include <QDateTime>
 #include <QImageWriter>
@@ -367,7 +368,9 @@ static void encodeFPDeltaRow(Bytef * src, Bytef * dst, size_t tileWidth, size_t 
             dst[col + realTileWidth*2] = src[col*3 + 2];
         }
     } else {
-        if (((union { uint32_t x; uint8_t c; }){1}).c) {
+        union { uint32_t x; uint8_t c; } byteOrderDetect;
+        byteOrderDetect.x = 1;
+        if (byteOrderDetect.c) {
             for (size_t col = 0; col < tileWidth; ++col) {
                 for (size_t byte = 0; byte < bytesps; ++byte)
                     dst[col + realTileWidth*(bytesps-byte-1)] = src[col*bytesps + byte];  // Little endian
@@ -471,8 +474,8 @@ void DngFloatWriter::writeRawData() {
 
     #pragma omp parallel
     {
-        Bytef cBuffer[dstLen];
-        Bytef uBuffer[dstLen];
+        Bytef * cBuffer = new Bytef[dstLen];
+        Bytef * uBuffer = new Bytef[dstLen];
 
         #pragma omp for collapse(2) schedule(dynamic)
         for (size_t y = 0; y < height; y += tileLength) {
@@ -503,6 +506,9 @@ void DngFloatWriter::writeRawData() {
                 }
             }
         }
+
+        delete [] cBuffer;
+        delete [] uBuffer;
     }
 
     rawIFD.setValue(TILEOFFSETS, tileOffsets);

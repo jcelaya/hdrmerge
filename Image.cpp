@@ -106,7 +106,7 @@ void Image::computeResponseFunction(const Image & r) {
     const uint16_t * rUsePixels = &r.data[-relrdy*width - relrdx];
 
     // Get average relative values between this image and the last one
-    std::pair<int, double> histogram[max + 1];
+    std::vector<std::pair<int, double>> histogram(max + 1);
     for (auto & i : histogram) i = { 0, 0.0 };
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {

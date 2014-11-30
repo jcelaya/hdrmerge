@@ -27,9 +27,10 @@ find_path (ALGLIB_INCLUDES
     stdafx.h
     PATHS
     /usr/include/libalglib/
+    /usr/local/include/alglib3/
     )
 
-find_library (ALGLIB_LIBRARIES NAMES alglib)
+find_library (ALGLIB_LIBRARIES NAMES alglib alglib3)
 
 # handle the QUIETLY and REQUIRED arguments and set ALGLIB_FOUND to TRUE if
 # all listed variables are TRUE

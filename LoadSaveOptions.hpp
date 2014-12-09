@@ -34,7 +34,9 @@ struct LoadOptions {
     bool crop;
     bool batch;
     double batchGap;
-    LoadOptions() : align(true), crop(true), batch(false), batchGap(2.0) {}
+    bool withSingles;
+    LoadOptions() : align(true), crop(true), batch(false), batchGap(2.0),
+        withSingles(false) {}
 };
 
 

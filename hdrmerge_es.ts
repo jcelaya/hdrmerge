@@ -135,6 +135,10 @@
         <source>Invalid %1 parameter, using default.</source>
         <translation type="finished">Parámetro %1 inválido, se usará el valor por defecto.</translation>
     </message>
+    <message>
+        <source>Include single images in batch mode (the default is to skip them.)</source>
+        <translation type="finished">Incluir imágenes sueltas en modo lote (por defecto se ignoran).</translation>
+    </message>
 </context>
 <context>
     <name>LoadSave</name>
@@ -181,6 +185,10 @@
     <message>
         <source>Done writing!</source>
         <translation type="finished">¡Escritura finalizada!</translation>
+    </message>
+    <message>
+        <source>Skipping single image %1</source>
+        <translation type="finished">Ignorando la imagen suelta %1</translation>
     </message>
 </context>
 <context>

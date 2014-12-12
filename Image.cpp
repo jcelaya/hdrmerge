@@ -66,6 +66,7 @@ Image & Image::operator=(Image && move) {
     brightness = move.brightness;
     response = move.response;
     halfLightPercent = move.halfLightPercent;
+    return *this;
 }
 
 

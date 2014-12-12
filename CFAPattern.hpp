@@ -63,7 +63,7 @@ public:
 
     int getRows() const {
         if (filters == 9) return 6;
-        else if (filters & 255 == (filters >> 8) & 255) return 2;
+        else if ((filters & 255) == ((filters >> 8) & 255)) return 2;
         else return 8;
     }
     

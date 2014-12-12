@@ -39,7 +39,7 @@ public:
     ImageIO() {}
 
     int load(const LoadOptions & options, ProgressIndicator & progress);
-    int save(const SaveOptions & options, ProgressIndicator & progress);
+    void save(const SaveOptions & options, ProgressIndicator & progress);
 
     const ImageStack & getImageStack() const {
         return stack;

@@ -29,5 +29,6 @@
 static int setLog() {
     hdrmerge::Log::setOutputStream(std::cout);
     hdrmerge::Log::setMinimumPriority(0);
+    return 0;
 }
 static int foo = setLog();

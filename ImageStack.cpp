@@ -273,7 +273,7 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
                     // Adjust alinearities, mixing saturated highlights with next exposure
                     if (p > 0.0001 && j < imageMax && rawV > satThreshold) {
                         double k = (rawV - satThreshold) / saturatedRange;
-                        if (k > 1.0) k == 1.0;
+                        if (k > 1.0) k = 1.0;
                         p += (1.0 - p) * k;
                     }
                 } else {

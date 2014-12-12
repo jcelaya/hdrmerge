@@ -124,7 +124,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
 }
 
 
-int ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
+void ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     string cropped = stack.isCropped() ? " cropped" : "";
     Log::msg(2, "Writing ", options.fileName, ", ", options.bps, "-bit, ", stack.getWidth(), 'x', stack.getHeight(), cropped);
 

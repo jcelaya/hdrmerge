@@ -50,7 +50,7 @@ set (WIN_RES_FILE "")
 if (WIN32)
     # This is required by libraw.h
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32 -DLIBRAW_NODLL")
-    set(PLATFORM WIN32 )
+    set(PLATFORM WIN32)
     configure_file (
         "${PROJECT_SOURCE_DIR}/winres.rc"
         "${PROJECT_BINARY_DIR}/winres.rc"

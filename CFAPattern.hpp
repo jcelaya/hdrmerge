@@ -40,11 +40,11 @@ public:
             }
         }
     }
-    
+
     bool operator==(const CFAPattern & r) const {
         return filters == r.filters;
     }
-    
+
     uint8_t operator()(int x, int y) const {
         // (x, y) is relative to the ACTIVE AREA
         if (filters == 9) {

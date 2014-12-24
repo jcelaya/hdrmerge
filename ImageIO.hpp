@@ -48,7 +48,7 @@ public:
         return stack;
     }
 
-        QString buildOutputFileName() const;
+    QString buildOutputFileName() const;
     QString getInputPath() const;
     QString replaceArguments(const QString & pattern, const QString & outFileName) const;
     static Image loadRawImage(RawParameters & rawParameters);

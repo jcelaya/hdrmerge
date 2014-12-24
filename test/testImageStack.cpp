@@ -21,6 +21,7 @@
  */
 
 #include <iostream>
+#include <QDir>
 #include "../ImageIO.hpp"
 #include "SampleImage.hpp"
 #include "../Log.hpp"
@@ -70,6 +71,10 @@ BOOST_FIXTURE_TEST_CASE(image_align, ImageIOFixture) {
     BOOST_REQUIRE(e2.good());
     BOOST_REQUIRE(e3.good());
     BOOST_REQUIRE(e4.good());
+    e1.preScale(); e1.setSaturationThreshold(254);
+    e2.preScale(); e2.setSaturationThreshold(254);
+    e3.preScale(); e3.setSaturationThreshold(254);
+    e4.preScale(); e4.setSaturationThreshold(254);
     e2.alignWith(e1);
     e3.alignWith(e1);
     e4.alignWith(e1);
@@ -120,10 +125,15 @@ BOOST_AUTO_TEST_CASE(stack_align) {
     BOOST_REQUIRE(e2.good());
     BOOST_REQUIRE(e3.good());
     BOOST_REQUIRE(e4.good());
+    e1.setSaturationThreshold(254);
+    e2.setSaturationThreshold(254);
+    e3.setSaturationThreshold(254);
+    e4.setSaturationThreshold(254);
     images.addImage(std::move(e1));
     images.addImage(std::move(e2));
     images.addImage(std::move(e3));
     images.addImage(std::move(e4));
+    images.setFlip(0);
     measureTime("Align images total", [&] () {images.align();});
     images.crop();
     Image & e1ref = images.getImage(1), & e2ref = images.getImage(3),
@@ -158,6 +168,8 @@ BOOST_AUTO_TEST_CASE(auto_exposure) {
     images.addImage(std::move(e2));
     images.addImage(std::move(e3));
     Image & e1ref = images.getImage(0), & e2ref = images.getImage(1), & e3ref = images.getImage(2);
+    images.setFlip(m1.flip);
+    images.calculateSaturationLevel(m1);
     measureTime("Align images", [&] () {
         images.align();
     });
@@ -184,11 +196,12 @@ BOOST_AUTO_TEST_CASE(output_filename) {
     NullProgressIndicator npi;
     lo.fileNames.push_back(image1);
     BOOST_REQUIRE_EQUAL(io.load(lo, npi), 2);
+    string pwd = QDir::currentPath().toLocal8Bit().constData();
     string oneFile = io.buildOutputFileName().toLocal8Bit().constData();
-    BOOST_CHECK_EQUAL(oneFile, "test/sample1");
+    BOOST_CHECK_EQUAL(oneFile, pwd + "/test/sample1.dng");
     lo.fileNames.push_back(image2);
     lo.fileNames.push_back(image3);
     BOOST_REQUIRE_EQUAL(io.load(lo, npi), 6);
     string threeFile = io.buildOutputFileName().toLocal8Bit().constData();
-    BOOST_CHECK_EQUAL(threeFile, "test/sample1-3");
+    BOOST_CHECK_EQUAL(threeFile, pwd + "/test/sample1-3.dng");
 }

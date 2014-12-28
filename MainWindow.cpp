@@ -249,7 +249,7 @@ void MainWindow::loadImages() {
         preloadFiles.clear();
     }
     if (lod.exec() && !lod.fileNames.empty()) {
-        unsigned int numImages = lod.fileNames.size();
+        int numImages = lod.fileNames.size();
         ProgressDialog progress(this);
         progress.setWindowTitle(tr("Open raw images"));
         QFuture<int> error = QtConcurrent::run(std::function<int()>([&] () { return io.load(lod, progress); }));
@@ -353,7 +353,7 @@ void MainWindow::saveResult() {
 
         if (saveDialog.exec()) {
             QString file = saveDialog.selectedFiles().front();
-            size_t extPos = file.lastIndexOf('.');
+            int extPos = file.lastIndexOf('.');
             if (extPos > file.length() || file.mid(extPos) != ".dng") {
                 file += ".dng";
             }

@@ -43,7 +43,7 @@ void RawParameters::loadCamXyzFromDng() {
     // Try to load it from the DNG metadata
     try {
         const float d65_white[3] = { 0.950456f, 1.0f, 1.088754f };
-        double cc[4][4], cm[4][3], xyz[] = { 1,1,1 };
+        double cc[4][4], xyz[] = { 1,1,1 };
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
                 cc[j][i] = i == j ? 1.0 : 0.0;

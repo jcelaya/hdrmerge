@@ -74,17 +74,17 @@ void ImageStack::align() {
         Timer t("Align");
         size_t errors[images.size()];
         #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < images.size(); ++i) {
+        for (size_t i = 0; i < images.size(); ++i) {
             images[i].preScale();
         }
         #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < images.size() - 1; ++i) {
+        for (size_t i = 0; i < images.size() - 1; ++i) {
             errors[i] = images[i].alignWith(images[i + 1]);
         }
-        for (int i = images.size() - 2; i >= 0; --i) {
-            images[i].displace(images[i + 1].getDeltaX(), images[i + 1].getDeltaY());
-            Log::debug("Image ", i, " displaced to (", images[i].getDeltaX(), ", ", images[i].getDeltaY(),
-                     ") with error ", errors[i]);
+        for (size_t i = images.size() - 1; i > 0; --i) {
+            images[i - 1].displace(images[i].getDeltaX(), images[i].getDeltaY());
+            Log::debug("Image ", i - 1, " displaced to (", images[i - 1].getDeltaX(),
+                       ", ", images[i - 1].getDeltaY(), ") with error ", errors[i - 1]);
         }
         for (auto & i : images) {
             i.releaseAlignData();
@@ -125,7 +125,7 @@ void ImageStack::generateMask() {
     #pragma omp parallel for schedule(dynamic)
     for (size_t y = 0; y < height; ++y) {
         for (size_t x = 0; x < width; ++x) {
-            int i = mask(x, y);
+            size_t i = mask(x, y);
             while (i < images.size() - 1 &&
                 (!images[i].contains(x, y) ||
                 images[i].isSaturatedAround(x, y))) ++i;
@@ -167,7 +167,7 @@ static Array2D<uint8_t> fattenMask(const Array2D<uint8_t> & mask, int radius) {
     for (int i = 0; i < radius; i++) {
         bufArray[i] = &mask[0];
     }
-    for (int i = 0; i < height; i++) {
+    for (size_t i = 0; i < height; i++) {
         bufArray[i + radius] = &mask[i * width];
     }
     for (int i = 0; i < radius; i++) {
@@ -184,7 +184,7 @@ static Array2D<uint8_t> fattenMask(const Array2D<uint8_t> & mask, int radius) {
         for (int i = 0; i < radius; i++) {
             maxArray[i] = buffer.get();
         }
-        for (int i = 0; i < width; i++) {
+        for (size_t i = 0; i < width; i++) {
             maxArray[i + radius] = &buffer[(radius + 1) * i];
         }
         for (int i = 0; i < radius; i++) {
@@ -273,7 +273,7 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
                     // Adjust alinearities, mixing saturated highlights with next exposure
                     if (p > 0.0001 && j < imageMax && rawV > satThreshold) {
                         double k = (rawV - satThreshold) / saturatedRange;
-                        if (k > 1.0) k == 1.0;
+                        if (k > 1.0) k = 1.0;
                         p += (1.0 - p) * k;
                     }
                 } else {

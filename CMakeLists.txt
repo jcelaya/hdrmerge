@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(hdrmerge)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+# Complain about anything, except ignored OpenMP pragma in Debug
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-unknown-pragmas")
 set (PLATFORM "")
 
 # Required and optional packages

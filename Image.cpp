@@ -66,6 +66,7 @@ Image & Image::operator=(Image && move) {
     brightness = move.brightness;
     response = move.response;
     halfLightPercent = move.halfLightPercent;
+    return *this;
 }
 
 
@@ -211,16 +212,16 @@ void Image::preScale() {
 
 uint16_t Image::getMaxAround(size_t x, size_t y) const {
     uint16_t result = 0;
-    if (y > dy) {
-        if (x > dx) result = std::max(result, (*this)(x - 1, y - 1));
+    if ((int)y > dy) {
+        if ((int)x > dx) result = std::max(result, (*this)(x - 1, y - 1));
         result = std::max(result, (*this)(x, y - 1));
         if (x < width + dx - 1) result = std::max(result, (*this)(x + 1, y - 1));
     }
-    if (x > dx) result = std::max(result, (*this)(x - 1, y));
+    if ((int)x > dx) result = std::max(result, (*this)(x - 1, y));
     result = std::max(result, (*this)(x, y));
     if (x < width + dx - 1) result = std::max(result, (*this)(x + 1, y));
     if (y < height + dy - 1) {
-        if (x > dx) result = std::max(result, (*this)(x - 1, y + 1));
+        if ((int)x > dx) result = std::max(result, (*this)(x - 1, y + 1));
         result = std::max(result, (*this)(x, y + 1));
         if (x < width + dx - 1) result = std::max(result, (*this)(x + 1, y + 1));
     }

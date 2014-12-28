@@ -42,7 +42,7 @@ public:
         resize(image.width(), image.height());
         const uchar * data = image.constBits();
         int min = 255, max = 0;
-        for (int i = 0; i < width * height; ++i) {
+        for (size_t i = 0; i < width * height; ++i) {
             (*this)[i] = data[i];
             if (min > data[i]) min = data[i];
             if (max < data[i]) max = data[i];
@@ -57,7 +57,7 @@ public:
     void save(const std::string & f) {
         QImage image(width, height, QImage::Format_RGB32);
         QRgb * data = reinterpret_cast<QRgb *>(image.bits());
-        for (int i = 0; i < width * height; ++i) {
+        for (size_t i = 0; i < width * height; ++i) {
             int v = (*this)[i];
             data[i] = qRgb(v, v, v);
         }

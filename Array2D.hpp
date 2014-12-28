@@ -25,7 +25,7 @@
 
 #include <memory>
 #include <cstdint>
-#include <bits/algorithmfwd.h>
+#include <algorithm>
 
 namespace hdrmerge {
 

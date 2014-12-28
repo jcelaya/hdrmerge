@@ -252,7 +252,7 @@ void MainWindow::loadImages() {
         unsigned int numImages = lod.fileNames.size();
         ProgressDialog progress(this);
         progress.setWindowTitle(tr("Open raw images"));
-        QFuture<int> error = QtConcurrent::run([&] () { return io.load(lod, progress); });
+        QFuture<int> error = QtConcurrent::run(std::function<int()>([&] () { return io.load(lod, progress); }));
         while (error.isRunning())
             QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
         int result = error.result();
@@ -363,9 +363,9 @@ void MainWindow::saveResult() {
                 dpd.fileName = file;
                 ProgressDialog pd(this);
                 pd.setWindowTitle(tr("Save DNG file"));
-                QFuture<void> result = QtConcurrent::run([&]() {
+                QFuture<void> result = QtConcurrent::run(std::function<void()>([&]() {
                     io.save(dpd, pd);
-                });
+                }));
                 while (result.isRunning())
                     QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
             }

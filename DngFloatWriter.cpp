@@ -347,12 +347,12 @@ void DngFloatWriter::setPreview(const QImage & p) {
 
 void DngFloatWriter::writePreviews() {
     size_t thumbsize = thumbnail.width() * thumbnail.height() * 3;
-    mainIFD.setValue(STRIPBYTES, thumbsize);
-    mainIFD.setValue(STRIPOFFSETS, file.tellp());
+    mainIFD.setValue(STRIPBYTES, (int32_t) thumbsize);
+    mainIFD.setValue(STRIPOFFSETS, (int32_t) file.tellp());
     file.write((const char *)thumbnail.bits(), thumbsize);
     if (previewWidth > 0) {
         previewIFD.setValue(STRIPBYTES, jpegPreviewData.size());
-        previewIFD.setValue(STRIPOFFSETS, file.tellp());
+        previewIFD.setValue(STRIPOFFSETS, (int32_t) file.tellp());
         file.write(jpegPreviewData.constData(), jpegPreviewData.size());
     }
 }

@@ -106,7 +106,7 @@ public:
         return alignedData[y*width + x];
     }
     bool contains(int x, int y) const {
-        return x >= dx && x < width + dx && y >= dy && y < height + dy;
+        return x >= dx && x < (int)width + dx && y >= dy && y < (int)height + dy;
     }
     void displace(int newDx, int newDy) {
         dx += newDx;
@@ -123,8 +123,8 @@ public:
 
     template <typename F> void traceCircle(int x, int y, int radius, const F & function) {
         int r2 = radius * radius;
-        int ymin = std::max(-y, -radius), ymax = std::min(height - y, radius + 1);
-        int xmin = std::max(-x, -radius), xmax = std::min(width - x, radius + 1);
+        int ymin = std::max(-y, -radius), ymax = std::min((int)height - y, radius + 1);
+        int xmin = std::max(-x, -radius), xmax = std::min((int)width - x, radius + 1);
         for (int row = ymin, rrow = y + row; row < ymax; ++row, ++rrow) {
             for (int col = xmin, rcol = x + col; col < xmax; ++col, ++rcol) {
                 if (row*row + col*col <= r2) {
@@ -135,8 +135,8 @@ public:
     }
 
     template <typename F> void traceSquare(int x, int y, int radius, const F & function) {
-        int ymin = std::max(-y, -radius), ymax = std::min(height - y, radius + 1);
-        int xmin = std::max(-x, -radius), xmax = std::min(width - x, radius + 1);
+        int ymin = std::max(-y, -radius), ymax = std::min((int)height - y, radius + 1);
+        int xmin = std::max(-x, -radius), xmax = std::min((int)width - x, radius + 1);
         for (int rrow = y + ymin; rrow < y + ymax; ++rrow) {
             for (int rcol = x + xmin; rcol < x + xmax; ++rcol) {
                 function(rcol, rrow, operator()(rcol, rrow));
@@ -147,7 +147,7 @@ public:
 protected:
     std::unique_ptr<T[]> data;
     T * alignedData;
-    int width, height;
+    size_t width, height;
     int dx, dy;
 };
 

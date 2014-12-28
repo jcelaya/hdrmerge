@@ -97,7 +97,7 @@ enum {
     YCBCRSUBSAMPLING = 530,
     YCBCRPOSITIONING = 531,
     REFBLACKWHITE = 532,
-} Tag;
+};
 
 
 enum {
@@ -111,7 +111,7 @@ enum {
     TIFF_FPFORMAT = 3,
     TIFF_CFA = 32803,
     TIFF_YCBCR = 6,
-} Constant;
+};
 
 
 void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p, const QString & filename) {
@@ -368,22 +368,17 @@ static void encodeFPDeltaRow(Bytef * src, Bytef * dst, size_t tileWidth, size_t 
             dst[col + realTileWidth*2] = src[col*3 + 2];
         }
     } else {
-        union { uint32_t x; uint8_t c; } byteOrderDetect;
-        byteOrderDetect.x = 1;
-        if (byteOrderDetect.c) {
-            for (size_t col = 0; col < tileWidth; ++col) {
-                for (size_t byte = 0; byte < bytesps; ++byte)
-                    dst[col + realTileWidth*(bytesps-byte-1)] = src[col*bytesps + byte];  // Little endian
-            }
-        } else {
-            for (size_t col = 0; col < tileWidth; ++col) {
-                for (size_t byte = 0; byte < bytesps; ++byte)
-                    dst[col + realTileWidth*byte] = src[col*bytesps + byte];
-            }
+        for (size_t col = 0; col < tileWidth; ++col) {
+            for (int byte = 0; byte < bytesps; ++byte)
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+                dst[col + realTileWidth*(bytesps-byte-1)] = src[col*bytesps + byte];
+#else
+                dst[col + realTileWidth*byte] = src[col*bytesps + byte];
+#endif
         }
     }
     // EncodeDeltaBytes
-    for (size_t col = realTileWidth*bytesps - 1; col >= factor; --col) {
+    for (int col = realTileWidth*bytesps - 1; col >= factor; --col) {
         dst[col] -= dst[col - factor];
     }
 }

@@ -108,19 +108,26 @@ private:
     DirEntry * getEntry(uint16_t tag);
     void setValue(DirEntry * entry, const void * data);
     template <typename T> void setValue(DirEntry * entry, const T & value) {
-        if (sizeof(T) > 4) {
+        if (entry->dataSize() > 4) {
             setValue(entry, (const void *)&value);
         } else {
-            uint32_t leftJustified = 0;
+            union {
+                float floatValue;
+                uint32_t longValue;
+                uint16_t shortValue;
+                uint8_t byteValue;
+            } u;
             switch (entry->type) {
                 case BYTE: case ASCII: case SBYTE: case UNDEFINED:
-                    *((uint8_t *)&leftJustified) = (uint8_t) value; break;
+                    u.byteValue = (uint8_t) value; break;
                 case SHORT: case SSHORT:
-                    *((uint16_t *)&leftJustified) = (uint16_t) value; break;
-                case LONG: case SLONG: case FLOAT:
-                    leftJustified = *((uint32_t *)&value); break;
+                    u.shortValue = (uint16_t) value; break;
+                case LONG: case SLONG:
+                    u.longValue = (uint32_t)value; break;
+                case FLOAT:
+                    u.floatValue = (float)value; break;
             }
-            entry->offset = leftJustified;
+            entry->offset = u.longValue;
         }
     }
 };

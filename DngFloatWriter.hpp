@@ -48,7 +48,7 @@ public:
     void write(Array2D<float> && rawPixels, const RawParameters & p, const QString & filename);
 
 private:
-    uint32_t previewWidth;
+    int previewWidth;
     int bps;
     const RawParameters * params;
     Array2D<float> rawData;

@@ -67,11 +67,11 @@ void Bitmap::shift(const Bitmap & src, int dx, int dy) {
     uint32_t mask1 = allOnes << b, mask2 = ~mask1;
     for (size_t i = 0; i < size; ++i) {
         bits[i] = 0;
-        if (div >= 0 && div < size) {
+        if (div >= 0 && div < (int)size) {
             bits[i] += (src.bits[div] & mask1) >> b;
         }
         ++div;
-        if (div >= 0 && div < size) {
+        if (div >= 0 && div < (int)size) {
             bits[i] += (src.bits[div] & mask2) << (32-b);
         }
     }
@@ -82,7 +82,7 @@ void Bitmap::shift(const Bitmap & src, int dx, int dy) {
 
 void Bitmap::applyRowMask(int dx) {
     size_t a, b;
-    if (dx > 0 && dx <= rowWidth) {
+    if (dx > 0 && dx <= (int)rowWidth) {
         a = 0;
         b = dx;
     } else if (dx < 0 && dx >= -(int)rowWidth) {
@@ -159,7 +159,7 @@ std::string Bitmap::dumpInfo() {
     iterator it = position(0, 0);
     int height = numBits / rowWidth;
     for (int row = 0; row < height; ++row) {
-        for (int col = 0; col < rowWidth; ++col, ++it) {
+        for (int col = 0; col < (int)rowWidth; ++col, ++it) {
             oss << (it.get() ? '1' : '0');
         }
         oss << std::endl;

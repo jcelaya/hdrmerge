@@ -136,7 +136,7 @@ int Launcher::automaticMerge() {
         SaveOptions setOptions = saveOptions;
         if (!setOptions.fileName.isEmpty()) {
             setOptions.fileName = io.replaceArguments(setOptions.fileName, "");
-            size_t extPos = setOptions.fileName.lastIndexOf('.');
+            int extPos = setOptions.fileName.lastIndexOf('.');
             if (extPos > setOptions.fileName.length() || setOptions.fileName.mid(extPos) != ".dng") {
                 setOptions.fileName += ".dng";
             }

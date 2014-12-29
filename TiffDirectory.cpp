@@ -49,9 +49,14 @@ void IFD::setValue(DirEntry * entry, const void * data) {
 }
 
 
-void IFD::write(std::ostream & file, bool hasNext) {
+void TiffHeader::write(uint8_t * buffer, size_t & pos) {
+    pos = std::copy_n((uint8_t *)this, 8, &buffer[pos]) - buffer;
+}
+
+
+void IFD::write(uint8_t * buffer, size_t & pos, bool hasNext) {
     uint16_t numEntries = entries.size();
-    uint32_t offsetData = (uint32_t)file.tellp() + 12*numEntries + 6;
+    uint32_t offsetData = (uint32_t)pos + 12*numEntries + 6;
     sort(entries.begin(), entries.end());
     uint32_t offsetNext = hasNext ? offsetData + entryData.size() : 0;
     for (auto & entry : entries) {
@@ -59,10 +64,12 @@ void IFD::write(std::ostream & file, bool hasNext) {
             entry.offset += offsetData;
         }
     }
-    file.write((const char *)&numEntries, 2);
-    file.write((const char *)&entries[0], 12*numEntries);
-    file.write((const char *)&offsetNext, 4);
-    file.write((const char *)&entryData[0], entryData.size());
+    uint8_t * p = &buffer[pos];
+    p = std::copy_n((uint8_t *)&numEntries, 2, p);
+    p = std::copy_n((uint8_t *)&entries[0], 12*numEntries, p);
+    p = std::copy_n((uint8_t *)&offsetNext, 4, p);
+    p = std::copy_n((uint8_t *)&entryData[0], entryData.size(), p);
+    pos = p - buffer;
 }
 
 

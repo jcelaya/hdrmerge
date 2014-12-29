@@ -30,7 +30,6 @@
 #include "ImageIO.hpp"
 #include "DngFloatWriter.hpp"
 #include "Log.hpp"
-#include "ExifTransfer.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -144,8 +143,6 @@ void ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     writer.setPreviewWidth((options.previewSize * stack.getWidth()) / 2);
     writer.setPreview(preview);
     writer.write(std::move(composedImage), params, options.fileName);
-
-    Exif::transfer(params.fileName, options.fileName);
     progress.advance(100, "Done writing!");
 
     if (options.saveMask) {

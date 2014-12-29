@@ -30,6 +30,7 @@
 #include "DngFloatWriter.hpp"
 #include "RawParameters.hpp"
 #include "Log.hpp"
+#include "ExifTransfer.hpp"
 using namespace std;
 
 
@@ -122,7 +123,6 @@ void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p,
 
     renderPreviews();
 
-    file.open(filename.toLocal8Bit().constData(), ios_base::binary);
     createMainIFD();
     subIFDoffsets[0] = 8 + mainIFD.length();
     createRawIFD();
@@ -133,19 +133,24 @@ void DngFloatWriter::write(Array2D<float> && rawPixels, const RawParameters & p,
         dataOffset += previewIFD.length();
     }
     mainIFD.setValue(SUBIFDS, (const void *)subIFDoffsets);
-    file.seekp(dataOffset);
+    pos = dataOffset;
+    size_t dataSize = dataOffset + thumbSize() + previewSize() + rawSize();
+    fileData.reset(new uint8_t[dataSize]);
 
     Timer t("Write output");
     writePreviews();
     writeRawData();
-    file.seekp(0);
-    TiffHeader().write(file);
-    mainIFD.write(file, false);
-    rawIFD.write(file, false);
+    dataSize = pos;
+    pos = 0;
+    TiffHeader().write(fileData.get(), pos);
+    mainIFD.write(fileData.get(), pos, false);
+    rawIFD.write(fileData.get(), pos, false);
     if (previewWidth > 0) {
-        previewIFD.write(file, false);
+        previewIFD.write(fileData.get(), pos, false);
     }
-    file.close();
+
+    Exif::transfer(p.fileName, filename.toLocal8Bit().constData(),
+                   fileData.get(), dataSize);
 }
 
 
@@ -345,15 +350,26 @@ void DngFloatWriter::setPreview(const QImage & p) {
 }
 
 
+size_t DngFloatWriter::thumbSize() {
+    return thumbnail.width() * thumbnail.height() * 3;
+}
+
+
+size_t DngFloatWriter::previewSize() {
+    return previewWidth > 0 ? jpegPreviewData.size() : 0;
+}
+
+
 void DngFloatWriter::writePreviews() {
-    size_t thumbsize = thumbnail.width() * thumbnail.height() * 3;
-    mainIFD.setValue(STRIPBYTES, thumbsize);
-    mainIFD.setValue(STRIPOFFSETS, file.tellp());
-    file.write((const char *)thumbnail.bits(), thumbsize);
+    size_t ts = thumbSize();
+    mainIFD.setValue(STRIPBYTES, ts);
+    mainIFD.setValue(STRIPOFFSETS, pos);
+    pos = std::copy_n((const uint8_t *)thumbnail.bits(), ts, &fileData[pos]) - fileData.get();
     if (previewWidth > 0) {
-        previewIFD.setValue(STRIPBYTES, jpegPreviewData.size());
-        previewIFD.setValue(STRIPOFFSETS, file.tellp());
-        file.write(jpegPreviewData.constData(), jpegPreviewData.size());
+        ts = previewSize();
+        previewIFD.setValue(STRIPBYTES, ts);
+        previewIFD.setValue(STRIPOFFSETS, pos);
+        pos = std::copy_n((const uint8_t *)jpegPreviewData.constData(), ts, &fileData[pos]) - fileData.get();
     }
 }
 
@@ -460,6 +476,12 @@ static void compressFloats(Bytef * dst, int tileWidth, int bytesps) {
 }
 
 
+size_t DngFloatWriter::rawSize() {
+    // Worst case size
+    return tilesAcross * tilesDown * tileWidth * tileLength * (bps >> 3);
+}
+
+
 void DngFloatWriter::writeRawData() {
     size_t tileCount = tilesAcross * tilesDown;
     uint32_t tileOffsets[tileCount];
@@ -495,8 +517,9 @@ void DngFloatWriter::writeRawData() {
                 } else {
                     #pragma omp critical
                     {
-                        tileOffsets[t] = file.tellp();
-                        file.write((const char *)cBuffer, tileBytes[t]);
+                        tileOffsets[t] = pos;
+                        std::copy_n((const uint8_t *)cBuffer, tileBytes[t], &fileData[pos]);
+                        pos += tileBytes[t];
                     }
                 }
             }

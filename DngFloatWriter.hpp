@@ -23,7 +23,6 @@
 #ifndef _DNGFLOATWRITER_HPP_
 #define _DNGFLOATWRITER_HPP_
 
-#include <fstream>
 #include <QString>
 #include <QImage>
 #include "config.h"
@@ -52,7 +51,8 @@ private:
     int bps;
     const RawParameters * params;
     Array2D<float> rawData;
-    std::ofstream file;
+    std::unique_ptr<uint8_t[]> fileData;
+    size_t pos;
     IFD mainIFD, rawIFD, previewIFD;
     uint32_t width, height;
     uint32_t tileWidth, tileLength;
@@ -69,6 +69,9 @@ private:
     void renderPreviews();
     void writePreviews();
     void createPreviewIFD();
+    size_t thumbSize();
+    size_t previewSize();
+    size_t rawSize();
 };
 
 } // namespace hdrmerge

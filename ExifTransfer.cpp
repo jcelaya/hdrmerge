@@ -30,12 +30,16 @@ using namespace std;
 
 class ExifTransfer {
 public:
-    ExifTransfer(const QString & srcFile, const QString & dstFile) : srcFile(srcFile), dstFile(dstFile) {}
+    ExifTransfer(const QString & srcFile, const QString & dstFile,
+                 const uint8_t * data, size_t dataSize)
+    : srcFile(srcFile), dstFile(dstFile), data(data), dataSize(dataSize) {}
 
     void copyMetadata();
 
 private:
     QString srcFile, dstFile;
+    const uint8_t * data;
+    size_t dataSize;
     Exiv2::Image::AutoPtr src, dst;
 
     void copyXMP();
@@ -44,15 +48,16 @@ private:
 };
 
 
-void hdrmerge::Exif::transfer(const QString & srcFile, const QString & dstFile) {
-    ExifTransfer exif(srcFile, dstFile);
+void hdrmerge::Exif::transfer(const QString & srcFile, const QString & dstFile,
+                 const uint8_t * data, size_t dataSize) {
+    ExifTransfer exif(srcFile, dstFile, data, dataSize);
     exif.copyMetadata();
 }
 
 
 void ExifTransfer::copyMetadata() {
     try {
-        dst = Exiv2::ImageFactory::open(dstFile.toLocal8Bit().constData());
+        dst = Exiv2::ImageFactory::open(BasicIo::AutoPtr(new MemIo(data, dataSize)));
         dst->readMetadata();
     } catch (Exiv2::Error & e) {
         std::cerr << "Exiv2 error: " << e.what() << std::endl;
@@ -71,6 +76,10 @@ void ExifTransfer::copyMetadata() {
     }
     try {
         dst->writeMetadata();
+        FileIo fileIo(dstFile.toLocal8Bit().constData());
+        fileIo.open("wb");
+        fileIo.write(dst->io());
+        fileIo.close();
     } catch (Exiv2::Error & e) {
         std::cerr << "Exiv2 error: " << e.what() << std::endl;
     }

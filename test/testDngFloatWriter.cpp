@@ -26,7 +26,6 @@
 #include "../ImageIO.hpp"
 #include "../Log.hpp"
 #include "../DngFloatWriter.hpp"
-#include "../ExifTransfer.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;
@@ -55,7 +54,6 @@ BOOST_AUTO_TEST_CASE(testDngFloatWriter) {
             string title = string("Save Dng Float with ") + to_string(bps) + " bps and preview width " + to_string(width);
             measureTime(title.c_str(), [&] () {
                 writer.write(std::move(result), params, fileName);
-                Exif::transfer(params.fileName, fileName);
             });
 //         }
 //     }

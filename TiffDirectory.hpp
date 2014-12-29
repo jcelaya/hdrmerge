@@ -21,7 +21,6 @@
  */
 
 #include <vector>
-#include <ostream>
 #include <string>
 
 #ifndef _TIFFDIRECTORY_HPP_
@@ -40,7 +39,7 @@ struct TiffHeader {
     uint32_t offset;
     // It sets the first two bytes to their correct value, given the architecture
     TiffHeader() : endian(0x4D4D4949), offset(8) { sep.magic = 42; }
-    void write(std::ostream & file) const { file.write((const char *)this, 8); }
+    void write(uint8_t * buffer, size_t & pos);
 };
 
 class IFD {
@@ -80,7 +79,7 @@ public:
     void addEntry(uint16_t tag, const std::string str) {
         addEntry(tag, ASCII, str.length() + 1, str.c_str());
     }
-    void write(std::ostream & file, bool hasNext);
+    void write(uint8_t * buffer, size_t & pos, bool hasNext);
     size_t length() const;
 
 private:

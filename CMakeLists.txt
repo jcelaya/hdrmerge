@@ -78,7 +78,8 @@ if (WIN32)
     find_library(EXPAT_LIBRARY libexpat.a "${LIB_PATH}")
     find_library(ICONV_LIBRARY libiconv.a "${LIB_PATH}")
     find_library(GETTEXT_LIBRARY libintl.a "${LIB_PATH}")
-    set(hdrmerge_libs -static ${hdrmerge_libs} "${EXPAT_LIBRARY}" "${GETTEXT_LIBRARY}" "${ICONV_LIBRARY}" psapi)
+    set(hdrmerge_libs -static ${hdrmerge_libs} "${EXPAT_LIBRARY}" "${GETTEXT_LIBRARY}" "${ICONV_LIBRARY}" psapi wsock32 imm32 winmm)
+    remove_definitions(-DQT_DLL)
 endif (WIN32)
 
 # Qt4 intermediate files

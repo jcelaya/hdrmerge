@@ -44,7 +44,7 @@ public:
         bps = b;
     }
     void setPreview(const QImage & p);
-    void write(Array2D<float> && rawPixels, const RawParameters & p, const QString & filename);
+    void write(Array2D<float> && rawPixels, const RawParameters & p, const QString & dstFileName);
 
 private:
     int previewWidth;

@@ -59,6 +59,8 @@ if (WIN32)
         "${PROJECT_BINARY_DIR}/winres.rc"
     )
     set(WIN_RES_FILE "${PROJECT_BINARY_DIR}/winres.rc")
+elseif (APPLE)
+    set(PLATFORM MACOSX_BUNDLE)
 endif (WIN32)
 
 # Sources and headers
@@ -123,6 +125,8 @@ if (WIN32)
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
         add_custom_target(hdrmerge-setup ALL DEPENDS "${PROJECT_BINARY_DIR}/${SETUP_PROG}")
     endif (MAKENSIS_EXECUTABLE)
+elseif (APPLE)
+    install(TARGETS hdrmerge BUNDLE DESTINATION "${PROJECT_BINARY_DIR}")
 else (WIN32)
     install(TARGETS hdrmerge RUNTIME DESTINATION bin)
     find_program(XDG-DESKTOP-MENU_EXECUTABLE xdg-desktop-menu)

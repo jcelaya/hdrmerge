@@ -49,7 +49,7 @@ configure_file (
 # so that we will find config.h
 include_directories("${PROJECT_BINARY_DIR}")
 
-set (WIN_RES_FILE "")
+set (PLATFORM_SOURCES "")
 if (WIN32)
     # This is required by libraw.h
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32 -DLIBRAW_NODLL")
@@ -58,9 +58,17 @@ if (WIN32)
         "${PROJECT_SOURCE_DIR}/winres.rc"
         "${PROJECT_BINARY_DIR}/winres.rc"
     )
-    set(WIN_RES_FILE "${PROJECT_BINARY_DIR}/winres.rc")
+    set(PLATFORM_SOURCES "${PROJECT_BINARY_DIR}/winres.rc")
 elseif (APPLE)
     set(PLATFORM MACOSX_BUNDLE)
+    set(MACOSX_BUNDLE_ICON_FILE "icon")
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER "org.hdrmerge")
+    set(MACOSX_BUNDLE_LONG_VERSION_STRING "HDRMerge for Mac v${HDRMERGE_VERSION}")
+    set(MACOSX_BUNDLE_BUNDLE_NAME "HDRMerge")
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${HDRMERGE_VERSION}")
+    set(MACOSX_BUNDLE_BUNDLE_VERSION "${HDRMERGE_VERSION}")
+    set(MACOSX_BUNDLE_INFO_COPYRIGHT "Copyright 2014 Javier Celaya")
+    set(PLATFORM_SOURCES "images/icon.icns")
 endif (WIN32)
 
 # Sources and headers
@@ -102,12 +110,12 @@ QT4_ADD_RESOURCES(hdrmerge_rsrc "${PROJECT_BINARY_DIR}/translations.qrc" resourc
 add_library(hdrmerge-objects OBJECT ${hdrmerge_sources} ${hdrmerge_rsrc})
 add_library(hdrmerge-gui-objects OBJECT ${hdrmerge_gui_sources} ${hdrmerge_moc})
 add_executable(hdrmerge ${PLATFORM} main.cpp Launcher.cpp
-    $<TARGET_OBJECTS:hdrmerge-objects> $<TARGET_OBJECTS:hdrmerge-gui-objects> "${WIN_RES_FILE}")
+    $<TARGET_OBJECTS:hdrmerge-objects> $<TARGET_OBJECTS:hdrmerge-gui-objects> "${PLATFORM_SOURCES}")
 target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs})
 
 if (WIN32)
     # Compile a target without GUI, for the .com executable
-    add_executable(hdrmerge-nogui main.cpp Launcher.cpp $<TARGET_OBJECTS:hdrmerge-objects> "${WIN_RES_FILE}")
+    add_executable(hdrmerge-nogui main.cpp Launcher.cpp $<TARGET_OBJECTS:hdrmerge-objects> "${PLATFORM_SOURCES}")
     target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs})
     set_target_properties(hdrmerge-nogui PROPERTIES COMPILE_DEFINITIONS "NO_GUI")
     # Create the installer with makensis
@@ -126,7 +134,8 @@ if (WIN32)
         add_custom_target(hdrmerge-setup ALL DEPENDS "${PROJECT_BINARY_DIR}/${SETUP_PROG}")
     endif (MAKENSIS_EXECUTABLE)
 elseif (APPLE)
-    install(TARGETS hdrmerge BUNDLE DESTINATION "${PROJECT_BINARY_DIR}")
+    set_source_files_properties(images/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+    install(TARGETS hdrmerge BUNDLE DESTINATION "/Applications")
 else (WIN32)
     install(TARGETS hdrmerge RUNTIME DESTINATION bin)
     find_program(XDG-DESKTOP-MENU_EXECUTABLE xdg-desktop-menu)

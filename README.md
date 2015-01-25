@@ -62,6 +62,15 @@ If you want to tone-map an image resulting from HDRMerge with a program like Lum
 
 # Feature List
 
+### v0.5.0:
+
+* First Mac OS X build! Thanks to Philip Ries for his help.
+* Several bug fixes:
+  * Fix dealing with images with non-ANSI file names.
+  * Calculate response function with non-linear behavior.
+  * Fix file locking issues by transfering Exif tags in memory.
+  * Correctly calculate the response function of very dark images.
+
 ### v0.4.5:
 
 * Better compatibility with other programs, by producing a DNG file that maintains the original layout: frame and active area sizes, black and white levels, etc. *Note that, if you use RawTherapee, you need v4.1.23 or higher to open these files.*
@@ -76,7 +85,7 @@ If you want to tone-map an image resulting from HDRMerge with a program like Lum
 * Better support for more camera models.
 * Better rendering of the embedded preview image.
 * Change the edit brush radius with Alt+Mouse wheel.
-* Several bugfixes.
+* Several bug fixes.
   * The original embedded preview is not included in the output anymore.
   * Fixed some glitches with the edit tools.
 

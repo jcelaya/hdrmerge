@@ -127,17 +127,37 @@ void Image::computeResponseFunction(const Image & r) {
     values[0] = 0;
     adjValues[0] = 0;
     int i = 1;
-    for (int v = max - 1; v >= 0 && (v >= max*0.75 || i < (max - v) / 2); --v) {
-        if (histogram[v].first > 0) {
+    for (int v = max - 1; v >= max*0.75; --v) {
+        if (histogram[v].first > 2) {
             values[i] = v;
             adjValues[i] = histogram[v].second / histogram[v].first;
             ++i;
         }
     }
-    alglib::ae_int_t info;
-    alglib::spline1dfitreport rep;
-    alglib::spline1dfitpenalized(values, adjValues, i, 200, 3, info, response.nonLinear, rep);
-    response.linear = alglib::spline1dcalc(response.nonLinear, response.threshold) / response.threshold;
+    if (i >= max/8) {
+        alglib::ae_int_t info;
+        alglib::spline1dfitreport rep;
+        alglib::spline1dfitpenalized(values, adjValues, i, 200, 3, info, response.nonLinear, rep);
+        response.linear = alglib::spline1dcalc(response.nonLinear, response.threshold) / response.threshold;
+    } else {
+        response.threshold = 65535;
+        // Fallback method for dark images:
+        // Minimize square error between images:
+        // min. C(n) = sum(n*f(x) - g(x))^2  ->  n = sum(f(x)*g(x)) / sum(f(x)^2)
+        double numerator = 0, denom = 0;
+        for (int y = 0; y < h; ++y) {
+            for (int x = 0; x < w; ++x) {
+                int pos = y * width + x;
+                double v = usePixels[pos];
+                double nv = rUsePixels[pos];
+                if (v >= nv && v < satThreshold) {
+                    numerator += v * nv;
+                    denom += v * v;
+                }
+            }
+        }
+        response.linear = numerator / denom;
+    }
 }
 
 

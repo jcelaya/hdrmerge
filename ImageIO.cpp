@@ -231,10 +231,11 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
             QImage interpolated(image->width, image->height, QImage::Format_RGB32);
             if (interpolated.isNull()) return QImage();
             for (int y = 0; y < image->height; ++y) {
-                for (int x = 0; x < image->width; ++x) {
-                    int pos = (y*image->width + x)*3;
+                QRgb* scanline = (QRgb*)interpolated.scanLine(y);
+                int pos = (y*image->width)*3;
+                for (int x = 0; x < image->width; ++x, pos+=3) {
                     int r = image->data[pos], g = image->data[pos + 1], b = image->data[pos + 2];
-                    interpolated.setPixel(x, y, qRgb(r, g, b));
+                    scanline[x] = qRgb(r, g, b);
                 }
             }
             LibRaw::dcraw_clear_mem(image);

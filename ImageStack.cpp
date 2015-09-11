@@ -121,15 +121,20 @@ void ImageStack::computeResponseFunctions() {
 void ImageStack::generateMask() {
     Timer t("Generate mask");
     mask.resize(width, height);
-    std::fill_n(&mask[0], width*height, 0);
-    #pragma omp parallel for schedule(dynamic)
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t x = 0; x < width; ++x) {
-            size_t i = mask(x, y);
-            while (i < images.size() - 1 &&
-                (!images[i].contains(x, y) ||
-                images[i].isSaturatedAround(x, y))) ++i;
-            mask(x, y) = i;
+    if(images.size() == 1) {
+        // single image, fill in zero values
+        std::fill_n(&mask[0], width*height, 0);
+    } else {
+        // multiple images, no need to prefill mask with zeroes. It will be filled correctly on the fly
+        #pragma omp parallel for schedule(dynamic)
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {
+                size_t i = 0;
+                while (i < images.size() - 1 &&
+                    (!images[i].contains(x, y) ||
+                    images[i].isSaturatedAround(x, y))) ++i;
+                mask(x, y) = i;
+            }
         }
     }
 }

@@ -109,18 +109,32 @@ void Image::computeResponseFunction(const Image & r) {
     // Get average relative values between this image and the last one
     std::vector<std::pair<int, double>> histogram(max + 1);
     for (auto & i : histogram) i = { 0, 0.0 };
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            int pos = y * width + x;
-            uint16_t v = usePixels[pos];
-            uint16_t nv = rUsePixels[pos];
-            if (v >= nv && v < satThreshold) {
-                histogram[v].first++;
-                histogram[v].second += r.response(nv);
+    #pragma omp parallel
+    {
+        // use one histogram per thread
+        std::vector<std::pair<int, double>> histogramThr(max + 1);
+        for (auto & i : histogramThr) i = { 0, 0.0 };
+        #pragma omp for nowait
+        for (int y = 0; y < h; ++y) {
+            for (int x = 0; x < w; ++x) {
+                int pos = y * width + x;
+                uint16_t v = usePixels[pos];
+                uint16_t nv = rUsePixels[pos];
+                if (v >= nv && v < satThreshold) {
+                    histogramThr[v].first++;
+                    histogramThr[v].second += r.response(nv);
+                }
+            }
+        }
+        #pragma omp critical
+        {
+            // join per thread histogram to global one
+            for(int i=0;i<max+1;i++) {
+                histogram[i].first += histogramThr[i].first;
+                histogram[i].second += histogramThr[i].second;
             }
         }
     }
-
     alglib::real_1d_array values, adjValues;
     values.setlength(max);
     adjValues.setlength(max);

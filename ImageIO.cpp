@@ -39,8 +39,12 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     if (rawProcessor.open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
         rawProcessor.get_decoder_info(&decoder_info);
+#ifdef LIBRAW_DECODER_FLATFIELD
         if(!decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD) {
             Log::msg(Log::DEBUG, "LibRaw decoder is not flatfield (", ios::hex, decoder_info.decoder_flags, ").");
+#else
+        if(false) {
+#endif
         } else if (d.idata.filters <= 1000 && d.idata.filters != 9) {
             Log::msg(Log::DEBUG, "Unsupported filter array (", d.idata.filters, ").");
         } else if (rawProcessor.unpack() != LIBRAW_SUCCESS) {

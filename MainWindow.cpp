@@ -270,8 +270,8 @@ void MainWindow::loadImages() {
         mergeAction->setEnabled(numImages > 0);
         addGhostAction->setEnabled(numImages > 1);
         rmGhostAction->setEnabled(numImages > 1);
-        radiusSlider->setValue(5);
-        exposureSlider->setValue(0);
+        radiusSlider->setValue(50);
+        exposureSlider->setValue(1000);
         createLayerSelector();
     }
     setToolFromKey();

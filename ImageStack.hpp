@@ -104,6 +104,7 @@ private:
 
     std::vector<Image> images;   ///< Images, from most to least exposed
     EditableMaskImpl mask;
+    Array2D<uint8_t> origMask;
     size_t width;
     size_t height;
     int flip;

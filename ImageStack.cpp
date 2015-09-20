@@ -141,6 +141,9 @@ void ImageStack::generateMask() {
             }
         }
     }
+    // The mask can be used in compose to get the information about saturated pixels
+    // but the mask can be modified in gui, so we have to make a copy to represent the original state
+    origMask = mask;
 }
 
 
@@ -346,50 +349,52 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
     BoxBlur map(fattenMask(mask, featherRadius));
     measureTime("Blur", [&] () {
         map.blur(featherRadius);
-        for (size_t i = 0; i < width*height; ++i) {
-            if (map[i] < 0.0) map[i] = 0.0;
-        }
     });
     Timer t("Compose");
     Array2D<float> dst(params.rawWidth, params.rawHeight);
-    fill_n(dst.begin(), dst.size(), 0.0);
     dst.displace(-(int)params.leftMargin, -(int)params.topMargin);
+    dst.fillBorders(0.f);
+
     float max = 0.0;
     double saturatedRange = params.max - satThreshold;
     #pragma omp parallel
     {
         float maxthr = 0.0;
-        #pragma omp for schedule(dynamic)
+        #pragma omp for schedule(dynamic,16) nowait
         for (size_t y = 0; y < height; ++y) {
             for (size_t x = 0; x < width; ++x) {
-                int j = floor(map(x, y));
-                double v = 0.0, vv = 0.0, p;
+                double v, vv;
+                double p = map(x,y);
+                p = p < 0.0 ? 0.0 : p;
+                int j = p;
                 if (images[j].contains(x, y)) {
+                    p = p - j;
                     v = images[j].exposureAt(x, y);
-                    uint16_t rawV = images[j].getMaxAround(x, y);
                     // Adjust false highlights
-                    if (j < imageMax && images[j].isSaturated(rawV)) {
+                    if (j < origMask(x,y)) { // SaturatedAround
                         v /= params.whiteMultAt(x, y);
-                    }
-                    p = map(x, y) - j;
-                    // Adjust alinearities, mixing saturated highlights with next exposure
-                    if (p > 0.0001 && j < imageMax && rawV > satThreshold) {
-                        double k = (rawV - satThreshold) / saturatedRange;
-                        if (k > 1.0) k = 1.0;
-                        p += (1.0 - p) * k;
+                        if(p > 0.0001) {
+                            uint16_t rawV = images[j].getMaxAround(x, y);
+                            double k = (rawV - satThreshold) / saturatedRange;
+                            if (k > 1.0)
+                                k = 1.0;
+                            p += (1.0 - p) * k;
+                        }
                     }
                 } else {
+                    v = 0.0;
                     p = 1.0;
                 }
                 if (p > 0.0001 && j < imageMax && images[j + 1].contains(x, y)) {
                     vv = images[j + 1].exposureAt(x, y);
-                    if (j < imageMax - 1 && images[j + 1].isSaturatedAround(x, y)) {
+                    if (j + 1 < origMask(x,y)) { // SaturatedAround
                         vv /= params.whiteMultAt(x, y);
                     }
                 } else {
+                    vv = 0.0;
                     p = 0.0;
                 }
-                v = v*(1.0 - p) + vv*p;
+                v -= p * (v - vv);
                 dst(x, y) = v;
                 if (v > maxthr) {
                     maxthr = v;
@@ -401,11 +406,14 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
             max = maxthr;
         }
     }
+
     dst.displace(params.leftMargin, params.topMargin);
     // Scale to params.max and recover the black levels
+    float mult = (params.max - params.maxBlack) / max;
+    #pragma omp parallel for
     for (size_t y = 0; y < params.rawHeight; ++y) {
         for (size_t x = 0; x < params.rawWidth; ++x) {
-            dst(x, y) *= (params.max - params.maxBlack) / max;
+            dst(x, y) *= mult;
             dst(x, y) += params.blackAt(x - params.leftMargin, y - params.topMargin);
         }
     }

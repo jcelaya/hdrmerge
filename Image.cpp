@@ -170,7 +170,7 @@ void Image::computeResponseFunction(const Image & r) {
                 }
             }
         }
-        response.linear = numerator / denom;
+        response.linear *= numerator / denom;
     }
 }
 

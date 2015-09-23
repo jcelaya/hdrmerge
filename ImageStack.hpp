@@ -89,7 +89,7 @@ public:
     bool isLayerValidAt(int layer, size_t x, size_t y) const {
         return images[layer].contains(x, y);
     }
-    void calculateSaturationLevel(const RawParameters & params);
+    void calculateSaturationLevel(const RawParameters & params, bool useCustomWl = false);
 
 private:
     class EditableMaskImpl : public EditableMask {

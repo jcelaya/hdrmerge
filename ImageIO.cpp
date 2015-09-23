@@ -108,7 +108,10 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
     }
     RawParameters & params = *rawParameters.front();
     stack.setFlip(params.flip);
-    stack.calculateSaturationLevel(params);
+    if(options.useCustomWl)
+        // Use custom white level, but only if it's not greater than the value provided by libraw
+        params.max = std::min(params.max, options.customWl);
+    stack.calculateSaturationLevel(params, options.useCustomWl);
     if (options.align && params.canAlign()) {
         progress.advance(p += step, "Aligning");
         stack.align();

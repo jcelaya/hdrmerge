@@ -74,6 +74,16 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     cropBox->setChecked(settings.value("cropOnLoad", true).toBool());
     layout->addWidget(cropBox, 0);
 
+    customWhiteLevelBox = new QCheckBox(tr("Use custom white level."), this);
+    customWhiteLevelBox->setChecked(settings.value("useCustomWlOnLoad", false).toBool());
+    layout->addWidget(customWhiteLevelBox, 0);
+
+    customWhiteLevelSpinBox = new QSpinBox();
+    customWhiteLevelSpinBox->setRange(0, 65535);
+    customWhiteLevelSpinBox->setValue(settings.value("customWlOnLoad", 16383).toInt());
+    customWhiteLevelSpinBox->setToolTip(tr("Custom white level."));
+    layout->addWidget(customWhiteLevelSpinBox, 0);
+
     QWidget * buttons = new QWidget(this);
     QHBoxLayout * buttonsLayout = new QHBoxLayout(buttons);
     QPushButton * acceptButton = new QPushButton(tr("Accept"), this);
@@ -153,6 +163,10 @@ void LoadOptionsDialog::accept() {
     settings.setValue("alignOnLoad", align);
     crop = cropBox->isChecked();
     settings.setValue("cropOnLoad", crop);
+    useCustomWl = customWhiteLevelBox->isChecked();
+    settings.setValue("useCustomWlOnLoad", useCustomWl);
+    customWl = customWhiteLevelSpinBox->value();
+    settings.setValue("customWlOnLoad", customWl);
     for (int i = 0; i < fileList->count(); ++i) {
         fileNames.push_back(fileList->item(i)->data(Qt::UserRole).toString());
     }

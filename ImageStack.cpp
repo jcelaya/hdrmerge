@@ -48,7 +48,7 @@ int ImageStack::addImage(Image && i) {
 }
 
 
-void ImageStack::calculateSaturationLevel(const RawParameters & params) {
+void ImageStack::calculateSaturationLevel(const RawParameters & params, bool useCustomWl) {
     // Calculate max value of brightest image and assume it is saturated
     uint16_t maxPerColor[4] = { 0, 0, 0, 0 };
     Image & brightest = images.front();
@@ -66,7 +66,11 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params) {
             satThreshold = maxPerColor[c];
         }
     }
-    satThreshold *= 0.99;
+    if(!useCustomWl) // only scale when no custom white level was specified
+        satThreshold *= 0.99;
+    else
+        Log::debug( "Using custom white level ", params.max );
+
     for (auto & i : images) {
         i.setSaturationThreshold(satThreshold);
     }

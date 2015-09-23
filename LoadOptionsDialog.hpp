@@ -26,6 +26,7 @@
 #include <QDialog>
 #include <QListWidget>
 #include <QCheckBox>
+#include <QSpinBox>
 #include "LoadSaveOptions.hpp"
 
 namespace hdrmerge {
@@ -43,13 +44,15 @@ public slots:
 
 protected:
     virtual void showEvent(QShowEvent * event);
-    
+
 private:
     Q_OBJECT
 
     QListWidget * fileList;
     QCheckBox * alignBox;
     QCheckBox * cropBox;
+    QCheckBox * customWhiteLevelBox;
+    QSpinBox * customWhiteLevelSpinBox;
 };
 
 } // namespace hdrmerge

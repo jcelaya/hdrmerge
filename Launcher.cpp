@@ -185,6 +185,16 @@ void Launcher::parseCommandLine() {
                     cerr << tr("Invalid %1 parameter, using default.").arg(argv[i - 1]) << endl;
                 }
             }
+        } else if (string("-w") == argv[i]) {
+            if (++i < argc) {
+                try {
+                    generalOptions.customWl = stoi(argv[i]);
+                    generalOptions.useCustomWl = true;
+                } catch (std::invalid_argument & e) {
+                    cerr << tr("Invalid %1 parameter, using default.").arg(argv[i - 1]) << endl;
+                    generalOptions.useCustomWl = false;
+                }
+            }
         } else if (string("-g") == argv[i]) {
             if (++i < argc) {
                 try {
@@ -258,6 +268,7 @@ void Launcher::showHelp() {
     cout << "    " << "-p size       " << tr("Preview size. Can be full, half or none.") << endl;
     cout << "    " << "-v            " << tr("Verbose mode.") << endl;
     cout << "    " << "-vv           " << tr("Debug mode.") << endl;
+    cout << "    " << "-w whitelevel " << tr("Use custom white level.") << endl;
     cout << "    " << "RAW_FILES     " << tr("The input raw files.") << endl;
 }
 

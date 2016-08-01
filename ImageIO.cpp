@@ -39,10 +39,12 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     if (rawProcessor.open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
         rawProcessor.get_decoder_info(&decoder_info);
-        if(!decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD) {
-            Log::msg(Log::DEBUG, "LibRaw decoder is not flatfield (", ios::hex, decoder_info.decoder_flags, ").");
-        } else if (d.idata.filters <= 1000 && d.idata.filters != 9) {
+        if (d.idata.filters <= 1000 && d.idata.filters != 9) {
             Log::msg(Log::DEBUG, "Unsupported filter array (", d.idata.filters, ").");
+#ifdef LIBRAW_DECODER_FLATFIELD
+        } else if (!decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD) {
+            Log::msg(Log::DEBUG, "LibRaw decoder is not flatfield (", ios::hex, decoder_info.decoder_flags, ").");
+#endif
         } else if (rawProcessor.unpack() != LIBRAW_SUCCESS) {
             Log::msg(Log::DEBUG, "LibRaw::unpack() failed.");
         } else {
@@ -53,6 +55,7 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     }
     return Image(d.rawdata.raw_image, rawParameters);
 }
+
 
 
 ImageIO::QDateInterval ImageIO::getImageCreationInterval(const QString & fileName) {

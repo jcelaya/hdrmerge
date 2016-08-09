@@ -25,6 +25,10 @@
 #include "Log.hpp"
 #include "BoxBlur.hpp"
 #include "RawParameters.hpp"
+#ifdef __SSE2__
+    #include <x86intrin.h>
+#endif
+
 using namespace std;
 using namespace hdrmerge;
 
@@ -44,7 +48,7 @@ int ImageStack::addImage(Image && i) {
 }
 
 
-void ImageStack::calculateSaturationLevel(const RawParameters & params) {
+void ImageStack::calculateSaturationLevel(const RawParameters & params, bool useCustomWl) {
     // Calculate max value of brightest image and assume it is saturated
     uint16_t maxPerColor[4] = { 0, 0, 0, 0 };
     Image & brightest = images.front();
@@ -62,7 +66,11 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params) {
             satThreshold = maxPerColor[c];
         }
     }
-    satThreshold *= 0.99;
+    if(!useCustomWl) // only scale when no custom white level was specified
+        satThreshold *= 0.99;
+    else
+        Log::debug( "Using custom white level ", params.max );
+
     for (auto & i : images) {
         i.setSaturationThreshold(satThreshold);
     }
@@ -121,17 +129,25 @@ void ImageStack::computeResponseFunctions() {
 void ImageStack::generateMask() {
     Timer t("Generate mask");
     mask.resize(width, height);
-    std::fill_n(&mask[0], width*height, 0);
-    #pragma omp parallel for schedule(dynamic)
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t x = 0; x < width; ++x) {
-            size_t i = mask(x, y);
-            while (i < images.size() - 1 &&
-                (!images[i].contains(x, y) ||
-                images[i].isSaturatedAround(x, y))) ++i;
-            mask(x, y) = i;
+    if(images.size() == 1) {
+        // single image, fill in zero values
+        std::fill_n(&mask[0], width*height, 0);
+    } else {
+        // multiple images, no need to prefill mask with zeroes. It will be filled correctly on the fly
+        #pragma omp parallel for schedule(dynamic)
+        for (size_t y = 0; y < height; ++y) {
+            for (size_t x = 0; x < width; ++x) {
+                size_t i = 0;
+                while (i < images.size() - 1 &&
+                    (!images[i].contains(x, y) ||
+                    images[i].isSaturatedAround(x, y))) ++i;
+                mask(x, y) = i;
+            }
         }
     }
+    // The mask can be used in compose to get the information about saturated pixels
+    // but the mask can be modified in gui, so we have to make a copy to represent the original state
+    origMask = mask;
 }
 
 
@@ -140,7 +156,7 @@ double ImageStack::value(size_t x, size_t y) const {
     return img.exposureAt(x, y);
 }
 
-
+#ifndef __SSE2__
 // From The GIMP: app/paint-funcs/paint-funcs.c:fatten_region
 static Array2D<uint8_t> fattenMask(const Array2D<uint8_t> & mask, int radius) {
     Timer t("Fatten mask");
@@ -237,57 +253,152 @@ static Array2D<uint8_t> fattenMask(const Array2D<uint8_t> & mask, int radius) {
 
     return result;
 }
+#else // use faster SSE version, crunch 16 bytes at once
+// From The GIMP: app/paint-funcs/paint-funcs.c:fatten_region
+// SSE version by Ingo Weyrich
+static Array2D<uint8_t> fattenMask(const Array2D<uint8_t> & mask, int radius) {
+    Timer t("Fatten mask (SSE version)");
+    size_t width = mask.getWidth(), height = mask.getHeight();
+    Array2D<uint8_t> result(width, height);
 
+    int circArray[2 * radius + 1]; // holds the y coords of the filter's mask
+    // compute_border(circArray, radius)
+    for (int i = 0; i < radius * 2 + 1; i++) {
+        double tmp;
+        if (i > radius)
+            tmp = (i - radius) - 0.5;
+        else if (i < radius)
+            tmp = (radius - i) - 0.5;
+        else
+            tmp = 0.0;
+        circArray[i] = int(std::sqrt(radius*radius - tmp*tmp));
+    }
+    // offset the circ pointer by radius so the range of the array
+    //     is [-radius] to [radius]
+    int * circ = circArray + radius;
+
+    const uint8_t * bufArray[height + 2*radius];
+    for (int i = 0; i < radius; i++) {
+        bufArray[i] = &mask[0];
+    }
+    for (size_t i = 0; i < height; i++) {
+        bufArray[i + radius] = &mask[i * width];
+    }
+    for (int i = 0; i < radius; i++) {
+        bufArray[i + height + radius] = &mask[(height - 1) * width];
+    }
+    // offset the buf pointer
+    const uint8_t ** buf = bufArray + radius;
+
+    #pragma omp parallel
+    {
+        uint8_t buffer[width * (radius + 1)];
+        uint8_t *maxArray[radius+1];
+        for (int i = 0; i <= radius; i++) {
+            maxArray[i] = &buffer[i*width];
+        }
+
+        #pragma omp for schedule(dynamic,16)
+        for (size_t y = 0; y < height; y++) {
+            size_t x = 0;
+            for (; x < width-15; x+=16) { // compute max array, use SSE to process 16 bytes at once
+                __m128i lmax = _mm_loadu_si128((__m128i*)&buf[y][x]);
+                if(radius<2) // max[0] is only used when radius < 2
+                    _mm_storeu_si128((__m128i*)&maxArray[0][x],lmax);
+                for (int i = 1; i <= radius; i++) {
+                    lmax = _mm_max_epu8(_mm_loadu_si128((__m128i*)&buf[y + i][x]),lmax);
+                    lmax = _mm_max_epu8(_mm_loadu_si128((__m128i*)&buf[y - i][x]),lmax);
+                    _mm_storeu_si128((__m128i*)&maxArray[i][x],lmax);
+                }
+            }
+            for (; x < width; x++) { // compute max array, remaining columns
+                uint8_t lmax = buf[y][x];
+                if(radius<2) // max[0] is only used when radius < 2
+                    maxArray[0][x] = lmax;
+                for (int i = 1; i <= radius; i++) {
+                    lmax = std::max(std::max(lmax, buf[y + i][x]), buf[y - i][x]);
+                    maxArray[i][x] = lmax;
+                }
+            }
+
+            for (x = 0; (int)x < radius; x++) { // render scan line, first columns without SSE
+                uint8_t last_max = maxArray[circ[radius]][x+radius];
+                for (int i = radius - 1; i >= -(int)x; i--)
+                    last_max = std::max(last_max,maxArray[circ[i]][x + i]);
+                result(x, y) = last_max;
+            }
+            for (; x < width-15-radius+1; x += 16) { // render scan line, use SSE to process 16 bytes at once
+                __m128i last_maxv = _mm_loadu_si128((__m128i*)&maxArray[circ[radius]][x+radius]);
+                for (int i = radius - 1; i >= -radius; i--)
+                    last_maxv = _mm_max_epu8(last_maxv,_mm_loadu_si128((__m128i*)&maxArray[circ[i]][x+i]));
+                _mm_storeu_si128((__m128i*)&result(x,y),last_maxv);
+            }
+
+            for (; x < width; x++) { // render scan line, last columns without SSE
+                int maxRadius = std::min(radius,(int)((int)width-1-(int)x));
+                uint8_t last_max = maxArray[circ[maxRadius]][x+maxRadius];
+                for (int i = maxRadius-1; i >= -radius; i--)
+                    last_max = std::max(last_max,maxArray[circ[i]][x + i]);
+                result(x, y) = last_max;
+            }
+        }
+    }
+
+    return result;
+}
+#endif
 
 Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadius) const {
     int imageMax = images.size() - 1;
     BoxBlur map(fattenMask(mask, featherRadius));
     measureTime("Blur", [&] () {
         map.blur(featherRadius);
-        for (size_t i = 0; i < width*height; ++i) {
-            if (map[i] < 0.0) map[i] = 0.0;
-        }
     });
     Timer t("Compose");
     Array2D<float> dst(params.rawWidth, params.rawHeight);
-    fill_n(dst.begin(), dst.size(), 0.0);
     dst.displace(-(int)params.leftMargin, -(int)params.topMargin);
+    dst.fillBorders(0.f);
+
     float max = 0.0;
     double saturatedRange = params.max - satThreshold;
     #pragma omp parallel
     {
         float maxthr = 0.0;
-        #pragma omp for schedule(dynamic)
+        #pragma omp for schedule(dynamic,16) nowait
         for (size_t y = 0; y < height; ++y) {
             for (size_t x = 0; x < width; ++x) {
-                int j = floor(map(x, y));
-                double v = 0.0, vv = 0.0, p;
+                double v, vv;
+                double p = map(x,y);
+                p = p < 0.0 ? 0.0 : p;
+                int j = p;
                 if (images[j].contains(x, y)) {
+                    p = p - j;
                     v = images[j].exposureAt(x, y);
-                    uint16_t rawV = images[j].getMaxAround(x, y);
                     // Adjust false highlights
-                    if (j < imageMax && images[j].isSaturated(rawV)) {
+                    if (j < origMask(x,y)) { // SaturatedAround
                         v /= params.whiteMultAt(x, y);
-                    }
-                    p = map(x, y) - j;
-                    // Adjust alinearities, mixing saturated highlights with next exposure
-                    if (p > 0.0001 && j < imageMax && rawV > satThreshold) {
-                        double k = (rawV - satThreshold) / saturatedRange;
-                        if (k > 1.0) k = 1.0;
-                        p += (1.0 - p) * k;
+                        if(p > 0.0001) {
+                            uint16_t rawV = images[j].getMaxAround(x, y);
+                            double k = (rawV - satThreshold) / saturatedRange;
+                            if (k > 1.0)
+                                k = 1.0;
+                            p += (1.0 - p) * k;
+                        }
                     }
                 } else {
+                    v = 0.0;
                     p = 1.0;
                 }
                 if (p > 0.0001 && j < imageMax && images[j + 1].contains(x, y)) {
                     vv = images[j + 1].exposureAt(x, y);
-                    if (j < imageMax - 1 && images[j + 1].isSaturatedAround(x, y)) {
+                    if (j + 1 < origMask(x,y)) { // SaturatedAround
                         vv /= params.whiteMultAt(x, y);
                     }
                 } else {
+                    vv = 0.0;
                     p = 0.0;
                 }
-                v = v*(1.0 - p) + vv*p;
+                v -= p * (v - vv);
                 dst(x, y) = v;
                 if (v > maxthr) {
                     maxthr = v;
@@ -299,11 +410,14 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
             max = maxthr;
         }
     }
+
     dst.displace(params.leftMargin, params.topMargin);
     // Scale to params.max and recover the black levels
+    float mult = (params.max - params.maxBlack) / max;
+    #pragma omp parallel for
     for (size_t y = 0; y < params.rawHeight; ++y) {
         for (size_t x = 0; x < params.rawWidth; ++x) {
-            dst(x, y) *= (params.max - params.maxBlack) / max;
+            dst(x, y) *= mult;
             dst(x, y) += params.blackAt(x - params.leftMargin, y - params.topMargin);
         }
     }

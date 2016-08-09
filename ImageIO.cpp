@@ -39,10 +39,12 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     if (rawProcessor.open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
         rawProcessor.get_decoder_info(&decoder_info);
-        if(!decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD) {
-            Log::msg(Log::DEBUG, "LibRaw decoder is not flatfield (", ios::hex, decoder_info.decoder_flags, ").");
-        } else if (d.idata.filters <= 1000 && d.idata.filters != 9) {
+        if (d.idata.filters <= 1000 && d.idata.filters != 9) {
             Log::msg(Log::DEBUG, "Unsupported filter array (", d.idata.filters, ").");
+#ifdef LIBRAW_DECODER_FLATFIELD
+        } else if (!decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD) {
+            Log::msg(Log::DEBUG, "LibRaw decoder is not flatfield (", ios::hex, decoder_info.decoder_flags, ").");
+#endif
         } else if (rawProcessor.unpack() != LIBRAW_SUCCESS) {
             Log::msg(Log::DEBUG, "LibRaw::unpack() failed.");
         } else {
@@ -53,6 +55,7 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     }
     return Image(d.rawdata.raw_image, rawParameters);
 }
+
 
 
 ImageIO::QDateInterval ImageIO::getImageCreationInterval(const QString & fileName) {
@@ -108,7 +111,10 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
     }
     RawParameters & params = *rawParameters.front();
     stack.setFlip(params.flip);
-    stack.calculateSaturationLevel(params);
+    if(options.useCustomWl)
+        // Use custom white level, but only if it's not greater than the value provided by libraw
+        params.max = std::min(params.max, options.customWl);
+    stack.calculateSaturationLevel(params, options.useCustomWl);
     if (options.align && params.canAlign()) {
         progress.advance(p += step, "Aligning");
         stack.align();
@@ -135,7 +141,7 @@ void ImageIO::save(const SaveOptions & options, ProgressIndicator & progress) {
     Array2D<float> composedImage = stack.compose(params, options.featherRadius);
 
     progress.advance(33, "Rendering preview");
-    QImage preview = renderPreview(composedImage, params, stack.getMaxExposure());
+    QImage preview = renderPreview(composedImage, params, stack.getMaxExposure(), options.previewSize <= 1);
 
     progress.advance(66, "Writing output");
     DngFloatWriter writer;
@@ -190,7 +196,7 @@ static void prepareRawBuffer(LibRaw & rawProcessor) {
 }
 
 
-QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameters & params, float expShift) {
+QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameters & params, float expShift, bool halfSize) {
     Timer t("Render preview");
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
@@ -207,6 +213,7 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
     d.params.exp_correc = 1;
     d.params.exp_shift = expShift;
     d.params.exp_preser = 1.0;
+    d.params.half_size = halfSize ? 1 : 0; // much faster, will be used for preview size 'half' or 'none'
     if (rawProcessor.open_file(params.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
 //             && rawProcessor.unpack() == LIBRAW_SUCCESS) {
         prepareRawBuffer(rawProcessor);
@@ -231,15 +238,16 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
             QImage interpolated(image->width, image->height, QImage::Format_RGB32);
             if (interpolated.isNull()) return QImage();
             for (int y = 0; y < image->height; ++y) {
+                QRgb* scanline = (QRgb*)interpolated.scanLine(y);
+                int pos = (y*image->width)*3;
                 for (int x = 0; x < image->width; ++x) {
-                    int pos = (y*image->width + x)*3;
-                    int r = image->data[pos], g = image->data[pos + 1], b = image->data[pos + 2];
-                    interpolated.setPixel(x, y, qRgb(r, g, b));
+                    int r = image->data[pos++], g = image->data[pos++], b = image->data[pos++];
+                    scanline[x] = qRgb(r, g, b);
                 }
             }
             LibRaw::dcraw_clear_mem(image);
             // The result may be some pixels bigger than the original...
-            return interpolated.copy(0, 0, params.width, params.height);
+            return interpolated.copy(0, 0, params.width/(halfSize ? 2 : 1 ), params.height/(halfSize ? 2 : 1 ));
         }
     }
     return QImage();

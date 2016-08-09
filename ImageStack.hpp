@@ -89,7 +89,7 @@ public:
     bool isLayerValidAt(int layer, size_t x, size_t y) const {
         return images[layer].contains(x, y);
     }
-    void calculateSaturationLevel(const RawParameters & params);
+    void calculateSaturationLevel(const RawParameters & params, bool useCustomWl = false);
 
 private:
     class EditableMaskImpl : public EditableMask {
@@ -104,6 +104,7 @@ private:
 
     std::vector<Image> images;   ///< Images, from most to least exposed
     EditableMaskImpl mask;
+    Array2D<uint8_t> origMask;
     size_t width;
     size_t height;
     int flip;

@@ -32,10 +32,12 @@ struct LoadOptions {
     std::vector<QString> fileNames;
     bool align;
     bool crop;
+    bool useCustomWl;
+    uint16_t customWl;
     bool batch;
     double batchGap;
     bool withSingles;
-    LoadOptions() : align(true), crop(true), batch(false), batchGap(2.0),
+    LoadOptions() : align(true), crop(true), useCustomWl(false), customWl(16383), batch(false), batchGap(2.0),
         withSingles(false) {}
 };
 

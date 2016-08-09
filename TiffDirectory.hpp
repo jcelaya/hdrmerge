@@ -76,7 +76,7 @@ public:
         }
     }
     void addEntry(uint16_t tag, uint16_t type, uint32_t count, const void * data);
-    void addEntry(uint16_t tag, const std::string str) {
+    void addEntry(uint16_t tag, const std::string &str) {
         addEntry(tag, ASCII, str.length() + 1, str.c_str());
     }
     void write(uint8_t * buffer, size_t & pos, bool hasNext);

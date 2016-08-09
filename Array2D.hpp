@@ -113,6 +113,18 @@ public:
         dy += newDy;
         alignedData = &data[-dy*width - dx];
     }
+    void fillBorders( T val ) {
+        if(dy > 0) {
+            for(size_t i = 0; i < dy; ++i)
+                for(size_t j = 0; j < width; ++j)
+                    data[i*width + j] = val;
+        }
+        if(dx > 0) {
+            for(size_t i = 0; i < height; ++i)
+                for(size_t j = 0; j < dx; ++j)
+                    data[i*width + j] = val;
+        }
+    }
 
     typedef T * iterator;
     typedef const T * const_iterator;

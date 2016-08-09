@@ -52,7 +52,7 @@ public:
     QString getInputPath() const;
     QString replaceArguments(const QString & pattern, const QString & outFileName) const;
     static Image loadRawImage(RawParameters & rawParameters);
-    static QImage renderPreview(const Array2D<float> & rawData, const RawParameters & rawParameters, float expShift);
+    static QImage renderPreview(const Array2D<float> & rawData, const RawParameters & rawParameters, float expShift, bool halfsize = false);
 
     struct QDateInterval {
         QDateTime start, end;

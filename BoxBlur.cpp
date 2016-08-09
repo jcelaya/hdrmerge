@@ -71,8 +71,45 @@ void BoxBlur::boxBlurH(size_t r) {
 
 void BoxBlur::boxBlurT(size_t r) {
     float iarr = 1.0 / (r+r+1);
-    #pragma omp parallel for schedule(dynamic)
-    for (size_t i = 0; i < width; ++i) {
+    const int numCols = 8; // process numCols columns at once for better usage of L1 cpu cache
+    #pragma omp parallel for schedule(dynamic,4)
+    for (size_t i = 0; i < width-numCols+1; i+=numCols) {
+        size_t ti = i, li = ti, ri = ti + r*width;
+        float val[numCols];
+        for(size_t k=0;k<numCols;++k)
+            val[k] = data[li+k] * (r + 1);
+        for(size_t k=0;k<numCols;++k)
+            for (size_t j = 0; j < r; ++j) {
+                val[k] += data[li + j*width + k];
+            }
+        for (size_t j = 0; j <= r; ++j) {
+            for(size_t k=0;k<numCols;++k) {
+                val[k] += data[ri+k] - data[li+k];
+                tmp[ti+k] = val[k]*iarr;
+            }
+            ri += width;
+            ti += width;
+        }
+        for (size_t j = r + 1; j < height - r; ++j) {
+            for(size_t k=0;k<numCols;++k) {
+                val[k] += data[ri+k] - data[li+k];
+                tmp[ti+k] = val[k]*iarr;
+            }
+            li += width;
+            ri += width;
+            ti += width;
+        }
+        for (size_t j = height - r; j < height; ++j) {
+            for(size_t k=0;k<numCols;++k) {
+                val[k] += data[ri - width + k] - data[li+ k];
+                tmp[ti+k] = val[k]*iarr;
+            }
+            li += width;
+            ti += width;
+        }
+    }
+    // process the remaining columns
+    for (size_t i = width - (width%numCols); i < width; ++i) {
         size_t ti = i, li = ti, ri = ti + r*width;
         float val = data[li] * (r + 1);
         for (size_t j = 0; j < r; ++j) {
@@ -98,6 +135,8 @@ void BoxBlur::boxBlurT(size_t r) {
             ti += width;
         }
     }
+
 }
+
 
 } // namespace hdrmerge

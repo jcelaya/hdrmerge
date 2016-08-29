@@ -46,7 +46,7 @@ HDRMerge merges raw images directly, without development. The advantages are tha
 HDRMerge also allows you to treat HDR images as any other raw image, introducing them in your normal raw development workflow. The DNG output of HDRMerge is actually a raw image with very little noise and more detail.
 
 [Zero]: http://www.guillermoluijk.com/tutorial/zeronoise/ 
-[Noise2]: http://www.guillermoluijk.com/article/virtualraw/index_en.htm
+[Noise]: http://www.guillermoluijk.com/article/virtualraw/index_en.htm
 
 ## Did you say DNG 1.4 with floating point data? What is that?
 

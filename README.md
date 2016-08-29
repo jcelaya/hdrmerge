@@ -25,7 +25,7 @@ HDRMerge fuses two or more raw images into a single raw with an extended dynamic
 
 ## Wait... Another HDR program??
 
-Not exactly... Common HDR programs, like [Luminance HDR][1] or [Photomatix][2], actually perform two tasks:
+Not exactly... Common HDR programs, like [Luminance HDR][] or [Photomatix][], actually perform two tasks:
 
 * Exposure merging.
 * Tone mapping.
@@ -34,30 +34,30 @@ Exposure merging consists in taking the best pixels of a set of images with diff
 
 Something that many people do not realize is that these two tasks are totally independent from each other. For instance, Luminance allows you to save the HDR image that results from the merging task. Then, you can load it (or any other HDR image) later to apply any tone mapping operator that Luminance implements. Likewise, HDRMerge generates an HDR image that can be later tone-mapped with another program.
 
-[1]: http://qtpfsgui.sourceforge.net/
-[2]: http://www.hdrsoft.com/
+[Luminance HDR]: http://qtpfsgui.sourceforge.net/
+[Photomatix]: http://www.hdrsoft.com/
 
 ## So, why should I use HDRMerge?
 
 Common HDR programs develop the input raw images prior to the merging task, performing several non-linear transformations on them: white balance, highlights recovery, *demosaicing* and gamma correction, among others. As a result, the merging process is complicated. It must calculate a non-linear response function of the camera and take conservative decisions on whether a pixel is useful or not. Usually, the output pixels are calculated as a weighted sum of their corresponding input pixels. Then, part of the noise of the least exposed input images is transferred to the output, and ghost artifacts are difficult to deal with.
 
-HDRMerge merges raw images directly, without development. The advantages are that it is very fast, requires little to none input from the user, and can be very optimistic on which pixels are the best ones. In fact, it can safely assume a linear response function of the camera. The resulting image then consists of the most exposed pixels from the input images that are not saturated. This ensures the lowest possible level of noise and highest detail in the output image. This is inspired in what Guillermo Luijk implemented with [Zero][1] [Noise][2].
+HDRMerge merges raw images directly, without development. The advantages are that it is very fast, requires little to none input from the user, and can be very optimistic on which pixels are the best ones. In fact, it can safely assume a linear response function of the camera. The resulting image then consists of the most exposed pixels from the input images that are not saturated. This ensures the lowest possible level of noise and highest detail in the output image. This is inspired in what Guillermo Luijk implemented with [Zero][] [Noise][].
 
 HDRMerge also allows you to treat HDR images as any other raw image, introducing them in your normal raw development workflow. The DNG output of HDRMerge is actually a raw image with very little noise and more detail.
 
-[1]: http://www.guillermoluijk.com/tutorial/zeronoise/index.html
-[2]: http://www.guillermoluijk.com/article/virtualraw/index_en.htm
+[Zero]: http://www.guillermoluijk.com/tutorial/zeronoise/ 
+[Noise2]: http://www.guillermoluijk.com/article/virtualraw/index_en.htm
 
 ## Did you say DNG 1.4 with floating point data? What is that?
 
 In the last revision of the DNG SDK, version 1.4, Adobe introduced the possibility of encoding the data as 16-, 24- and 32-bit floating point numbers, instead of the usual 16-bit integers. In this way, the dynamic range that can be represented with such an encoding is vastly increased. Furthermore, the floating point encoding dedicates the same number of levels to each exposure step.
 
-The drawback is that very few programs read this format. Officially, only recent versions of Adobe products read it. I have confirmed Adobe Lightroom v5.4 myself. So, I also provided a patch for the fantastic [RawTherapee][1] raw development program that allows it to import this format natively. It is available since version 4.1. RawTherapee includes a tone mapping operator that produces great results (realistic ones, at least; if you like alien landscapes, this may not be for you).
+The drawback is that very few programs read this format. Officially, only recent versions of Adobe products read it. I have confirmed Adobe Lightroom v5.4 myself. So, I also provided a patch for the fantastic [RawTherapee][] raw development program that allows it to import this format natively. It is available since version 4.1. RawTherapee includes a tone mapping operator that produces great results (realistic ones, at least; if you like alien landscapes, this may not be for you).
 
-If you want to tone-map an image resulting from HDRMerge with a program like Luminance or Photomatix, a solution would be to develop it first as a 16-bit TIFF image, with RawTherapee or Lightroom. Then, open it with your tone-mapping program as a single image. 16-bit integers, along with a gamma correction, are usually enough to encode most HDR images with detailed shadows free of noise (after all, the dynamic range is all about [noise][2]). You can also pull the shadows up yourself during raw development.
+If you want to tone-map an image resulting from HDRMerge with a program like Luminance or Photomatix, a solution would be to develop it first as a 16-bit TIFF image, with RawTherapee or Lightroom. Then, open it with your tone-mapping program as a single image. 16-bit integers, along with a gamma correction, are usually enough to encode most HDR images with detailed shadows free of noise (after all, the dynamic range is all about [noise][]). You can also pull the shadows up yourself during raw development.
 
-[1]: http://rawtherapee.com/
-[2]: http://theory.uchicago.edu/~ejm/pix/20d/tests/noise/index.html
+[RawTherapee]: http://rawtherapee.com/
+[noise]: http://theory.uchicago.edu/~ejm/pix/20d/tests/noise/index.html
 
 
 # Feature List

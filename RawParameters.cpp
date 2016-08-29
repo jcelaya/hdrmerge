@@ -207,6 +207,10 @@ void RawParameters::fromLibRaw(LibRaw & rawData) {
     isoSpeed = r.other.iso_speed;
     shutter = r.other.shutter;
     aperture = r.other.aperture;
+    if(aperture <= 0.f || isinf(aperture) || isnan(aperture)) {
+        Log::debug("Invalid aperture: ", aperture, " replaced by aperture: f8");
+        aperture = 8;
+    }
     maker = r.idata.make;
     model = r.idata.model;
     description = r.other.desc;

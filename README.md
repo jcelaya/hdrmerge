@@ -175,3 +175,5 @@ Also, HDRMerge implements or is based on the techniques described in the followi
 +  Guillermo Luijk, Zero Noise, <http://www.guillermoluijk.com/tutorial/zeronoise/index.html>
 +  Jens Mueller, dngconvert, <https://github.com/jmue/dngconvert>
 +  Jarosz, W. (2001). Fast image convolutions. In SIGGRAPH Workshop. Code from Ivan Kuckir, <http://blog.ivank.net/fastest-gaussian-blur.html>
+
+There is also a community forum for discussions and connecting with other users (as well as other Free Software projects) at <https://discuss.pixls.us>, hosted by [PIXLS.US](https://pixls.us).

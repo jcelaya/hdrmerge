@@ -1,6 +1,6 @@
 name: HDRMerge
 author: Javier Celaya
-markdown: redcarpet
+markdown: kramdown
 highlighter: rouge
 baseurl: /hdrmerge
 gitpagesurl: http://jcelaya.github.io/hdrmerge

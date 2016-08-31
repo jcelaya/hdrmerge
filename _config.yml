@@ -1,7 +1,7 @@
 name: HDRMerge
 author: Javier Celaya
 markdown: redcarpet
-pygments: true
+highlighter: rouge
 baseurl: /hdrmerge
 gitpagesurl: http://jcelaya.github.io/hdrmerge
 description: HDR raw exposure merging
@@ -11,4 +11,3 @@ facebook: http://www.facebook.com
 linkedin: http://www.linkedin.com
 googleplus: https://plus.google.com/108529106439895792928
 email: hdrmerge[at]gmail.com
-

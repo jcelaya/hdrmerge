@@ -33,6 +33,8 @@
 #include "MainWindow.hpp"
 #endif
 #include "Log.hpp"
+#include <libraw.h>
+
 using namespace std;
 
 namespace hdrmerge {
@@ -321,6 +323,7 @@ int Launcher::run() {
     app.installTranslator(&appTranslator);
 
     parseCommandLine();
+    Log::debug("Using LibRaw ", libraw_version());
 
     if (help) {
         showHelp();

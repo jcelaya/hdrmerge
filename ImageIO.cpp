@@ -26,7 +26,7 @@
 #include <QString>
 #include <QRegExp>
 #include <QFileInfo>
-#include <libraw/libraw.h>
+#include <libraw.h>
 #include "ImageIO.hpp"
 #include "DngFloatWriter.hpp"
 #include "Log.hpp"

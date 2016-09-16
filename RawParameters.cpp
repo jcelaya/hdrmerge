@@ -26,7 +26,7 @@
 #include <functional>
 #include <QDateTime>
 #include <QFileInfo>
-#include <libraw/libraw.h>
+#include <libraw.h>
 #include <exiv2/exiv2.hpp>
 #include "Log.hpp"
 #include "RawParameters.hpp"

@@ -67,7 +67,7 @@ chmod u+x usr/bin/$LOWERAPP
 #cp ./usr/share/applications/$LOWERAPP.desktop .
 #sed -i -e "s|gimp-2.9|$LOWERAPP|g" $LOWERAPP.desktop
 rm -rf ./usr/share/icons/48x48/apps || true
-cp $WD/checkout/hdrmerge/images/icon.png hdrmerge.png
+cp $TRAVIS_BUILD_DIR/images/icon.png hdrmerge.png
 
 get_apprun
 
@@ -125,7 +125,8 @@ cp $(ldconfig -p | grep libgtk-x11-2.0.so.0 | cut -d ">" -f 2 | xargs) ./usr/lib
 
 VER1=$APP_VERSION-$(date +%Y%m%d)
 GLIBC_NEEDED=$(glibc_needed)
-VERSION=$VER1.glibc$GLIBC_NEEDED
+VERSION=git-${TRAVIS_BRANCH}-${TRAVIS_COMMIT}-$(date +%Y%m%d).glibc$GLIBC_NEEDED
+#VERSION=$VER1.glibc$GLIBC_NEEDED
 echo $VERSION
 
 get_desktopintegration $LOWERAPP
@@ -136,5 +137,13 @@ get_desktopintegration $LOWERAPP
 # Go out of AppImage
 cd ..
 
+mkdir -p ../out/
 ARCH="x86_64"
 generate_appimage
+
+########################################################################
+# Upload the AppDir
+########################################################################
+
+transfer ../out/*
+echo "AppImage has been uploaded to the URL above; use something like GitHub Releases for permanent storage"

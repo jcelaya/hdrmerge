@@ -25,6 +25,8 @@ before_script:
     - export LD_LIBRARY_PATH=/app/lib:${LD_LIBRARY_PATH}
     - git clone https://github.com/LibRaw/LibRaw.git
     - cd LibRaw
+    - aclocal
+    - automake --add-missing
     - autoconf
     - pwd
     - ls

@@ -16,6 +16,7 @@ addons:
       - libqt4-dev
       - autoconf
       - automake
+      - exiv2
 
 
 before_script:

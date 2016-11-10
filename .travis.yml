@@ -17,6 +17,8 @@ addons:
       - autoconf
       - automake
       - libexiv2-dev
+      - libalglib-dev
+      - libboost-all-dev
 
 
 before_script:

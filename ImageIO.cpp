@@ -37,6 +37,7 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
     if (rawProcessor.open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
+        Log::msg(Log::DEBUG, "Number of frames : ", d.idata.raw_count);
         libraw_decoder_info_t decoder_info;
         rawProcessor.get_decoder_info(&decoder_info);
         if (d.idata.filters <= 1000 && d.idata.filters != 9) {

@@ -15,6 +15,7 @@ addons:
       - intltool
       - libqt4-dev
       - autoconf
+      - automake
 
 
 before_script:

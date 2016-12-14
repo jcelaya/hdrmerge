@@ -238,7 +238,9 @@ void MainWindow::about() {
 
 
 void MainWindow::showEvent(QShowEvent * event) {
-    loadImages();
+    if (io.getImageStack().size() == 0) {
+        loadImages();
+    }
 }
 
 

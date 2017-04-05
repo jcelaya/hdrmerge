@@ -170,7 +170,7 @@ void ExifTransfer::copyEXIF() {
     }
     // Now we set the SubImage1 file type to Primary Image
     // Exiv2 wouldn't modify SubImage1 tags if it was set before
-    dstExif["Exif.SubImage1.NewSubfileType"] = 0;
+    dstExif["Exif.SubImage1.NewSubfileType"] = 0u;
 
     for (const auto & datum : srcExif) {
         if (!excludeExifDatum(datum) && dstExif.findKey(Exiv2::ExifKey(datum.key())) == dstExif.end()) {

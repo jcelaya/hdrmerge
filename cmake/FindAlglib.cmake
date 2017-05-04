@@ -10,7 +10,7 @@ if (ALGLIB_INCLUDES)
   set (ALGLIB_FIND_QUIETLY TRUE)
 endif (ALGLIB_INCLUDES)
 
-find_path (ALGLIB_INCLUDES 
+find_path (ALGLIB_INCLUDES
     alglibinternal.h
     alglibmisc.h
     ap.h
@@ -26,6 +26,7 @@ find_path (ALGLIB_INCLUDES
     statistics.h
     stdafx.h
     PATHS
+    /usr/include/alglib/
     /usr/include/libalglib/
     /usr/local/include/alglib3/
     )

@@ -26,6 +26,7 @@ find_path (ALGLIB_INCLUDES
     statistics.h
     stdafx.h
     PATHS
+    /usr/include/alglib/
     /usr/include/libalglib/
     /usr/local/include/alglib3/
     )

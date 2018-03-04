@@ -22,9 +22,9 @@
 
 #include <cstdlib>
 #include <QImage>
-#include "../RawParameters.hpp"
-#include "../Array2D.hpp"
-#include "../Log.hpp"
+#include "../src/RawParameters.hpp"
+#include "../src/Array2D.hpp"
+#include "../src/Log.hpp"
 
 namespace hdrmerge {
 

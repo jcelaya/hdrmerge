@@ -20,7 +20,7 @@
  *
  */
 
-#include "../Bitmap.hpp"
+#include "../src/Bitmap.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;

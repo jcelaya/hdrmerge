@@ -18,7 +18,12 @@ find_package(ZLIB REQUIRED)
 find_package(Alglib REQUIRED)
 find_package(Boost 1.46 COMPONENTS unit_test_framework)
 find_package(OpenMP)
-include_directories("${LibRaw_INCLUDE_DIR}" "${EXIV2_INCLUDE_DIR}" "${ZLIB_INCLUDE_DIRS}" "${ALGLIB_INCLUDES}")
+include_directories(
+    "${LibRaw_INCLUDE_DIR}"
+    "${EXIV2_INCLUDE_DIR}"
+    "${ZLIB_INCLUDE_DIRS}"
+    "${ALGLIB_INCLUDES}"
+)
 
 if(NOT(CMAKE_BUILD_TYPE))
     set(CMAKE_BUILD_TYPE Release)
@@ -42,7 +47,7 @@ set(HDRMERGE_VERSION ${HDRMERGE_VERSION_MAJOR}.${HDRMERGE_VERSION_MINOR}.${HDRME
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file(
-    "${PROJECT_SOURCE_DIR}/config.h.in"
+    "${PROJECT_SOURCE_DIR}/src/config.h.in"
     "${PROJECT_BINARY_DIR}/config.h"
 )
 
@@ -55,8 +60,8 @@ if(WIN32)
     # This is required by libraw.h
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32 -DLIBRAW_NODLL")
     set(PLATFORM WIN32)
-    configure_file (
-        "${PROJECT_SOURCE_DIR}/winres.rc"
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/data/winres.rc"
         "${PROJECT_BINARY_DIR}/winres.rc"
     )
     set(PLATFORM_SOURCES "${PROJECT_BINARY_DIR}/winres.rc")
@@ -64,48 +69,48 @@ elseif(APPLE)
     set(PLATFORM MACOSX_BUNDLE)
     set(MACOSX_BUNDLE_ICON_FILE "icon")
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "org.hdrmerge")
-    set(MACOSX_BUNDLE_LONG_VERSION_STRING "HDRMerge for Mac v${HDRMERGE_VERSION}")
+    set(MACOSX_BUNDLE_LONG_VERSION_STRING "HDRMerge for macOS v${HDRMERGE_VERSION}")
     set(MACOSX_BUNDLE_BUNDLE_NAME "HDRMerge")
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${HDRMERGE_VERSION}")
     set(MACOSX_BUNDLE_BUNDLE_VERSION "${HDRMERGE_VERSION}")
-    set(MACOSX_BUNDLE_INFO_COPYRIGHT "Copyright 2014 Javier Celaya")
+    set(MACOSX_BUNDLE_INFO_COPYRIGHT "Copyright 2018 Javier Celaya")
     set(PLATFORM_SOURCES "images/icon.icns")
 endif()
 
 # Sources and headers
 set(hdrmerge_sources
-    Image.cpp
-    ImageStack.cpp
-    Bitmap.cpp
-    RawParameters.cpp
-    EditableMask.cpp
-    DngFloatWriter.cpp
-    TiffDirectory.cpp
-    BoxBlur.cpp
-    ExifTransfer.cpp
-    ImageIO.cpp
+    src/Image.cpp
+    src/ImageStack.cpp
+    src/Bitmap.cpp
+    src/RawParameters.cpp
+    src/EditableMask.cpp
+    src/DngFloatWriter.cpp
+    src/TiffDirectory.cpp
+    src/BoxBlur.cpp
+    src/ExifTransfer.cpp
+    src/ImageIO.cpp
 )
 
 set(hdrmerge_gui_sources
-    AboutDialog.cpp
-    MainWindow.cpp
-    PreviewWidget.cpp
-    DraggableScrollArea.cpp
-    DngPropertiesDialog.cpp
-    LoadOptionsDialog.cpp
+    src/AboutDialog.cpp
+    src/MainWindow.cpp
+    src/PreviewWidget.cpp
+    src/DraggableScrollArea.cpp
+    src/DngPropertiesDialog.cpp
+    src/LoadOptionsDialog.cpp
 )
 
 set(hdrmerge_qobject_headers
-    MainWindow.hpp
-    PreviewWidget.hpp
-    LoadOptionsDialog.hpp
-    DraggableScrollArea.hpp
-    DngPropertiesDialog.hpp
-    AboutDialog.hpp
+    src/MainWindow.hpp
+    src/PreviewWidget.hpp
+    src/LoadOptionsDialog.hpp
+    src/DraggableScrollArea.hpp
+    src/DngPropertiesDialog.hpp
+    src/AboutDialog.hpp
 )
 
 set(hdrmerge_translations
-    hdrmerge_es.ts
+    data/hdrmerge_es.ts
 )
 
 # Libs
@@ -127,7 +132,8 @@ if(WIN32)
         "${EXPAT_LIBRARY}"
         "${GETTEXT_LIBRARY}"
         "${ICONV_LIBRARY}"
-        psapi wsock32
+        psapi
+        wsock32
         imm32
         winmm
     )
@@ -144,14 +150,15 @@ foreach(file ${hdrmerge_qm})
     set(HDRMERGE_QM_XML "${HDRMERGE_QM_XML}
         <file>${basename}</file>")
 endforeach()
-configure_file (
-    "${PROJECT_SOURCE_DIR}/translations.qrc.in"
+
+configure_file(
+    "${PROJECT_SOURCE_DIR}/data/translations.qrc.in"
     "${PROJECT_BINARY_DIR}/translations.qrc"
 )
 
 QT4_ADD_RESOURCES(hdrmerge_rsrc
     "${PROJECT_BINARY_DIR}/translations.qrc"
-    resources.qrc
+    data/resources.qrc
 )
 
 add_library(hdrmerge-objects OBJECT
@@ -165,8 +172,8 @@ add_library(hdrmerge-gui-objects OBJECT
 )
 
 add_executable(hdrmerge ${PLATFORM}
-    main.cpp
-    Launcher.cpp
+    src/main.cpp
+    src/Launcher.cpp
     $<TARGET_OBJECTS:hdrmerge-objects>
     $<TARGET_OBJECTS:hdrmerge-gui-objects>
     "${PLATFORM_SOURCES}"
@@ -177,8 +184,8 @@ target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs})
 if(WIN32)
     # Compile a target without GUI, for the .com executable
     add_executable(hdrmerge-nogui
-        main.cpp
-        Launcher.cpp
+        src/main.cpp
+        src/Launcher.cpp
         $<TARGET_OBJECTS:hdrmerge-objects>
         "${PLATFORM_SOURCES}"
     )
@@ -189,7 +196,7 @@ if(WIN32)
     if(MAKENSIS_EXECUTABLE)
         set(SETUP_PROG hdrmerge-setup${WIN_ARCH}-${HDRMERGE_VERSION}.exe)
         configure_file(
-            "${PROJECT_SOURCE_DIR}/setup.nsi"
+            "${PROJECT_SOURCE_DIR}/data/setup.nsi"
             "${PROJECT_BINARY_DIR}/setup.nsi" @ONLY
         )
         add_custom_command(OUTPUT ${SETUP_PROG}
@@ -202,13 +209,17 @@ if(WIN32)
 elseif(APPLE)
     set_source_files_properties(images/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
     install(TARGETS hdrmerge BUNDLE DESTINATION "/Applications")
-else(WIN32)
-    install(TARGETS hdrmerge RUNTIME DESTINATION bin)
+else()
+    if(NOT DEFINED CMAKE_INSTALL_BINDIR)
+        set(CMAKE_INSTALL_BINDIR "bin")
+    endif()
+    message(STATUS "Install binary to: " ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS hdrmerge DESTINATION ${CMAKE_INSTALL_BINDIR})
     find_program(XDG-DESKTOP-MENU_EXECUTABLE xdg-desktop-menu)
     find_program(XDG-ICON-RESOURCE_EXECUTABLE xdg-icon-resource)
     if(XDG-DESKTOP-MENU_EXECUTABLE AND XDG-ICON-RESOURCE_EXECUTABLE)
         configure_file(
-            "${PROJECT_SOURCE_DIR}/hdrmerge.desktop"
+            "${PROJECT_SOURCE_DIR}/data/hdrmerge.desktop"
             "${PROJECT_BINARY_DIR}/hdrmerge.desktop"
         )
         install(CODE "

@@ -22,9 +22,9 @@
 
 #include <iostream>
 #include <QDir>
-#include "../ImageIO.hpp"
+#include "../src/ImageIO.hpp"
 #include "SampleImage.hpp"
-#include "../Log.hpp"
+#include "../src/Log.hpp"
 #include <boost/test/unit_test.hpp>
 #include <boost/config/no_tr1/complex.hpp>
 using namespace hdrmerge;

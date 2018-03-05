@@ -2,10 +2,10 @@
 
 HDRMerge combines two or more raw images into a single raw with an extended dynamic range. It can import any raw image supported by LibRaw, and outputs a DNG 1.4 image with floating point data. The output raw is built from the less noisy pixels of the input, so that shadows maintain as much detail as possible. This tool also offers a GUI to remove ghosts from the resulting image.
 
-## Installation
-Get HDRMerge from your package manager. Find the latest release by checking our [releases page](https://github.com/jcelaya/hdrmerge/releases).
+## Download & Installation
+Find the latest builds on our [releases page](https://github.com/jcelaya/hdrmerge/releases).
 
-If your package manager does not ship the latest version of HDRMerge, file a bug report using your distribution's bug tracker asking them to ship the new version.
+Linux users can get HDRMerge from their package manager. If your package manager does not ship the latest version of HDRMerge, file a bug report using your distribution's bug tracker asking them to ship the latest version.
 
 ## Compilation
 If you would like to compile HDRMerge yourself, follow the instructions in the `INSTALL.md` file.

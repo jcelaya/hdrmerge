@@ -22,7 +22,7 @@ Once the preview is satisfactory, the Save HDR option of the File menu generates
 The program can also be run without GUI, in batch mode. This is accomplished either by providing an output file name with the "-o" switch, or by generating an automatic one with the "-a" switch. Other switches control the output parameters, refer to the output of the "--help" switch.
 
 ## Licence
-HDRMerge is released under the TheGNU General Public License v3.0.
+HDRMerge is released under the GNU General Public License v3.0.
 See the file `LICENSE`.
 
 ## Contributing

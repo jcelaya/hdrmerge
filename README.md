@@ -10,7 +10,7 @@ If your package manager does not ship the latest version of HDRMerge, file a bug
 ## Compilation
 If you would like to compile HDRMerge yourself, follow the instructions in the `INSTALL.md` file.
 
-# Usage
+## Usage
 Source images can be loaded from the Open option in the File menu, or passed as arguments in the command line. They must be made with the same camera. After loading them, HDRMerge will correct small misalignments by translation. So, if your camera allows it, you can take the shots with bracketing in burst mode. I have successfully done this just holding the camera with my hands, but using a tripod is highly recommended to obtain the best results.
 
 Once the input images are loaded, the interface presents you with a 100% preview of the result. The selected pixels from each input image are painted with a different color. You can then pan the result to inspect it.
@@ -85,7 +85,7 @@ https://github.com/jcelaya/hdrmerge/issues
   - Writes full, half or no preview to the output image.
   - Copies the EXIF data from the least exposed source image.
 
-# Acknowledgments
+## Acknowledgments
 I would like to thank all the people that have contributed ideas, critics and samples to improve HDRMerge. In particular, to the team of [RawTherapee](https://github.com/Beep6581/RawTherapee).
 
 Also, HDRMerge implements or is based on the techniques described in the following works:
@@ -96,7 +96,7 @@ Also, HDRMerge implements or is based on the techniques described in the followi
 
 There is also a community forum for discussions and connecting with other users (as well as other Free Software projects) at <https://discuss.pixls.us>, hosted by [PIXLS.US](https://pixls.us).
 
-# Links
-Website: http://jcelaya.github.io/hdrmerge/
+## Links
+Website and documentation: http://jcelaya.github.io/hdrmerge/
 Forum: https://discuss.pixls.us/c/software/hdrmerge
 GitHub: https://github.com/jcelaya/hdrmerge

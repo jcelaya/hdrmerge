@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 2.8)
 
 project(hdrmerge)
 
+if(WIN32)
+    if(NOT(ALGLIB_ROOT))
+        message(FATAL_ERROR "When building on Windows, you need to download 'alglib' source and define its root directory in ALGLIB_ROOT !")
+    else()
+        message(STATUS "ALGLIB_ROOT = ${ALGLIB_ROOT}")
+    endif()
+endif()
+
 # Complain about anything, except ignored OpenMP pragma in Debug
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-unknown-pragmas")
 set(PLATFORM "")
@@ -15,9 +23,15 @@ add_definitions(${QT_DEFINITIONS})
 find_package(LibRaw REQUIRED)
 find_package(Exiv2 REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(Alglib REQUIRED)
 find_package(Boost 1.46 COMPONENTS unit_test_framework)
 find_package(OpenMP)
+
+if(WIN32)
+    set(ALGLIB_INCLUDES ${ALGLIB_ROOT}/src)
+else()
+    find_package(Alglib REQUIRED)
+endif()
+
 include_directories(
     "${LibRaw_INCLUDE_DIR}"
     "${EXIV2_INCLUDE_DIR}"
@@ -113,13 +127,30 @@ set(hdrmerge_translations
     data/hdrmerge_es.ts
 )
 
+if(WIN32)
+    set(alglib_sources
+        ${ALGLIB_ROOT}/src/alglibinternal.cpp
+        ${ALGLIB_ROOT}/src/alglibmisc.cpp
+        ${ALGLIB_ROOT}/src/ap.cpp
+        ${ALGLIB_ROOT}/src/dataanalysis.cpp
+        ${ALGLIB_ROOT}/src/diffequations.cpp
+        ${ALGLIB_ROOT}/src/fasttransforms.cpp
+        ${ALGLIB_ROOT}/src/integration.cpp
+        ${ALGLIB_ROOT}/src/interpolation.cpp
+        ${ALGLIB_ROOT}/src/linalg.cpp
+        ${ALGLIB_ROOT}/src/optimization.cpp
+        ${ALGLIB_ROOT}/src/solvers.cpp
+        ${ALGLIB_ROOT}/src/specialfunctions.cpp
+        ${ALGLIB_ROOT}/src/statistics.cpp
+    )
+endif()
+
 # Libs
 set(hdrmerge_libs
     "${LibRaw_r_LIBRARIES}"
     "${QT_LIBRARIES}"
     "${EXIV2_LIBRARY}"
     "${ZLIB_LIBRARIES}"
-    "${ALGLIB_LIBRARIES}"
 )
 
 if(WIN32)
@@ -127,7 +158,7 @@ if(WIN32)
     find_library(EXPAT_LIBRARY libexpat.a "${LIB_PATH}")
     find_library(ICONV_LIBRARY libiconv.a "${LIB_PATH}")
     find_library(GETTEXT_LIBRARY libintl.a "${LIB_PATH}")
-    set(hdrmerge_libs -static
+    set(hdrmerge_libs
         ${hdrmerge_libs}
         "${EXPAT_LIBRARY}"
         "${GETTEXT_LIBRARY}"
@@ -138,6 +169,11 @@ if(WIN32)
         winmm
     )
     remove_definitions(-DQT_DLL)
+else()
+    set(hdrmerge_libs
+        "${hdrmerge_libs}"
+        "${ALGLIB_LIBRARIES}"
+    )
 endif()
 
 # Qt4 intermediate files
@@ -161,6 +197,12 @@ QT4_ADD_RESOURCES(hdrmerge_rsrc
     data/resources.qrc
 )
 
+if(WIN32)
+    add_library(alglib-objects OBJECT
+        ${alglib_sources}
+    )
+endif()
+
 add_library(hdrmerge-objects OBJECT
     ${hdrmerge_sources}
     ${hdrmerge_rsrc}
@@ -171,13 +213,24 @@ add_library(hdrmerge-gui-objects OBJECT
     ${hdrmerge_moc}
 )
 
-add_executable(hdrmerge ${PLATFORM}
-    src/main.cpp
-    src/Launcher.cpp
-    $<TARGET_OBJECTS:hdrmerge-objects>
-    $<TARGET_OBJECTS:hdrmerge-gui-objects>
-    "${PLATFORM_SOURCES}"
-)
+if(WIN32)
+    add_executable(hdrmerge ${PLATFORM}
+        src/main.cpp
+        src/Launcher.cpp
+        $<TARGET_OBJECTS:hdrmerge-objects>
+        $<TARGET_OBJECTS:hdrmerge-gui-objects>
+        $<TARGET_OBJECTS:alglib-objects>
+        "${PLATFORM_SOURCES}"
+    )
+else()
+    add_executable(hdrmerge ${PLATFORM}
+        src/main.cpp
+        src/Launcher.cpp
+        $<TARGET_OBJECTS:hdrmerge-objects>
+        $<TARGET_OBJECTS:hdrmerge-gui-objects>
+        "${PLATFORM_SOURCES}"
+    )
+endif()
 
 target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs})
 
@@ -187,13 +240,15 @@ if(WIN32)
         src/main.cpp
         src/Launcher.cpp
         $<TARGET_OBJECTS:hdrmerge-objects>
+        $<TARGET_OBJECTS:alglib-objects>
         "${PLATFORM_SOURCES}"
     )
     target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs})
     set_target_properties(hdrmerge-nogui PROPERTIES COMPILE_DEFINITIONS "NO_GUI")
     # Create the installer with makensis
-    find_program(MAKENSIS_EXECUTABLE makensis)
+    find_program(MAKENSIS_EXECUTABLE makensis.exe PATH_SUFFIXES "NSIS/Bin")
     if(MAKENSIS_EXECUTABLE)
+        message(STATUS "NSIS found!")
         set(SETUP_PROG hdrmerge-setup${WIN_ARCH}-${HDRMERGE_VERSION}.exe)
         configure_file(
             "${PROJECT_SOURCE_DIR}/data/setup.nsi"
@@ -205,6 +260,8 @@ if(WIN32)
             DEPENDS "${PROJECT_BINARY_DIR}/hdrmerge.exe"
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
         add_custom_target(hdrmerge-setup ALL DEPENDS "${PROJECT_BINARY_DIR}/${SETUP_PROG}")
+    else()
+        message(STATUS "NSIS not found!")
     endif()
 elseif(APPLE)
     set_source_files_properties(images/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")

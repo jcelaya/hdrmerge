@@ -20,7 +20,7 @@
  *
  */
 
-#include "../Histogram.hpp"
+#include "../src/Histogram.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;

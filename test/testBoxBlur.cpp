@@ -23,9 +23,9 @@
 #include <string>
 #include <cmath>
 #include <QDir>
-#include "../BoxBlur.hpp"
+#include "../src/BoxBlur.hpp"
 #include "SampleImage.hpp"
-#include "../Log.hpp"
+#include "../src/Log.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;

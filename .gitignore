@@ -6,8 +6,8 @@
 .DS_Store
 .kde*
 Makefile
-Build*
-build*
+Build*/
+build*/
 hdrmerge.kde*
 moc_*
 samples/

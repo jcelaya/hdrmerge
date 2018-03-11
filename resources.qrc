@@ -1,9 +1,0 @@
-<!DOCTYPE RCC><RCC version="1.0">
-    <qresource prefix="/images">
-        <file alias="logo.png">images/logo.png</file>
-        <file alias="icon.png">images/icon.png</file>
-        <file alias="transform-move.png">images/transform-move.png</file>
-        <file alias="draw-brush.png">images/draw-brush.png</file>
-        <file alias="draw-eraser.png">images/draw-eraser.png</file>
-    </qresource>
-</RCC>

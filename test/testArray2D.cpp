@@ -20,7 +20,7 @@
  *
  */
 
-#include "../Array2D.hpp"
+#include "../src/Array2D.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;

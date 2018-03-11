@@ -23,9 +23,9 @@
 #include <string>
 #include <cmath>
 #include <QDir>
-#include "../ImageIO.hpp"
-#include "../Log.hpp"
-#include "../DngFloatWriter.hpp"
+#include "../src/ImageIO.hpp"
+#include "../src/Log.hpp"
+#include "../src/DngFloatWriter.hpp"
 #include <boost/test/unit_test.hpp>
 using namespace hdrmerge;
 using namespace std;

@@ -11,5 +11,11 @@ set(
     testDngFloatWriter.cpp
 )
 
-add_executable(hdrmerge-test ${test_sources} $<TARGET_OBJECTS:hdrmerge-objects> $<TARGET_OBJECTS:hdrmerge-gui-objects>)
+
+if(APPLE)
+    add_executable(hdrmerge-test ${test_sources} $<TARGET_OBJECTS:alglib-objects> $<TARGET_OBJECTS:hdrmerge-objects> $<TARGET_OBJECTS:hdrmerge-gui-objects>)
+else()
+    add_executable(hdrmerge-test ${test_sources} $<TARGET_OBJECTS:hdrmerge-objects> $<TARGET_OBJECTS:hdrmerge-gui-objects>)
+endif()
+
 target_link_libraries(hdrmerge-test ${hdrmerge_libs} ${Boost_LIBRARIES})

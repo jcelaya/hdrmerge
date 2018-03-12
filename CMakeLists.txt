@@ -12,7 +12,7 @@ endif()
 
 if(APPLE)
     if(NOT(ALGLIB_ROOT))
-        message(FATAL_ERROR "Didn’t work: passage of ALGLIB_ROOT to cmake. Download alglib and define its root directory in ALGLIB_ROOT")
+        message(FATAL_ERROR "Passage of ALGLIB_ROOT to cmake. Download alglib and define its root directory in ALGLIB_ROOT")
     else
         message(STATUS "ALGLIB_ROOT = ${ALGLIB_ROOT}")
     endif()

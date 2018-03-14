@@ -21,7 +21,7 @@ Once the preview is satisfactory, the Save HDR option of the File menu generates
 
 The program can also be run without GUI, in batch mode. This is accomplished either by providing an output file name with the "-o" switch, or by generating an automatic one with the "-a" switch. Other switches control the output parameters, refer to the output of the "--help" switch. macOS users may need to change their current working directory to the one which contains the executable in order to run it in CLI mode.
 
-HDRMerge merges RAW files to produce an HDR image. Once you have obtained your HDR image from HDRMerge, you need to further process it in an application that supports HDR images, such as [RawTherapee](https://rawtherapee.com) or [darktable](https://darktable.org). 
+HDRMerge merges raw files to produce an HDR image in DNG format. Once you have obtained your image from HDRMerge, you need to further process it in an application that supports HDR images in the DNG format, such as [RawTherapee](https://rawtherapee.com) or [darktable](https://darktable.org). 
 
 ## Licence
 HDRMerge is released under the GNU General Public License v3.0.

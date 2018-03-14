@@ -52,14 +52,41 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
     // Calculate max value of brightest image and assume it is saturated
     uint16_t maxPerColor[4] = { 0, 0, 0, 0 };
     Image & brightest = images.front();
-    for (size_t y = 0; y < height; ++y) {
-        for (size_t x = 0; x < width; ++x) {
-            uint16_t v = brightest(x, y);
-            if (v > maxPerColor[params.FC(x, y)]) {
-                maxPerColor[params.FC(x, y)] = v;
+    #pragma omp parallel
+    {
+        uint16_t maxPerColorThr[4] = { 0, 0, 0, 0 };
+        #pragma omp for schedule(dynamic,16) nowait
+        for (size_t y = 0; y < height; ++y) {
+            // get the color codes from x = 0 to 5, works for bayer and xtrans
+            uint16_t fcrow[6];
+            for(size_t i = 0; i < 6; ++i) {
+                fcrow[i] = params.FC(i, y);
+            }
+            size_t x = 0;
+            for (; x < width - 5; x+=6) {
+                for(size_t j = 0; j < 6; ++j) {
+                    uint16_t v = brightest(x + j, y);
+                    if (v > maxPerColorThr[fcrow[j]]) {
+                        maxPerColorThr[fcrow[j]] = v;
+                    }
+                }
+            }
+            // remaining pixels
+            for (size_t j = 0; x < width; ++x, ++j) {
+                 uint16_t v = brightest(x, y);
+                if (v > maxPerColorThr[fcrow[j]]) {
+                    maxPerColorThr[fcrow[j]] = v;
+                 }
+             }
+        }
+        #pragma omp critical
+        {
+            for(int c = 0; c < 4; ++c) {
+                maxPerColor[c] = std::max(maxPerColorThr[c], maxPerColor[c]);
             }
         }
     }
+
     satThreshold = params.max == 0 ? maxPerColor[0] : params.max;
     for (int c = 0; c < 4; ++c) {
         if (maxPerColor[c] > 0 && maxPerColor[c] < satThreshold) {

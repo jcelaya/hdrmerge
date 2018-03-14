@@ -34,7 +34,7 @@ add_definitions(${QT_DEFINITIONS})
 find_package(LibRaw REQUIRED)
 find_package(Exiv2 REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(Boost 1.46 COMPONENTS unit_test_framework)
+#find_package(Boost 1.46 COMPONENTS unit_test_framework)
 find_package(OpenMP)
 
 if(WIN32)
@@ -213,22 +213,14 @@ if(WIN32)
     )
 endif()
 
-add_library(hdrmerge-objects OBJECT
-    ${hdrmerge_sources}
-    ${hdrmerge_rsrc}
-)
-
-add_library(hdrmerge-gui-objects OBJECT
-    ${hdrmerge_gui_sources}
-    ${hdrmerge_moc}
-)
-
 if(WIN32)
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
         src/Launcher.cpp
-        $<TARGET_OBJECTS:hdrmerge-objects>
-        $<TARGET_OBJECTS:hdrmerge-gui-objects>
+        ${hdrmerge_sources}
+        ${hdrmerge_rsrc}
+        ${hdrmerge_gui_sources}
+        ${hdrmerge_moc}
         $<TARGET_OBJECTS:alglib-objects>
         "${PLATFORM_SOURCES}"
     )
@@ -236,8 +228,10 @@ else()
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
         src/Launcher.cpp
-        $<TARGET_OBJECTS:hdrmerge-objects>
-        $<TARGET_OBJECTS:hdrmerge-gui-objects>
+        ${hdrmerge_sources}
+        ${hdrmerge_rsrc}
+        ${hdrmerge_gui_sources}
+        ${hdrmerge_moc}
         "${PLATFORM_SOURCES}"
     )
 endif()

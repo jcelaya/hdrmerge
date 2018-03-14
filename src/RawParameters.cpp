@@ -221,7 +221,7 @@ void RawParameters::fromLibRaw(LibRaw & rawData) {
     description = r.other.desc;
     QDateTime dateTimeTmp = QDateTime::fromTime_t(r.other.timestamp);
     QString dateTimeTmpText = dateTimeTmp.toString("yyyy:MM:dd hh:mm:ss");
-    dateTime = dateTimeTmpText.toAscii().constData();
+    dateTime = dateTimeTmpText.toLatin1().constData();
     flip = r.sizes.flip;
     switch ((flip + 3600) % 360) {
         case 270: flip = 5; break;

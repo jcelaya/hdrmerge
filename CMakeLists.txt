@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1.0)
 
 project(hdrmerge)
 
@@ -17,9 +17,23 @@ set(PLATFORM "")
 # Required and optional packages
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${PROJECT_SOURCE_DIR}/cmake")
 
-find_package(Qt4 REQUIRED QtCore QtGui)
-include(${QT_USE_FILE})
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+
+#set(CMAKE_AUTOUIC ON)
+#set(CMAKE_AUTORCC ON)
+#set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+#find_package(Qt5Gui              REQUIRED)
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Widgets REQUIRED)
+#find_package(Qt5Transitional REQUIRED)
+
+#include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
+
 find_package(LibRaw REQUIRED)
 find_package(Exiv2 REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -148,7 +162,6 @@ endif()
 # Libs
 set(hdrmerge_libs
     "${LibRaw_r_LIBRARIES}"
-    "${QT_LIBRARIES}"
     "${EXIV2_LIBRARY}"
     "${ZLIB_LIBRARIES}"
 )
@@ -177,8 +190,8 @@ else()
 endif()
 
 # Qt4 intermediate files
-QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})
-QT4_ADD_TRANSLATION(hdrmerge_qm ${hdrmerge_translations})
+#QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})
+#QT4_ADD_TRANSLATION(hdrmerge_qm ${hdrmerge_translations})
 
 # Generate the XML version of hdrmerge_qm
 foreach(file ${hdrmerge_qm})
@@ -192,10 +205,10 @@ configure_file(
     "${PROJECT_BINARY_DIR}/translations.qrc"
 )
 
-QT4_ADD_RESOURCES(hdrmerge_rsrc
-    "${PROJECT_BINARY_DIR}/translations.qrc"
-    data/resources.qrc
-)
+#QT4_ADD_RESOURCES(hdrmerge_rsrc
+#    "${PROJECT_BINARY_DIR}/translations.qrc"
+#    data/resources.qrc
+#)
 
 if(WIN32)
     add_library(alglib-objects OBJECT
@@ -232,7 +245,7 @@ else()
     )
 endif()
 
-target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs})
+target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs} Qt5::Widgets)
 
 if(WIN32)
     # Compile a target without GUI, for the .com executable

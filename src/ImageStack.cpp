@@ -62,7 +62,7 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
     }
     satThreshold = params.max == 0 ? maxPerColor[0] : params.max;
     for (int c = 0; c < 4; ++c) {
-        if (maxPerColor[c] < satThreshold) {
+        if (maxPerColor[c] > 0 && maxPerColor[c] < satThreshold) {
             satThreshold = maxPerColor[c];
         }
     }

@@ -196,6 +196,11 @@ void RawParameters::fromLibRaw(LibRaw & rawData) {
     max = r.color.maximum;
     black = r.color.black;
     copy_n(r.color.cblack, 4, cblack);
+    if(r.idata.filters == 9) { //xtrans
+        for (int c = 0; c < 4; c++) {
+            cblack[c] = r.color.cblack[6];
+        }
+    }
     adjustBlack();
     copy_n(r.color.pre_mul, 4, preMul);
     copy_n(r.color.cam_mul, 4, camMul);

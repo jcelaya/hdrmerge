@@ -25,7 +25,7 @@
 #include "MainWindow.hpp"
 #include <QApplication>
 #include <QFuture>
-#include <QtConcurrentRun>
+#include <QtConcurrent/QtConcurrent>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QFileDialog>

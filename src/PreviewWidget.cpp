@@ -24,7 +24,7 @@
 #include <QImage>
 #include <QPainter>
 #include <QFuture>
-#include <QtConcurrentRun>
+#include <QtConcurrent/QtConcurrent>
 #include <QApplication>
 #include <QBitmap>
 #include <QAction>
@@ -136,7 +136,7 @@ QRgb PreviewWidget::rgb(int col, int row) const {
 
 void PreviewWidget::render(QRect zone) {
     if (!stack.size()) return;
-    zone = zone.intersect(QRect(0, 0, width, height));
+    zone = zone.intersected(QRect(0, 0, width, height));
     if (zone.isNull()) return;
     cancelRender = false;
     QImage image(zone.width(), zone.height(), QImage::Format_RGB32);

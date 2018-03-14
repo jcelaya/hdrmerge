@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.4)
 
 project(hdrmerge)
 
@@ -26,10 +26,7 @@ set(CMAKE_AUTOMOC ON)
 #set(CMAKE_AUTORCC ON)
 #set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-#find_package(Qt5Gui              REQUIRED)
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Widgets REQUIRED)
-#find_package(Qt5Transitional REQUIRED)
+find_package(Qt5 5.6 REQUIRED Core Widgets)
 
 #include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})

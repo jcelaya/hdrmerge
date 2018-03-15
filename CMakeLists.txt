@@ -10,7 +10,6 @@ if(WIN32)
     endif()
 endif()
 
-# Complain about anything, except ignored OpenMP pragma in Debug
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-unknown-pragmas")
 set(PLATFORM "")
 
@@ -19,12 +18,12 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${PROJECT_SOURCE_DIR}/cmake")
 
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
 
-#set(CMAKE_AUTOUIC ON)
-#set(CMAKE_AUTORCC ON)
-#set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Generate resources automatically
+set(CMAKE_AUTORCC ON)
 
 find_package(Qt5 5.6 REQUIRED Core Widgets)
 
@@ -34,8 +33,10 @@ add_definitions(${QT_DEFINITIONS})
 find_package(LibRaw REQUIRED)
 find_package(Exiv2 REQUIRED)
 find_package(ZLIB REQUIRED)
-#find_package(Boost 1.46 COMPONENTS unit_test_framework)
 find_package(OpenMP)
+
+# Commented-out as it doesn't link
+#find_package(Boost 1.46 COMPONENTS unit_test_framework)
 
 if(WIN32)
     set(ALGLIB_INCLUDES ${ALGLIB_ROOT}/src)
@@ -69,15 +70,13 @@ set(HDRMERGE_VERSION_MINOR 5)
 set(HDRMERGE_VERSION_REV 0)
 set(HDRMERGE_VERSION ${HDRMERGE_VERSION_MAJOR}.${HDRMERGE_VERSION_MINOR}.${HDRMERGE_VERSION_REV})
 
-# configure a header file to pass some of the CMake settings
-# to the source code
+# configure a header file to pass some of the CMake settings to the source code
 configure_file(
     "${PROJECT_SOURCE_DIR}/src/config.h.in"
     "${PROJECT_BINARY_DIR}/config.h"
 )
 
-# add the binary tree to the search path for include files
-# so that we will find config.h
+# add the binary tree to the search path for include files so that we will find config.h
 include_directories("${PROJECT_BINARY_DIR}")
 
 set(PLATFORM_SOURCES "")
@@ -186,8 +185,6 @@ else()
     )
 endif()
 
-# Qt4 intermediate files
-#QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})
 #QT4_ADD_TRANSLATION(hdrmerge_qm ${hdrmerge_translations})
 
 # Generate the XML version of hdrmerge_qm
@@ -202,11 +199,6 @@ configure_file(
     "${PROJECT_BINARY_DIR}/translations.qrc"
 )
 
-#QT4_ADD_RESOURCES(hdrmerge_rsrc
-#    "${PROJECT_BINARY_DIR}/translations.qrc"
-#    data/resources.qrc
-#)
-
 if(WIN32)
     add_library(alglib-objects OBJECT
         ${alglib_sources}
@@ -217,8 +209,8 @@ if(WIN32)
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
         src/Launcher.cpp
+        data/resources.qrc
         ${hdrmerge_sources}
-        ${hdrmerge_rsrc}
         ${hdrmerge_gui_sources}
         ${hdrmerge_moc}
         $<TARGET_OBJECTS:alglib-objects>
@@ -228,8 +220,9 @@ else()
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
         src/Launcher.cpp
+        data/resources.qrc
+        ${hdrmerge_translations}
         ${hdrmerge_sources}
-        ${hdrmerge_rsrc}
         ${hdrmerge_gui_sources}
         ${hdrmerge_moc}
         "${PLATFORM_SOURCES}"
@@ -284,7 +277,7 @@ else()
             "${PROJECT_BINARY_DIR}/hdrmerge.desktop"
         )
         install(CODE "
-            execute_process(COMMAND \"${XDG-ICON-RESOURCE_EXECUTABLE}\" install --novendor --size 128 \"${PROJECT_SOURCE_DIR}/images/icon.png\" hdrmerge-icon)
+            execute_process(COMMAND \"${XDG-ICON-RESOURCE_EXECUTABLE}\" install --novendor --size 128 \"${PROJECT_SOURCE_DIR}/data/images/icon.png\" hdrmerge-icon)
             execute_process(COMMAND \"${XDG-DESKTOP-MENU_EXECUTABLE}\" install --novendor \"${PROJECT_BINARY_DIR}/hdrmerge.desktop\")"
         )
     endif()

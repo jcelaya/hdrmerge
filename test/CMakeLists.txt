@@ -16,4 +16,8 @@ add_executable(hdrmerge-test
     ${test_sources}
 )
 
-target_link_libraries(hdrmerge-test ${hdrmerge_libs} ${Boost_LIBRARIES} Qt5::Widgets)
+if(APPLE)
+    target_link_libraries(hdrmerge-test ${hdrmerge_libs} alglib-objects ${Boost_LIBRARIES} Qt5::Widgets)
+else()
+    target_link_libraries(hdrmerge-test ${hdrmerge_libs} ${Boost_LIBRARIES} Qt5::Widgets)
+endif()

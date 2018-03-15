@@ -1,10 +1,20 @@
 cmake_minimum_required(VERSION 3.4)
 
+CMAKE_POLICY(SET CMP0025 NEW)
+
 project(hdrmerge)
 
 if(WIN32)
     if(NOT(ALGLIB_ROOT))
         message(FATAL_ERROR "When building on Windows, you need to download 'alglib' source and define its root directory in ALGLIB_ROOT !")
+    else()
+        message(STATUS "ALGLIB_ROOT = ${ALGLIB_ROOT}")
+    endif()
+endif()
+
+if(APPLE)
+    if(NOT(ALGLIB_ROOT))
+        message(FATAL_ERROR "Passage of ALGLIB_ROOT to cmake failed. Download alglib and define its root directory in ALGLIB_ROOT")
     else()
         message(STATUS "ALGLIB_ROOT = ${ALGLIB_ROOT}")
     endif()
@@ -155,6 +165,24 @@ if(WIN32)
     )
 endif()
 
+if(APPLE)
+    set(alglib_sources
+        ${ALGLIB_ROOT}/src/alglibinternal.cpp
+        ${ALGLIB_ROOT}/src/alglibmisc.cpp
+        ${ALGLIB_ROOT}/src/ap.cpp
+        ${ALGLIB_ROOT}/src/dataanalysis.cpp
+        ${ALGLIB_ROOT}/src/diffequations.cpp
+        ${ALGLIB_ROOT}/src/fasttransforms.cpp
+        ${ALGLIB_ROOT}/src/integration.cpp
+        ${ALGLIB_ROOT}/src/interpolation.cpp
+        ${ALGLIB_ROOT}/src/linalg.cpp
+        ${ALGLIB_ROOT}/src/optimization.cpp
+        ${ALGLIB_ROOT}/src/solvers.cpp
+        ${ALGLIB_ROOT}/src/specialfunctions.cpp
+        ${ALGLIB_ROOT}/src/statistics.cpp
+    )
+endif()
+
 # Libs
 set(hdrmerge_libs
     "${LibRaw_r_LIBRARIES}"
@@ -205,6 +233,12 @@ if(WIN32)
     )
 endif()
 
+if(APPLE)
+    add_library(alglib-objects OBJECT
+        ${alglib_sources}
+    )
+endif()
+
 if(WIN32)
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
@@ -215,6 +249,17 @@ if(WIN32)
         ${hdrmerge_moc}
         $<TARGET_OBJECTS:alglib-objects>
         "${PLATFORM_SOURCES}"
+    )
+elseif(APPLE)
+    add_executable(hdrmerge ${PLATFORM}
+        src/main.cpp
+        src/Launcher.cpp
+        $<TARGET_OBJECTS:alglib-objects>
+        ${hdrmerge_translations}
+        ${hdrmerge_sources}
+        ${hdrmerge_gui_sources}
+        ${hdrmerge_moc}
+       "${PLATFORM_SOURCES}"
     )
 else()
     add_executable(hdrmerge ${PLATFORM}
@@ -262,7 +307,7 @@ if(WIN32)
     endif()
 elseif(APPLE)
     set_source_files_properties(images/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    install(TARGETS hdrmerge BUNDLE DESTINATION "/Applications")
+    install(TARGETS hdrmerge BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
 else()
     if(NOT DEFINED CMAKE_INSTALL_BINDIR)
         set(CMAKE_INSTALL_BINDIR "bin")

@@ -108,7 +108,7 @@ elseif(APPLE)
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${HDRMERGE_VERSION}")
     set(MACOSX_BUNDLE_BUNDLE_VERSION "${HDRMERGE_VERSION}")
     set(MACOSX_BUNDLE_INFO_COPYRIGHT "Copyright 2018 Javier Celaya")
-    set(PLATFORM_SOURCES "images/icon.icns")
+    set(PLATFORM_SOURCES "data/images/icon.icns")
 endif()
 
 # Sources and headers

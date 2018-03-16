@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4)
 
-CMAKE_POLICY(SET CMP0025 NEW)
+cmake_policy(SET CMP0025 NEW)
 
 project(hdrmerge)
 
@@ -59,7 +59,7 @@ include_directories(
     "${EXIV2_INCLUDE_DIR}"
     "${ZLIB_INCLUDE_DIRS}"
     "${ALGLIB_INCLUDES}"
-)
+    )
 
 if(NOT(CMAKE_BUILD_TYPE))
     set(CMAKE_BUILD_TYPE Release)
@@ -84,7 +84,7 @@ set(HDRMERGE_VERSION ${HDRMERGE_VERSION_MAJOR}.${HDRMERGE_VERSION_MINOR}.${HDRME
 configure_file(
     "${PROJECT_SOURCE_DIR}/src/config.h.in"
     "${PROJECT_BINARY_DIR}/config.h"
-)
+    )
 
 # add the binary tree to the search path for include files so that we will find config.h
 include_directories("${PROJECT_BINARY_DIR}")
@@ -97,7 +97,7 @@ if(WIN32)
     configure_file(
         "${PROJECT_SOURCE_DIR}/data/winres.rc"
         "${PROJECT_BINARY_DIR}/winres.rc"
-    )
+        )
     set(PLATFORM_SOURCES "${PROJECT_BINARY_DIR}/winres.rc")
 elseif(APPLE)
     set(PLATFORM MACOSX_BUNDLE)
@@ -123,7 +123,7 @@ set(hdrmerge_sources
     src/BoxBlur.cpp
     src/ExifTransfer.cpp
     src/ImageIO.cpp
-)
+    )
 
 set(hdrmerge_gui_sources
     src/AboutDialog.cpp
@@ -132,7 +132,7 @@ set(hdrmerge_gui_sources
     src/DraggableScrollArea.cpp
     src/DngPropertiesDialog.cpp
     src/LoadOptionsDialog.cpp
-)
+    )
 
 set(hdrmerge_qobject_headers
     src/MainWindow.hpp
@@ -141,11 +141,11 @@ set(hdrmerge_qobject_headers
     src/DraggableScrollArea.hpp
     src/DngPropertiesDialog.hpp
     src/AboutDialog.hpp
-)
+    )
 
 set(hdrmerge_translations
     data/hdrmerge_es.ts
-)
+    )
 
 if(WIN32)
     set(alglib_sources
@@ -162,7 +162,7 @@ if(WIN32)
         ${ALGLIB_ROOT}/src/solvers.cpp
         ${ALGLIB_ROOT}/src/specialfunctions.cpp
         ${ALGLIB_ROOT}/src/statistics.cpp
-    )
+        )
 endif()
 
 if(APPLE)
@@ -180,7 +180,7 @@ if(APPLE)
         ${ALGLIB_ROOT}/src/solvers.cpp
         ${ALGLIB_ROOT}/src/specialfunctions.cpp
         ${ALGLIB_ROOT}/src/statistics.cpp
-    )
+        )
 endif()
 
 # Libs
@@ -188,7 +188,7 @@ set(hdrmerge_libs
     "${LibRaw_r_LIBRARIES}"
     "${EXIV2_LIBRARY}"
     "${ZLIB_LIBRARIES}"
-)
+    )
 
 if(WIN32)
     get_filename_component(LIB_PATH "${EXIV2_LIBRARY}" PATH)
@@ -204,13 +204,13 @@ if(WIN32)
         wsock32
         imm32
         winmm
-    )
+        )
     remove_definitions(-DQT_DLL)
 else()
     set(hdrmerge_libs
         "${hdrmerge_libs}"
         "${ALGLIB_LIBRARIES}"
-    )
+        )
 endif()
 
 #QT4_ADD_TRANSLATION(hdrmerge_qm ${hdrmerge_translations})
@@ -219,24 +219,24 @@ endif()
 foreach(file ${hdrmerge_qm})
     get_filename_component(basename ${file} NAME)
     set(HDRMERGE_QM_XML "${HDRMERGE_QM_XML}
-        <file>${basename}</file>")
+    <file>${basename}</file>")
 endforeach()
 
 configure_file(
     "${PROJECT_SOURCE_DIR}/data/translations.qrc.in"
     "${PROJECT_BINARY_DIR}/translations.qrc"
-)
+    )
 
 if(WIN32)
     add_library(alglib-objects OBJECT
         ${alglib_sources}
-    )
+        )
 endif()
 
 if(APPLE)
     add_library(alglib-objects OBJECT
         ${alglib_sources}
-    )
+        )
 endif()
 
 if(WIN32)
@@ -249,7 +249,7 @@ if(WIN32)
         ${hdrmerge_moc}
         $<TARGET_OBJECTS:alglib-objects>
         "${PLATFORM_SOURCES}"
-    )
+        )
 elseif(APPLE)
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
@@ -259,8 +259,8 @@ elseif(APPLE)
         ${hdrmerge_sources}
         ${hdrmerge_gui_sources}
         ${hdrmerge_moc}
-       "${PLATFORM_SOURCES}"
-    )
+        "${PLATFORM_SOURCES}"
+        )
 else()
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
@@ -271,7 +271,7 @@ else()
         ${hdrmerge_gui_sources}
         ${hdrmerge_moc}
         "${PLATFORM_SOURCES}"
-    )
+        )
 endif()
 
 target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs} Qt5::Widgets)
@@ -284,7 +284,7 @@ if(WIN32)
         $<TARGET_OBJECTS:hdrmerge-objects>
         $<TARGET_OBJECTS:alglib-objects>
         "${PLATFORM_SOURCES}"
-    )
+        )
     target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs})
     set_target_properties(hdrmerge-nogui PROPERTIES COMPILE_DEFINITIONS "NO_GUI")
     # Create the installer with makensis
@@ -295,7 +295,7 @@ if(WIN32)
         configure_file(
             "${PROJECT_SOURCE_DIR}/data/setup.nsi"
             "${PROJECT_BINARY_DIR}/setup.nsi" @ONLY
-        )
+            )
         add_custom_command(OUTPUT ${SETUP_PROG}
             COMMAND "${MAKENSIS_EXECUTABLE}" -V2 setup.nsi
             MAIN_DEPENDENCY setup.nsi
@@ -320,12 +320,12 @@ else()
         configure_file(
             "${PROJECT_SOURCE_DIR}/data/hdrmerge.desktop"
             "${PROJECT_BINARY_DIR}/hdrmerge.desktop"
-        )
+            )
         install(CODE "
-            execute_process(COMMAND \"${XDG-ICON-RESOURCE_EXECUTABLE}\" install --novendor --size 128 \"${PROJECT_SOURCE_DIR}/data/images/icon.png\" hdrmerge-icon)
-            execute_process(COMMAND \"${XDG-DESKTOP-MENU_EXECUTABLE}\" install --novendor \"${PROJECT_BINARY_DIR}/hdrmerge.desktop\")"
+        execute_process(COMMAND \"${XDG-ICON-RESOURCE_EXECUTABLE}\" install --novendor --size 128 \"${PROJECT_SOURCE_DIR}/data/images/icon.png\" hdrmerge-icon)
+        execute_process(COMMAND \"${XDG-DESKTOP-MENU_EXECUTABLE}\" install --novendor \"${PROJECT_BINARY_DIR}/hdrmerge.desktop\")"
         )
-    endif()
+endif()
 endif()
 
 if(Boost_FOUND)

@@ -1,6 +1,7 @@
 *.o
 *.orig
 *.swp
+*.project
 *~
 .directory
 .DS_Store

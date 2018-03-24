@@ -248,8 +248,12 @@ if(WIN32)
     # Create the installer with makensis
     find_program(MAKENSIS_EXECUTABLE makensis.exe PATH_SUFFIXES "NSIS/Bin")
     if(MAKENSIS_EXECUTABLE)
-        message(STATUS "NSIS found!")
+        message(STATUS "NSIS found")
         set(SETUP_PROG hdrmerge-setup${WIN_ARCH}-${HDRMERGE_VERSION}.exe)
+        #file(TO_NATIVE_PATH "${PROJECT_SOURCE_DIR}" PROJ_SRC_DIR)   This doesn't work :(
+        string(REPLACE "/" "\\" PROJ_SRC_DIR "${PROJECT_SOURCE_DIR}")
+        message(STATUS "PROJECT_SOURCE_DIR = ${PROJECT_SOURCE_DIR}")
+        message(STATUS "PROJ_SRC_DIR       = ${PROJ_SRC_DIR}")
         configure_file(
             "${PROJECT_SOURCE_DIR}/data/setup.nsi"
             "${PROJECT_BINARY_DIR}/setup.nsi" @ONLY
@@ -261,7 +265,7 @@ if(WIN32)
             WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
         add_custom_target(hdrmerge-setup ALL DEPENDS "${PROJECT_BINARY_DIR}/${SETUP_PROG}")
     else()
-        message(STATUS "NSIS not found!")
+        message(STATUS "NSIS not found")
     endif()
 elseif(APPLE)
     set_source_files_properties(images/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")

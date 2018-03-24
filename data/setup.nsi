@@ -30,9 +30,9 @@ VIAddVersionKey "FileDescription" "${APPNAME}"
 VIAddVersionKey "FileVersion" "@HDRMERGE_VERSION@"
 VIAddVersionKey "ProductVersion" "@HDRMERGE_VERSION@"
 
-!define MUI_ICON "@PROJECT_SOURCE_DIR@/images/icon.ico"
+!define MUI_ICON "@PROJ_SRC_DIR@\images\icon.ico"
 !define MUI_HEADERIMAGE
-!define MUI_HEADERIMAGE_BITMAP "@PROJECT_SOURCE_DIR@/images/logo.bmp"
+!define MUI_HEADERIMAGE_BITMAP "@PROJ_SRC_DIR@\images\logo.bmp"
 !define MUI_HEADERIMAGE_RIGHT
 
 ;--------------------------------
@@ -40,7 +40,7 @@ VIAddVersionKey "ProductVersion" "@HDRMERGE_VERSION@"
 ; Pages
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "@PROJECT_SOURCE_DIR@/LICENSE"
+!insertmacro MUI_PAGE_LICENSE "@PROJ_SRC_DIR@\LICENSE"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
@@ -65,9 +65,9 @@ Section "HDRMerge (required)"
 
     ; Put file there
     File "hdrmerge.exe" \
-        "@PROJECT_SOURCE_DIR@/LICENSE" \
-        "@PROJECT_SOURCE_DIR@/LICENSE_icons" \
-        "@PROJECT_SOURCE_DIR@/README.md"
+        "@PROJ_SRC_DIR@\LICENSE" \
+        "@PROJ_SRC_DIR@\LICENSE_icons" \
+        "@PROJ_SRC_DIR@\README.md"
     File /oname=hdrmerge.com "hdrmerge-nogui.exe"
 
     ; Write the installation path into the registry

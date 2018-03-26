@@ -30,9 +30,9 @@ VIAddVersionKey "FileDescription" "${APPNAME}"
 VIAddVersionKey "FileVersion" "@HDRMERGE_VERSION@"
 VIAddVersionKey "ProductVersion" "@HDRMERGE_VERSION@"
 
-!define MUI_ICON "@PROJECT_SOURCE_DIR@/images/icon.ico"
+!define MUI_ICON "@PROJ_SRC_DIR@\data\images\icon.ico"
 !define MUI_HEADERIMAGE
-!define MUI_HEADERIMAGE_BITMAP "@PROJECT_SOURCE_DIR@/images/logo.bmp"
+!define MUI_HEADERIMAGE_BITMAP "@PROJ_SRC_DIR@\data\images\logo.bmp"
 !define MUI_HEADERIMAGE_RIGHT
 
 ;--------------------------------
@@ -40,7 +40,7 @@ VIAddVersionKey "ProductVersion" "@HDRMERGE_VERSION@"
 ; Pages
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "@PROJECT_SOURCE_DIR@/LICENSE"
+!insertmacro MUI_PAGE_LICENSE "@PROJ_SRC_DIR@\LICENSE"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
@@ -65,10 +65,41 @@ Section "HDRMerge (required)"
 
     ; Put file there
     File "hdrmerge.exe" \
-        "@PROJECT_SOURCE_DIR@/LICENSE" \
-        "@PROJECT_SOURCE_DIR@/LICENSE_icons" \
-        "@PROJECT_SOURCE_DIR@/README.md"
+        "@PROJ_SRC_DIR@\LICENSE" \
+        "@PROJ_SRC_DIR@\LICENSE_icons" \
+        "@PROJ_SRC_DIR@\README.md"\
+        "@MINGW_LIB_DIR@\libbz2-1.dll"\
+        "@MINGW_LIB_DIR@\libexiv2.dll"\
+        "@MINGW_LIB_DIR@\libexpat-1.dll"\
+        "@MINGW_LIB_DIR@\libfreetype-6.dll"\
+        "@MINGW_LIB_DIR@\libgcc_s_seh-1.dll"\
+        "@MINGW_LIB_DIR@\libglib-2.0-0.dll"\
+        "@MINGW_LIB_DIR@\libgomp-1.dll"\
+        "@MINGW_LIB_DIR@\libgraphite2.dll"\
+        "@MINGW_LIB_DIR@\libharfbuzz-0.dll"\
+        "@MINGW_LIB_DIR@\libiconv-2.dll"\
+        "@MINGW_LIB_DIR@\libicudt58.dll"\
+        "@MINGW_LIB_DIR@\libicuin58.dll"\
+        "@MINGW_LIB_DIR@\libicuuc58.dll"\
+        "@MINGW_LIB_DIR@\libintl-8.dll"\
+        "@MINGW_LIB_DIR@\libjasper-4.dll"\
+        "@MINGW_LIB_DIR@\libjpeg-8.dll"\
+        "@MINGW_LIB_DIR@\liblcms2-2.dll"\
+        "@MINGW_LIB_DIR@\libpcre-1.dll"\
+        "@MINGW_LIB_DIR@\libpcre2-16-0.dll"\
+        "@MINGW_LIB_DIR@\libpng16-16.dll"\
+        "@MINGW_LIB_DIR@\libraw_r-16.dll"\
+        "@MINGW_LIB_DIR@\libstdc++-6.dll"\
+        "@MINGW_LIB_DIR@\libwinpthread-1.dll"\
+        "@MINGW_LIB_DIR@\Qt5Core.dll"\
+        "@MINGW_LIB_DIR@\Qt5Gui.dll"\
+        "@MINGW_LIB_DIR@\Qt5Widgets.dll"\
+        "@MINGW_LIB_DIR@\zlib1.dll"
     File /oname=hdrmerge.com "hdrmerge-nogui.exe"
+    
+    SetOutPath $INSTDIR\platforms
+
+    File "@QT5_PLUGINS_DIR@\platforms\qwindows.dll"
 
     ; Write the installation path into the registry
     WriteRegStr HKLM SOFTWARE\${APPNAME} "Install_Dir" "$INSTDIR"
@@ -121,6 +152,35 @@ Section "Uninstall"
     Delete "$INSTDIR\LICENSE_icons"
     Delete "$INSTDIR\README.md"
     Delete "$INSTDIR\uninstall.exe"
+    Delete "$INSTDIR\platforms\qwindows.dll"
+    RMDir  "$INSTDIR\platforms"
+    Delete "$INSTDIR\libbz2-1.dll"
+    Delete "$INSTDIR\libexiv2.dll"
+    Delete "$INSTDIR\libexpat-1.dll"
+    Delete "$INSTDIR\libfreetype-6.dll"
+    Delete "$INSTDIR\libgcc_s_seh-1.dll"
+    Delete "$INSTDIR\libglib-2.0-0.dll"
+    Delete "$INSTDIR\libgomp-1.dll"
+    Delete "$INSTDIR\libgraphite2.dll"
+    Delete "$INSTDIR\libharfbuzz-0.dll"
+    Delete "$INSTDIR\libiconv-2.dll"
+    Delete "$INSTDIR\libicudt58.dll"
+    Delete "$INSTDIR\libicuin58.dll"
+    Delete "$INSTDIR\libicuuc58.dll"
+    Delete "$INSTDIR\libintl-8.dll"
+    Delete "$INSTDIR\libjasper-4.dll"
+    Delete "$INSTDIR\libjpeg-8.dll"
+    Delete "$INSTDIR\liblcms2-2.dll"
+    Delete "$INSTDIR\libpcre-1.dll"
+    Delete "$INSTDIR\libpcre2-16-0.dll"
+    Delete "$INSTDIR\libpng16-16.dll"
+    Delete "$INSTDIR\libraw_r-16.dll"
+    Delete "$INSTDIR\libstdc++-6.dll"
+    Delete "$INSTDIR\libwinpthread-1.dll"
+    Delete "$INSTDIR\Qt5Core.dll"
+    Delete "$INSTDIR\Qt5Gui.dll"
+    Delete "$INSTDIR\Qt5Widgets.dll"
+    Delete "$INSTDIR\zlib1.dll"
     RMDir /REBOOTOK $INSTDIR
 
 SectionEnd

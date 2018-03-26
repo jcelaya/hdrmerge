@@ -240,6 +240,7 @@ if(WIN32)
         src/main.cpp
         src/Launcher.cpp
         data/resources.qrc
+        ${hdrmerge_translations}
         ${hdrmerge_sources}
         ${hdrmerge_gui_sources}
         ${hdrmerge_moc}
@@ -277,29 +278,51 @@ if(WIN32)
     add_executable(hdrmerge-nogui
         src/main.cpp
         src/Launcher.cpp
-        $<TARGET_OBJECTS:hdrmerge-objects>
+        data/resources.qrc
+        ${hdrmerge_translations}
+        ${hdrmerge_sources}
+        ${hdrmerge_moc}
         $<TARGET_OBJECTS:alglib-objects>
         "${PLATFORM_SOURCES}"
     )
-    target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs})
+    
+    # WARNING: ImageIO class need QImage which need Qt5::Widgets
+    #          Launcher.cpp need QApplication which need Qt5::Widgets
+    target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs} Qt5::Widgets Qt5::Core)
     set_target_properties(hdrmerge-nogui PROPERTIES COMPILE_DEFINITIONS "NO_GUI")
     # Create the installer with makensis
     find_program(MAKENSIS_EXECUTABLE makensis.exe PATH_SUFFIXES "NSIS/Bin")
     if(MAKENSIS_EXECUTABLE)
-        message(STATUS "NSIS found!")
+        message(STATUS "NSIS found")
         set(SETUP_PROG hdrmerge-setup${WIN_ARCH}-${HDRMERGE_VERSION}.exe)
-        configure_file(
-            "${PROJECT_SOURCE_DIR}/data/setup.nsi"
-            "${PROJECT_BINARY_DIR}/setup.nsi" @ONLY
-        )
-        add_custom_command(OUTPUT ${SETUP_PROG}
-            COMMAND "${MAKENSIS_EXECUTABLE}" -V2 setup.nsi
-            MAIN_DEPENDENCY setup.nsi
-            DEPENDS "${PROJECT_BINARY_DIR}/hdrmerge.exe"
-            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
-        add_custom_target(hdrmerge-setup ALL DEPENDS "${PROJECT_BINARY_DIR}/${SETUP_PROG}")
+        string(REPLACE "/" "\\" PROJ_SRC_DIR "${PROJECT_SOURCE_DIR}")
+        message(STATUS "PROJ_SRC_DIR       = ${PROJ_SRC_DIR}")
+
+        # ASSUMING YOU'RE USING EXIV2 BUNDLED WITH MSYS2
+        find_program(MINGW_LIB_DIR exiv2.exe)
+        if(MINGW_LIB_DIR)
+            get_filename_component(MINGW_LIB_DIR "${MINGW_LIB_DIR}" PATH)
+            string(REPLACE "/" "\\" MINGW_LIB_DIR "${MINGW_LIB_DIR}")
+            message(STATUS "MINGW_LIB_DIR      = ${MINGW_LIB_DIR}")
+
+            set(QT5_PLUGINS_DIR "${MINGW_LIB_DIR}\\..\\share\\qt5\\plugins")
+            message(STATUS "QT5_PLUGINS_DIR    = ${QT5_PLUGINS_DIR}")
+
+            configure_file(
+                "${PROJECT_SOURCE_DIR}/data/setup.nsi"
+                "${PROJECT_BINARY_DIR}/setup.nsi" @ONLY
+            )
+            add_custom_command(OUTPUT ${SETUP_PROG}
+                COMMAND "${MAKENSIS_EXECUTABLE}" -V2 setup.nsi
+                MAIN_DEPENDENCY setup.nsi
+                DEPENDS "${PROJECT_BINARY_DIR}/hdrmerge.exe"
+                WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+            add_custom_target(hdrmerge-setup ALL DEPENDS "${PROJECT_BINARY_DIR}/${SETUP_PROG}")
+        else(MINGW_LIB_DIR)
+            message(STATUS "Unable to locate the 'bin' directory to get the dependencies")
+        endif(MINGW_LIB_DIR)
     else()
-        message(STATUS "NSIS not found!")
+        message(STATUS "NSIS not found")
     endif()
 elseif(APPLE)
     set_source_files_properties(images/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")

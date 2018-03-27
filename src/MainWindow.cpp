@@ -25,7 +25,7 @@
 #include "MainWindow.hpp"
 #include <QApplication>
 #include <QFuture>
-#include <QtConcurrentRun>
+#include <QtConcurrent/QtConcurrent>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -72,7 +72,7 @@ MainWindow::MainWindow() : QMainWindow() {
     createMenus();
 
     setWindowTitle(tr("HDRMerge %1 - Raw image fusion").arg(HDRMERGE_VERSION_STRING));
-    setWindowIcon(QIcon(":/images/icon.png"));
+    setWindowIcon(QIcon(":/icon.png"));
 
     QSettings settings;
     restoreGeometry(settings.value("windowGeometry").toByteArray());

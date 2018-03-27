@@ -67,7 +67,7 @@ chmod u+x usr/bin/$LOWERAPP
 #cp ./usr/share/applications/$LOWERAPP.desktop .
 #sed -i -e "s|gimp-2.9|$LOWERAPP|g" $LOWERAPP.desktop
 rm -rf ./usr/share/icons/48x48/apps || true
-cp $TRAVIS_BUILD_DIR/images/icon.png hdrmerge.png
+cp $TRAVIS_BUILD_DIR/data/images/icon.png hdrmerge.png
 
 get_apprun
 
@@ -79,7 +79,7 @@ Type=Application
 Name=HDRMerge AppImage
 GenericName=HDR raw image merge
 GenericName[es]=Mezcla de imágenes HDR raw
-Comment=Merge several raw images into a single DNG raw image with high dynamic range.
+Comment=Merge several raw photos into a single raw DNG with high dynamic range.
 Comment[es]=Mezcla varias imágenes raw en una única imagen DNG raw de alto rango dinámico.
 Exec=LOWERAPP %f
 TryExec=LOWERAPP

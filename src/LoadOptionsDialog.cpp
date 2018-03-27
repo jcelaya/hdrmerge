@@ -46,6 +46,8 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     QSettings settings;
     QVBoxLayout * layout = new QVBoxLayout(this);
 
+    setMinimumSize(400, 400);
+
     QWidget * fileSelector = new QWidget(this);
     QHBoxLayout * fileSelectorLayout = new QHBoxLayout(fileSelector);
     fileSelectorLayout->setMargin(0);

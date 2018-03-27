@@ -4,13 +4,13 @@ This document explains how to compile HDRMerge.
 ## Dependencies
 - [ALGLIB](http://www.alglib.net/)
 - [Boost](http://www.boost.org/)
-- [CMake](https://cmake.org/)
+- [CMake](https://cmake.org/) 3.4
 - [exiv2](http://www.exiv2.org/)
 - [gettext](http://www.gnu.org/software/gettext/)
 - [libexpat](http://expat.sourceforge.net/)
 - [libiconv](https://www.gnu.org/software/libiconv/)
 - [LibRaw](http://www.libraw.org/)
-- [Qt](http://qt-project.org/) 4.8
+- [Qt](https://www.qt.io/) 5.6
 - [zlib](http://www.zlib.net/)
 
 Install the dependencies and proceed to the next section.
@@ -18,19 +18,19 @@ Install the dependencies and proceed to the next section.
 ### Arch and derivatives
 ```bash
 sudo pacman -Syy
-sudo pacman -S --needed cmake libraw pacaur qt4
+sudo pacman -S --needed cmake libraw pacaur qt5
 pacaur -S alglib
 ```
 
 ### Debian/Ubuntu and derivatives
 ```bash
 sudo apt update
-sudo apt install build-essential cmake git libalglib-dev libboost-all-dev libexiv2-dev libexpat-dev libraw-dev qt4-default zlib1g-dev
+sudo apt install build-essential cmake git libalglib-dev libboost-all-dev libexiv2-dev libexpat-dev libraw-dev qt5-default zlib1g-dev
 ```
 
 ### Gentoo and derivatives
 ```bash
-sudo emerge -uva sci-libs/alglib dev-libs/boost dev-util/cmake media-gfx/exiv2 dev-vcs/git media-libs/libraw sys-devel/gettext dev-libs/expat virtual/libiconv dev-qt/qtcore:4 sys-libs/zlib
+sudo emerge -uva sci-libs/alglib dev-libs/boost dev-util/cmake media-gfx/exiv2 dev-vcs/git media-libs/libraw sys-devel/gettext dev-libs/expat virtual/libiconv dev-qt/qtcore:5 sys-libs/zlib
 ```
 
 ## Compilation in Windows
@@ -68,6 +68,7 @@ For the 32-bit version, substitute `x86_64-w64-mingw32` for `i686-w64-mingw32` e
 
 You will need to build/download the following libraries:
 - Qt
+_**TODO**: Update to Qt5_
 Unpack Qt and build it as:
   ```bash
   ./configure -static -xplatform win32-g++ -device-option CROSS_COMPILE=x86_64-w64-mingw32- -prefix $HOME/usr/x86_64-w64-mingw32/Qt-4.8.6-static -opensource -qt-sql-sqlite -no-qt3support -no-xmlpatterns -no-multimedia -no-phonon -no-webkit -no-javascript-jit -no-script -no-scripttools -no-declarative -qt-zlib -qt-libtiff -qt-libpng -qt-libmng -qt-libjpeg -no-openssl -no-nis -no-cups -no-dbus -qt-freetype -make libs -nomake tools -nomake examples -nomake tests -qtlibinfix 4
@@ -109,6 +110,7 @@ libexpat is built with GNU Autoconf:
   ```
 
 Once you have the dependencies installed, you are ready to compile HDRMerge.
+_**TODO**: Is QT_ROOT still valid in Qt5?_
 Set the CMake variable `QT_ROOT` to where you have the Qt libraries installed.
 
 ```bash

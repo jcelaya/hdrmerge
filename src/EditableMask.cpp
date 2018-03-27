@@ -71,7 +71,7 @@ QRect EditableMask::modifyLayer(const std::list<QPoint> & points, int layer) {
         QRect a(points.front(), points.front());
         for (auto p : points) {
             operator()(p.x(), p.y()) = layer;
-            a = a.unite(QRect(p, p));
+            a = a.united(QRect(p, p));
         }
         return a;
     }

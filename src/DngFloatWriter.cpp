@@ -170,7 +170,7 @@ void DngFloatWriter::createMainIFD() {
     mainIFD.addEntry(IMAGEDESCRIPTION, params->description);
     QDateTime currentTime = QDateTime::currentDateTime();
     QString currentTimeText = currentTime.toString("yyyy:MM:dd hh:mm:ss");
-    mainIFD.addEntry(DATETIME, currentTimeText.toAscii().constData());
+    mainIFD.addEntry(DATETIME, currentTimeText.toLatin1().constData());
     mainIFD.addEntry(DATETIMEORIGINAL, params->dateTime);
 
     // Profile

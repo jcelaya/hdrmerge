@@ -1,4 +1,6 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.4)
+
+cmake_policy(SET CMP0025 NEW)
 
 project(hdrmerge)
 
@@ -10,21 +12,41 @@ if(WIN32)
     endif()
 endif()
 
-# Complain about anything, except ignored OpenMP pragma in Debug
+if(APPLE)
+    if(NOT(ALGLIB_ROOT))
+        message(FATAL_ERROR "Passage of ALGLIB_ROOT to cmake failed. Download alglib and define its root directory in ALGLIB_ROOT")
+    else()
+        message(STATUS "ALGLIB_ROOT = ${ALGLIB_ROOT}")
+    endif()
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-unknown-pragmas")
 set(PLATFORM "")
 
 # Required and optional packages
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${PROJECT_SOURCE_DIR}/cmake")
 
-find_package(Qt4 REQUIRED QtCore QtGui)
-include(${QT_USE_FILE})
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+
+# Generate resources automatically
+set(CMAKE_AUTORCC ON)
+
+find_package(Qt5 5.6 REQUIRED Core Widgets)
+
+#include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
+
 find_package(LibRaw REQUIRED)
 find_package(Exiv2 REQUIRED)
 find_package(ZLIB REQUIRED)
-find_package(Boost 1.46 COMPONENTS unit_test_framework)
 find_package(OpenMP)
+
+# Commented-out as it doesn't link
+#find_package(Boost 1.46 COMPONENTS unit_test_framework)
 
 if(WIN32)
     set(ALGLIB_INCLUDES ${ALGLIB_ROOT}/src)
@@ -58,15 +80,13 @@ set(HDRMERGE_VERSION_MINOR 5)
 set(HDRMERGE_VERSION_REV 0)
 set(HDRMERGE_VERSION ${HDRMERGE_VERSION_MAJOR}.${HDRMERGE_VERSION_MINOR}.${HDRMERGE_VERSION_REV})
 
-# configure a header file to pass some of the CMake settings
-# to the source code
+# configure a header file to pass some of the CMake settings to the source code
 configure_file(
     "${PROJECT_SOURCE_DIR}/src/config.h.in"
     "${PROJECT_BINARY_DIR}/config.h"
 )
 
-# add the binary tree to the search path for include files
-# so that we will find config.h
+# add the binary tree to the search path for include files so that we will find config.h
 include_directories("${PROJECT_BINARY_DIR}")
 
 set(PLATFORM_SOURCES "")
@@ -88,7 +108,7 @@ elseif(APPLE)
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${HDRMERGE_VERSION}")
     set(MACOSX_BUNDLE_BUNDLE_VERSION "${HDRMERGE_VERSION}")
     set(MACOSX_BUNDLE_INFO_COPYRIGHT "Copyright 2018 Javier Celaya")
-    set(PLATFORM_SOURCES "images/icon.icns")
+    set(PLATFORM_SOURCES "data/images/icon.icns")
 endif()
 
 # Sources and headers
@@ -145,10 +165,27 @@ if(WIN32)
     )
 endif()
 
+if(APPLE)
+    set(alglib_sources
+        ${ALGLIB_ROOT}/src/alglibinternal.cpp
+        ${ALGLIB_ROOT}/src/alglibmisc.cpp
+        ${ALGLIB_ROOT}/src/ap.cpp
+        ${ALGLIB_ROOT}/src/dataanalysis.cpp
+        ${ALGLIB_ROOT}/src/diffequations.cpp
+        ${ALGLIB_ROOT}/src/fasttransforms.cpp
+        ${ALGLIB_ROOT}/src/integration.cpp
+        ${ALGLIB_ROOT}/src/interpolation.cpp
+        ${ALGLIB_ROOT}/src/linalg.cpp
+        ${ALGLIB_ROOT}/src/optimization.cpp
+        ${ALGLIB_ROOT}/src/solvers.cpp
+        ${ALGLIB_ROOT}/src/specialfunctions.cpp
+        ${ALGLIB_ROOT}/src/statistics.cpp
+    )
+endif()
+
 # Libs
 set(hdrmerge_libs
     "${LibRaw_r_LIBRARIES}"
-    "${QT_LIBRARIES}"
     "${EXIV2_LIBRARY}"
     "${ZLIB_LIBRARIES}"
 )
@@ -176,15 +213,13 @@ else()
     )
 endif()
 
-# Qt4 intermediate files
-QT4_WRAP_CPP(hdrmerge_moc ${hdrmerge_qobject_headers})
-QT4_ADD_TRANSLATION(hdrmerge_qm ${hdrmerge_translations})
+#QT4_ADD_TRANSLATION(hdrmerge_qm ${hdrmerge_translations})
 
 # Generate the XML version of hdrmerge_qm
 foreach(file ${hdrmerge_qm})
     get_filename_component(basename ${file} NAME)
     set(HDRMERGE_QM_XML "${HDRMERGE_QM_XML}
-        <file>${basename}</file>")
+    <file>${basename}</file>")
 endforeach()
 
 configure_file(
@@ -192,80 +227,106 @@ configure_file(
     "${PROJECT_BINARY_DIR}/translations.qrc"
 )
 
-QT4_ADD_RESOURCES(hdrmerge_rsrc
-    "${PROJECT_BINARY_DIR}/translations.qrc"
-    data/resources.qrc
-)
-
 if(WIN32)
-    add_library(alglib-objects OBJECT
-        ${alglib_sources}
-    )
+    add_library(alglib-objects OBJECT ${alglib_sources})
 endif()
 
-add_library(hdrmerge-objects OBJECT
-    ${hdrmerge_sources}
-    ${hdrmerge_rsrc}
-)
-
-add_library(hdrmerge-gui-objects OBJECT
-    ${hdrmerge_gui_sources}
-    ${hdrmerge_moc}
-)
+if(APPLE)
+    add_library(alglib-objects OBJECT ${alglib_sources})
+endif()
 
 if(WIN32)
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
         src/Launcher.cpp
-        $<TARGET_OBJECTS:hdrmerge-objects>
-        $<TARGET_OBJECTS:hdrmerge-gui-objects>
+        data/resources.qrc
+        ${hdrmerge_translations}
+        ${hdrmerge_sources}
+        ${hdrmerge_gui_sources}
+        ${hdrmerge_moc}
         $<TARGET_OBJECTS:alglib-objects>
+        "${PLATFORM_SOURCES}"
+    )
+elseif(APPLE)
+    add_executable(hdrmerge ${PLATFORM}
+        src/main.cpp
+        src/Launcher.cpp
+        $<TARGET_OBJECTS:alglib-objects>
+        ${hdrmerge_translations}
+        ${hdrmerge_sources}
+        ${hdrmerge_gui_sources}
+        ${hdrmerge_moc}
         "${PLATFORM_SOURCES}"
     )
 else()
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
         src/Launcher.cpp
-        $<TARGET_OBJECTS:hdrmerge-objects>
-        $<TARGET_OBJECTS:hdrmerge-gui-objects>
+        data/resources.qrc
+        ${hdrmerge_translations}
+        ${hdrmerge_sources}
+        ${hdrmerge_gui_sources}
+        ${hdrmerge_moc}
         "${PLATFORM_SOURCES}"
     )
 endif()
 
-target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs})
+target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs} Qt5::Widgets)
 
 if(WIN32)
     # Compile a target without GUI, for the .com executable
     add_executable(hdrmerge-nogui
         src/main.cpp
         src/Launcher.cpp
-        $<TARGET_OBJECTS:hdrmerge-objects>
+        data/resources.qrc
+        ${hdrmerge_translations}
+        ${hdrmerge_sources}
+        ${hdrmerge_moc}
         $<TARGET_OBJECTS:alglib-objects>
         "${PLATFORM_SOURCES}"
     )
-    target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs})
+    
+    # WARNING: ImageIO class need QImage which need Qt5::Widgets
+    #          Launcher.cpp need QApplication which need Qt5::Widgets
+    target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs} Qt5::Widgets Qt5::Core)
     set_target_properties(hdrmerge-nogui PROPERTIES COMPILE_DEFINITIONS "NO_GUI")
     # Create the installer with makensis
     find_program(MAKENSIS_EXECUTABLE makensis.exe PATH_SUFFIXES "NSIS/Bin")
     if(MAKENSIS_EXECUTABLE)
-        message(STATUS "NSIS found!")
+        message(STATUS "NSIS found")
         set(SETUP_PROG hdrmerge-setup${WIN_ARCH}-${HDRMERGE_VERSION}.exe)
-        configure_file(
-            "${PROJECT_SOURCE_DIR}/data/setup.nsi"
-            "${PROJECT_BINARY_DIR}/setup.nsi" @ONLY
-        )
-        add_custom_command(OUTPUT ${SETUP_PROG}
-            COMMAND "${MAKENSIS_EXECUTABLE}" -V2 setup.nsi
-            MAIN_DEPENDENCY setup.nsi
-            DEPENDS "${PROJECT_BINARY_DIR}/hdrmerge.exe"
-            WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
-        add_custom_target(hdrmerge-setup ALL DEPENDS "${PROJECT_BINARY_DIR}/${SETUP_PROG}")
+        string(REPLACE "/" "\\" PROJ_SRC_DIR "${PROJECT_SOURCE_DIR}")
+        message(STATUS "PROJ_SRC_DIR       = ${PROJ_SRC_DIR}")
+
+        # ASSUMING YOU'RE USING EXIV2 BUNDLED WITH MSYS2
+        find_program(MINGW_LIB_DIR exiv2.exe)
+        if(MINGW_LIB_DIR)
+            get_filename_component(MINGW_LIB_DIR "${MINGW_LIB_DIR}" PATH)
+            string(REPLACE "/" "\\" MINGW_LIB_DIR "${MINGW_LIB_DIR}")
+            message(STATUS "MINGW_LIB_DIR      = ${MINGW_LIB_DIR}")
+
+            set(QT5_PLUGINS_DIR "${MINGW_LIB_DIR}\\..\\share\\qt5\\plugins")
+            message(STATUS "QT5_PLUGINS_DIR    = ${QT5_PLUGINS_DIR}")
+
+            configure_file(
+                "${PROJECT_SOURCE_DIR}/data/setup.nsi"
+                "${PROJECT_BINARY_DIR}/setup.nsi" @ONLY
+            )
+            add_custom_command(OUTPUT ${SETUP_PROG}
+                COMMAND "${MAKENSIS_EXECUTABLE}" -V2 setup.nsi
+                MAIN_DEPENDENCY setup.nsi
+                DEPENDS "${PROJECT_BINARY_DIR}/hdrmerge.exe"
+                WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
+            add_custom_target(hdrmerge-setup ALL DEPENDS "${PROJECT_BINARY_DIR}/${SETUP_PROG}")
+        else(MINGW_LIB_DIR)
+            message(STATUS "Unable to locate the 'bin' directory to get the dependencies")
+        endif(MINGW_LIB_DIR)
     else()
-        message(STATUS "NSIS not found!")
+        message(STATUS "NSIS not found")
     endif()
 elseif(APPLE)
     set_source_files_properties(images/icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    install(TARGETS hdrmerge BUNDLE DESTINATION "/Applications")
+    install(TARGETS hdrmerge BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR})
 else()
     if(NOT DEFINED CMAKE_INSTALL_BINDIR)
         set(CMAKE_INSTALL_BINDIR "bin")
@@ -280,7 +341,7 @@ else()
             "${PROJECT_BINARY_DIR}/hdrmerge.desktop"
         )
         install(CODE "
-            execute_process(COMMAND \"${XDG-ICON-RESOURCE_EXECUTABLE}\" install --novendor --size 128 \"${PROJECT_SOURCE_DIR}/images/icon.png\" hdrmerge-icon)
+            execute_process(COMMAND \"${XDG-ICON-RESOURCE_EXECUTABLE}\" install --novendor --size 128 \"${PROJECT_SOURCE_DIR}/data/images/icon.png\" hdrmerge-icon)
             execute_process(COMMAND \"${XDG-DESKTOP-MENU_EXECUTABLE}\" install --novendor \"${PROJECT_BINARY_DIR}/hdrmerge.desktop\")"
         )
     endif()

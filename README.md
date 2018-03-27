@@ -36,6 +36,15 @@ Report bugs by creating a new issue on our GitHub page:
 https://github.com/jcelaya/hdrmerge/issues
 
 ## Changelog:
+- v1.0 (not released yet)
+  - Allow user to specify custom white level in case of artifacts with automatically computed white level from LibRaw.
+  - Added support for raw files from Fufjifilm X-Trans sensors.
+  - Speed optimization.
+  - Assume aperture of f/8 if the aperture is invalid.
+  - Migrated from Qt4 to Qt5.
+  - Enable compilation in Windows.
+  - Documentation updated.
+  - Repository tree restructured.
 - v0.5.0:
   - First Mac OS X build! Thanks to Philip Ries for his help.
   - Several bug fixes:

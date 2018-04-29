@@ -25,7 +25,7 @@
 
 #include <memory>
 #include <list>
-#include <QWidget>
+#include <qwidget.h>
 #include <QPaintEvent>
 #include <QFuture>
 #include "ImageStack.hpp"

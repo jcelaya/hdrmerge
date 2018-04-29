@@ -33,7 +33,8 @@ using namespace hdrmerge;
 
 
 PreviewWidget::PreviewWidget(ImageStack & s, QWidget * parent) : QWidget(parent), stack(s),
-width(0), height(0), flip(0), addPixels(false), rmPixels(false), layer(0), radius(5), expMult(1.0) {
+width(0), height(0), flip(0), addPixels(false), rmPixels(false), layer(0), radius(5),
+mouseX(0), mouseY(0), expMult(1.0), cancelRender(false) {
     float g = 1.0f / 2.2f;
     for (int i = 0; i < 65536; i++) {
         gamma[i] = (int)std::floor(65536.0f * std::pow(i / 65536.0f, g)) >> 8;
@@ -200,7 +201,7 @@ void PreviewWidget::mouseEvent(QMouseEvent * event, bool pressed) {
     rotate(rx, ry);
     if (rx >= 0 && rx < (int)stack.getWidth() && ry >= 0 && ry < (int)stack.getHeight())
         emit pixelUnderMouse(rx, ry);
-    if (event->buttons() & Qt::LeftButton && (addPixels || rmPixels)) {
+    if ((event->buttons() & Qt::LeftButton) && (addPixels || rmPixels)) {
         event->accept();
         if (pressed) {
             stack.getMask().startAction(addPixels, layer);

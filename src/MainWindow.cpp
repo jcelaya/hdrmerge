@@ -392,7 +392,7 @@ void MainWindow::layerSelected(QAction * action) {
 
 void MainWindow::setToolFromKey() {
     Qt::KeyboardModifiers mods = QApplication::queryKeyboardModifiers();
-    if (mods & Qt::ShiftModifier && addGhostAction->isEnabled()) addGhostAction->setChecked(true);
-    else if (mods & Qt::ControlModifier && rmGhostAction->isEnabled()) rmGhostAction->setChecked(true);
+    if ((mods & Qt::ShiftModifier) && rmGhostAction->isChecked() && addGhostAction->isEnabled()) addGhostAction->setChecked(true);
+    else if ((mods & Qt::ControlModifier) && addGhostAction->isChecked() && rmGhostAction->isEnabled()) rmGhostAction->setChecked(true);
     else lastTool->setChecked(true);
 }

@@ -58,11 +58,9 @@ void DraggableScrollArea::mouseReleaseEvent(QMouseEvent * event) {
 void DraggableScrollArea::mouseMoveEvent(QMouseEvent * event) {
     if (moveViewport && (event->buttons() & Qt::LeftButton)) {
         QPoint delta = QCursor::pos() - mousePos;
-        //if (event->modifiers() & Qt::ControlModifier) {
-        // x3 panning speed
-        delta.setX(delta.x() * 3);
-        delta.setY(delta.y() * 3);
-        //}
+        // x5 panning speed
+        delta.setX(delta.x() * 5);
+        delta.setY(delta.y() * 5);
         horizontalScrollBar()->setValue(horizontalScrollBar()->value() - delta.x());
         verticalScrollBar()->setValue(verticalScrollBar()->value() - delta.y());
         mousePos = QCursor::pos();

@@ -51,7 +51,8 @@ public:
     QString buildOutputFileName() const;
     QString getInputPath() const;
     QString replaceArguments(const QString & pattern, const QString & outFileName) const;
-    static Image loadRawImage(RawParameters & rawParameters);
+    static int getFrameCount(RawParameters & rawParameters) ;
+    static Image loadRawImage(RawParameters & rawParameters, int shot_select = 0);
     static QImage renderPreview(const Array2D<float> & rawData, const RawParameters & rawParameters, float expShift, bool halfsize = false);
 
     struct QDateInterval {

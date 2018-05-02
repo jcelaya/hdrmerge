@@ -30,11 +30,12 @@ namespace hdrmerge {
 
 class DraggableScrollArea : public QScrollArea {
 public:
-    DraggableScrollArea(QWidget * parent) : QScrollArea(parent), moveViewport(true) {}
+    DraggableScrollArea(QWidget * parent) : QScrollArea(parent), moveViewport(true), dragging(false) {}
 
 public slots:
     void show(int x, int y);
     void toggleMoveViewport(bool toggle);
+    bool isDragging();
 
 protected:
     void mousePressEvent(QMouseEvent * event);
@@ -47,6 +48,7 @@ private:
     QPoint mousePos;
     QPoint lastScrollPos;
     bool moveViewport;
+    bool dragging;
 };
 
 } // namespace hdrmerge

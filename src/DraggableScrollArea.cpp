@@ -44,6 +44,7 @@ void DraggableScrollArea::mousePressEvent(QMouseEvent * event) {
     if (moveViewport && event->button() == Qt::LeftButton) {
         mousePos = QCursor::pos();
         widget()->setCursor(QCursor(Qt::OpenHandCursor));
+        dragging = true;
     }
 }
 
@@ -51,12 +52,13 @@ void DraggableScrollArea::mousePressEvent(QMouseEvent * event) {
 void DraggableScrollArea::mouseReleaseEvent(QMouseEvent * event) {
     if (moveViewport && event->button() == Qt::LeftButton) {
         widget()->setCursor(QCursor(Qt::CrossCursor));
+        dragging = false;
     }
 }
 
 
 void DraggableScrollArea::mouseMoveEvent(QMouseEvent * event) {
-    if (moveViewport && (event->buttons() & Qt::LeftButton)) {
+    if (dragging) {
         QPoint delta = QCursor::pos() - mousePos;
         // x5 panning speed
         delta.setX(delta.x() * 5);
@@ -67,3 +69,6 @@ void DraggableScrollArea::mouseMoveEvent(QMouseEvent * event) {
     }
 }
 
+bool DraggableScrollArea::isDragging() {
+    return dragging;
+}

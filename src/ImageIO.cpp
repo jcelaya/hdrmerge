@@ -33,11 +33,11 @@
 using namespace std;
 using namespace hdrmerge;
 
-Image ImageIO::loadRawImage(RawParameters & rawParameters) {
+Image ImageIO::loadRawImage(RawParameters & rawParameters, int shot_select) {
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
+    d.params.shot_select = shot_select;
     if (rawProcessor.open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
-        Log::msg(Log::DEBUG, "Number of frames : ", d.idata.raw_count);
         libraw_decoder_info_t decoder_info;
         rawProcessor.get_decoder_info(&decoder_info);
         if (d.idata.filters <= 1000 && d.idata.filters != 9) {
@@ -57,7 +57,17 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters) {
     return Image(d.rawdata.raw_image, rawParameters);
 }
 
+int ImageIO::getFrameCount(RawParameters & rawParameters) {
+    LibRaw rawProcessor;
+    auto & d = rawProcessor.imgdata;
+    if (rawProcessor.open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
+        Log::msg(Log::DEBUG, "Number of frames : ", d.idata.raw_count);
+        return d.idata.raw_count;
+    } else {
+        return 0;
+    }
 
+}
 
 ImageIO::QDateInterval ImageIO::getImageCreationInterval(const QString & fileName) {
     LibRaw rawProcessor;
@@ -72,35 +82,64 @@ ImageIO::QDateInterval ImageIO::getImageCreationInterval(const QString & fileNam
 
 int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
     int numImages = options.fileNames.size();
-    int step = 100 / (numImages + 1);
-    int p = -step;
+    int step;
+    int p = 0;
     int error = 0, failedImage = 0;
     stack.clear();
     rawParameters.clear();
     {
         Timer t("Load files");
-        #pragma omp parallel for schedule(dynamic)
-        for (int i = 0; i < numImages; ++i) {
-            if (!error) { // We cannot break from the for loop if we are using OpenMP
-                QString name = options.fileNames[i];
-                #pragma omp critical
-                progress.advance(p += step, "Loading %1", name.toLocal8Bit().constData());
-                unique_ptr<RawParameters> params(new RawParameters(name));
-                Image image = loadRawImage(*params);
-                #pragma omp critical
-                if (!error) { // Report on the first image that fails, ignore the rest
+        if(numImages == 1) { // check for multiframe raw files
+            QString name = options.fileNames[0];
+            unique_ptr<RawParameters> params(new RawParameters(name));
+            int frameCount = getFrameCount(*params);
+            step = 100 / (frameCount + 1);
+            p = 0;
+            if(frameCount == 3 || frameCount == 1) {
+                for (int i = 0; i < frameCount; ++i) {
+                    progress.advance(p, "Loading %1", name.toLocal8Bit().constData());
+                    p += step;
+                    unique_ptr<RawParameters> params(new RawParameters(name));
+
+                    Image image = loadRawImage(*params, i);
                     if (!image.good()) {
                         error = 1;
                         failedImage = i;
+                        break;
                     } else if (stack.size() && !params->isSameFormat(*rawParameters.front())) {
                         error = 2;
                         failedImage = i;
+                        break;
                     } else {
                         int pos = stack.addImage(std::move(image));
                         rawParameters.emplace_back(std::move(params));
                         for (int j = rawParameters.size() - 1; j > pos; --j)
                             rawParameters[j - 1].swap(rawParameters[j]);
                     }
+                }
+            }
+        } else {
+            step = 100 / (numImages + 1);
+            for (int i = 0; i < numImages; ++i) {
+                QString name = options.fileNames[i];
+                progress.advance(p, "Loading %1", name.toLocal8Bit().constData());
+                p += step;
+                unique_ptr<RawParameters> params(new RawParameters(name));
+
+                Image image = loadRawImage(*params);;
+                if (!image.good()) {
+                    error = 1;
+                    failedImage = i;
+                    break;
+                } else if (stack.size() && !params->isSameFormat(*rawParameters.front())) {
+                    error = 2;
+                    failedImage = i;
+                    break;
+                } else {
+                    int pos = stack.addImage(std::move(image));
+                    rawParameters.emplace_back(std::move(params));
+                    for (int j = rawParameters.size() - 1; j > pos; --j)
+                        rawParameters[j - 1].swap(rawParameters[j]);
                 }
             }
         }
@@ -110,6 +149,9 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
         rawParameters.clear();
         return (failedImage << 1) + error - 1;
     }
+
+    progress.advance(p, "Processing stack");
+
     RawParameters & params = *rawParameters.front();
     stack.setFlip(params.flip);
     if(options.useCustomWl)
@@ -117,7 +159,6 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
         params.max = std::min(params.max, options.customWl);
     stack.calculateSaturationLevel(params, options.useCustomWl);
     if (options.align && params.canAlign()) {
-        progress.advance(p += step, "Aligning");
         stack.align();
         if (options.crop) {
             stack.crop();

@@ -21,10 +21,12 @@
  */
 
 #include <algorithm>
+
+#include "BoxBlur.hpp"
 #include "ImageStack.hpp"
 #include "Log.hpp"
-#include "BoxBlur.hpp"
 #include "RawParameters.hpp"
+
 #ifdef __SSE2__
     #include <x86intrin.h>
 #endif
@@ -50,36 +52,51 @@ int ImageStack::addImage(Image && i) {
 
 void ImageStack::calculateSaturationLevel(const RawParameters & params, bool useCustomWl) {
     // Calculate max value of brightest image and assume it is saturated
-    Image & brightest = images.front();
+    Image& brightest = images.front();
 
     std::vector<std::vector<size_t>> histograms(4, std::vector<size_t>(brightest.getMax() + 1));
 
-    for (size_t y = 0; y < height; ++y) {
-        // get the color codes from x = 0 to 5, works for bayer and xtrans
-        uint16_t fcrow[6];
-        for(size_t i = 0; i < 6; ++i) {
-            fcrow[i] = params.FC(i, y);
-        }
-        size_t x = 0;
-        for (; x < width - 5; x+=6) {
-            for(size_t j = 0; j < 6; ++j) {
-                uint16_t v = brightest(x + j, y);
-                ++histograms[fcrow[j]][v];
+    #pragma omp parallel
+    {
+        std::vector<std::vector<size_t>> histogramsThr(4, std::vector<size_t>(brightest.getMax() + 1));
+        #pragma omp for schedule(dynamic,16) nowait
+        for (size_t y = 0; y < height; ++y) {
+            // get the color codes from x = 0 to 5, works for bayer and xtrans
+            uint16_t fcrow[6];
+            for (size_t i = 0; i < 6; ++i) {
+                fcrow[i] = params.FC(i, y);
+            }
+            size_t x = 0;
+            for (; x < width - 5; x+=6) {
+                for(size_t j = 0; j < 6; ++j) {
+                    uint16_t v = brightest(x + j, y);
+                    ++histogramsThr[fcrow[j]][v];
+                }
+            }
+            // remaining pixels
+            for (size_t j = 0; x < width; ++x, ++j) {
+                uint16_t v = brightest(x, y);
+                ++histogramsThr[fcrow[j]][v];
             }
         }
-        // remaining pixels
-        for (size_t j = 0; x < width; ++x, ++j) {
-            uint16_t v = brightest(x, y);
-            ++histograms[fcrow[j]][v];
+        #pragma omp critical
+        {
+            for (int c = 0; c < 4; ++c) {
+                for (std::vector<size_t>::size_type i = 0; i < histograms[c].size(); ++i) {
+                    histograms[c][i] += histogramsThr[c][i];
+                }
+            }
         }
     }
 
-    uint16_t maxPerColor[4] = { 0, 0, 0, 0 };
+    const size_t threshold = width * height / 1000;
+
+    uint16_t maxPerColor[4] = {0, 0, 0, 0};
 
     for (int c = 0; c < 4; ++c) {
         for (int i = histograms[c].size() - 1; i >= 0; --i) {
             const size_t v = histograms[c][i];
-            if (v > width * height / 1000) {
+            if (v > threshold) {
                 maxPerColor[c] = i;
                 break;
             }
@@ -93,10 +110,11 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
         }
     }
 
-    if(useCustomWl)
+    if(useCustomWl) {
         Log::debug( "Using custom white level ", params.max );
+    }
 
-    for (auto & i : images) {
+    for (auto& i : images) {
         i.setSaturationThreshold(satThreshold);
     }
 }

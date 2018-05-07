@@ -195,7 +195,13 @@ void RawParameters::fromLibRaw(LibRaw & rawData) {
     cdesc = r.idata.cdesc;
     max = r.color.maximum;
     black = r.color.black;
-    copy_n(r.color.cblack, 4, cblack);
+    if(r.color.cblack[4] * r.color.cblack[5] == 0) {
+        copy_n(r.color.cblack, 4, cblack);
+    } else if (r.color.cblack[4] * r.color.cblack[5] == 4) {
+        for (int c = 0; c < 4; c++) {
+            cblack[FC(c / 2, c % 2)] = r.color.cblack[6 + c / 2 % r.color.cblack[4] * r.color.cblack[5] + c % 2 % r.color.cblack[5]];
+        }
+    }
     if(r.idata.filters == 9) { //xtrans
         for (int c = 0; c < 4; c++) {
             cblack[c] = r.color.cblack[6];

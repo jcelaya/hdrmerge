@@ -78,9 +78,9 @@ Section "HDRMerge (required)"
         "@MINGW_LIB_DIR@\libgraphite2.dll"\
         "@MINGW_LIB_DIR@\libharfbuzz-0.dll"\
         "@MINGW_LIB_DIR@\libiconv-2.dll"\
-        "@MINGW_LIB_DIR@\libicudt58.dll"\
-        "@MINGW_LIB_DIR@\libicuin58.dll"\
-        "@MINGW_LIB_DIR@\libicuuc58.dll"\
+        "@MINGW_LIB_DIR@\libicudt61.dll"\
+        "@MINGW_LIB_DIR@\libicuin61.dll"\
+        "@MINGW_LIB_DIR@\libicuuc61.dll"\
         "@MINGW_LIB_DIR@\libintl-8.dll"\
         "@MINGW_LIB_DIR@\libjasper-4.dll"\
         "@MINGW_LIB_DIR@\libjpeg-8.dll"\

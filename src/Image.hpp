@@ -74,6 +74,10 @@ public:
         return brightness > r.brightness;
     }
     void setSaturationThreshold(uint16_t sat);
+    uint16_t getMax() const
+    {
+        return max;
+    }
 
 private:
     struct ResponseFunction {

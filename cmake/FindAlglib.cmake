@@ -29,6 +29,7 @@ find_path (ALGLIB_INCLUDES
     /usr/include/alglib/
     /usr/include/libalglib/
     /usr/local/include/alglib3/
+    /usr/local/include/libalglib/
     )
 
 find_library (ALGLIB_LIBRARIES NAMES alglib alglib3)

@@ -103,16 +103,15 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
         }
     }
 
-    satThreshold = params.max == 0 ? maxPerColor[0] : params.max;
-    for (int c = 0; c < 4; ++c) {
-        if (maxPerColor[c] > 0 && maxPerColor[c] < satThreshold) {
-            satThreshold = maxPerColor[c];
-        }
+
+    uint16_t maxPerColors = std::max(maxPerColor[0], std::max(maxPerColor[1],std::max(maxPerColor[2], maxPerColor[3])));
+    satThreshold = params.max == 0 ? maxPerColors : params.max;
+
+    if(maxPerColors > 0) {
+        satThreshold = std::min(satThreshold, maxPerColors);
     }
 
-    if(useCustomWl) {
-        Log::debug( "Using custom white level ", params.max );
-    }
+    Log::debug( "Using white level ", satThreshold );
 
     for (auto& i : images) {
         i.setSaturationThreshold(satThreshold);

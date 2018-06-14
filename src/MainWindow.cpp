@@ -344,12 +344,18 @@ void MainWindow::saveResult() {
         }
 
         QFileDialog saveDialog(this, tr("Save DNG file"), name, tr("Digital Negatives (*.dng)"));
+        saveDialog.setOptions(QFileDialog::DontUseNativeDialog); // Keep before setSidebarUrls due to bug in old Qt5 versions
         saveDialog.setAcceptMode(QFileDialog::AcceptSave);
         saveDialog.setFileMode(QFileDialog::AnyFile);
         saveDialog.setConfirmOverwrite(true);
-        QList<QUrl> urls, urlsBak;
-        urlsBak = saveDialog.sidebarUrls();
-        urls << urlsBak << QUrl::fromLocalFile(io.getInputPath());
+
+        QList<QUrl> urls;
+        urls.append(QUrl::fromLocalFile(io.getInputPath()));
+        urls.append(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::HomeLocation)));
+        urls.append(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation)));
+        urls.append(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)));
+        urls.append(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)));
+        urls.append(QUrl::fromLocalFile(QStandardPaths::writableLocation(QStandardPaths::TempLocation)));
         saveDialog.setSidebarUrls(urls);
 
         if (saveDialog.exec()) {
@@ -371,7 +377,6 @@ void MainWindow::saveResult() {
                     QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
             }
         }
-        saveDialog.setSidebarUrls(urlsBak);
     }
     setToolFromKey();
 }

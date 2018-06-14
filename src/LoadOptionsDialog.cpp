@@ -140,7 +140,7 @@ void LoadOptionsDialog::addFiles() {
     ")"));
     QStringList files = QFileDialog::getOpenFileNames(this, tr("Open raw images"),
         lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
-        filter, NULL, QFileDialog::DontUseNativeDialog);
+        filter, Q_NULLPTR, Q_NULLPTR);
     if (!files.empty()) {
         QString lastDir = QFileInfo(files.front()).absolutePath();
         settings.setValue("lastOpenDirectory", lastDir);

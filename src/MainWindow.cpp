@@ -351,7 +351,6 @@ void MainWindow::saveResult() {
         urlsBak = saveDialog.sidebarUrls();
         urls << urlsBak << QUrl::fromLocalFile(io.getInputPath());
         saveDialog.setSidebarUrls(urls);
-        saveDialog.setOptions(QFileDialog::DontUseNativeDialog);
 
         if (saveDialog.exec()) {
             QString file = saveDialog.selectedFiles().front();

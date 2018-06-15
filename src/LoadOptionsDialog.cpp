@@ -27,6 +27,7 @@
 #include <QFileDialog>
 #include <QSettings>
 #include "LoadOptionsDialog.hpp"
+#include "FileSystem.hpp"
 
 namespace hdrmerge {
 
@@ -138,14 +139,22 @@ void LoadOptionsDialog::addFiles() {
     "*.sr2 *.srf *.srw "
     "*.x3f"
     ")"));
-    QStringList files = QFileDialog::getOpenFileNames(this, tr("Open raw images"),
-        lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(),
-        filter, Q_NULLPTR, Q_NULLPTR);
-    if (!files.empty()) {
-        QString lastDir = QFileInfo(files.front()).absolutePath();
-        settings.setValue("lastOpenDirectory", lastDir);
-        for (auto & i : files) {
-            new FileItem(i, fileList);
+
+
+    QFileDialog loadDialog(this, tr("Open raw images"), lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(), tr("Digital Negatives (*.dng)"));
+    loadDialog.setOptions(QFileDialog::DontUseNativeDialog);
+    loadDialog.setAcceptMode(QFileDialog::AcceptOpen);
+    loadDialog.setFileMode(QFileDialog::ExistingFiles);
+    QList<QUrl> urls = getStdUrls();
+    loadDialog.setSidebarUrls(urls);
+    if (loadDialog.exec()) {
+        QStringList files = loadDialog.selectedFiles();
+        if (!files.empty()) {
+            QString lastDir = QFileInfo(files.front()).absolutePath();
+            settings.setValue("lastOpenDirectory", lastDir);
+            for (auto & i : files) {
+                new FileItem(i, fileList);
+            }
         }
     }
 }

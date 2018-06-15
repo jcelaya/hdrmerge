@@ -132,6 +132,7 @@ set(hdrmerge_gui_sources
     src/DraggableScrollArea.cpp
     src/DngPropertiesDialog.cpp
     src/LoadOptionsDialog.cpp
+    src/FileSystem.cpp
 )
 
 set(hdrmerge_qobject_headers
@@ -141,6 +142,7 @@ set(hdrmerge_qobject_headers
     src/DraggableScrollArea.hpp
     src/DngPropertiesDialog.hpp
     src/AboutDialog.hpp
+    src/FileSystem.hpp
 )
 
 set(hdrmerge_translations

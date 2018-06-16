@@ -141,7 +141,7 @@ void LoadOptionsDialog::addFiles() {
     ")"));
 
 
-    QFileDialog loadDialog(this, tr("Open raw images"), lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(), tr("Digital Negatives (*.dng)"));
+    QFileDialog loadDialog(this, tr("Open raw images"), lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(), filter);
     loadDialog.setOptions(QFileDialog::DontUseNativeDialog);
     loadDialog.setAcceptMode(QFileDialog::AcceptOpen);
     loadDialog.setFileMode(QFileDialog::ExistingFiles);

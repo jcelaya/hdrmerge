@@ -1,7 +1,7 @@
 /*
  *  HDRMerge - HDR exposure merging software.
- *  Copyright 2012 Javier Celaya
- *  jcelaya@gmail.com
+ *  Copyright 2018 Jean-Christophe FRISCH
+ *  natureh.510@gmail.com
  *
  *  This file is part of HDRMerge.
  *

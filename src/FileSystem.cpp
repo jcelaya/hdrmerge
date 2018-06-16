@@ -29,11 +29,15 @@ using namespace std;
 
 namespace hdrmerge {
 
-QList<QUrl> getStdUrls()
+QList<QUrl> getStdUrls(const QString additionalPath)
 {
 
     QList<QUrl> urls;
     QStringList stdLocations;
+    if (!additionalPath.isEmpty()) {
+        urls.append(QUrl::fromLocalFile(additionalPath));
+    }
+
     stdLocations = QStandardPaths::standardLocations(QStandardPaths::StandardLocation::HomeLocation);
     for (auto & i : stdLocations) {
         urls.append(QUrl::fromLocalFile(i));
@@ -50,17 +54,11 @@ QList<QUrl> getStdUrls()
     for (auto & i : stdLocations) {
         urls.append(QUrl::fromLocalFile(i));
     }
+
     QList<QStorageInfo> volumes = QStorageInfo::mountedVolumes();
     for (auto & volume : volumes) {
-        if (volume.isValid() && volume.isReady()) {
+        if (volume.isValid() && volume.isReady() && !volume.isReadOnly()) {
             urls.append(QUrl::fromLocalFile(volume.rootPath()));
-        }
-    }
-    foreach (const QStorageInfo &storage, QStorageInfo::mountedVolumes()) {
-        if (storage.isValid() && storage.isReady()) {
-            if (!storage.isReadOnly()) {
-                // ...
-            }
         }
     }
 

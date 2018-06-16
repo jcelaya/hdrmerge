@@ -350,8 +350,7 @@ void MainWindow::saveResult() {
         saveDialog.setFileMode(QFileDialog::AnyFile);
         saveDialog.setConfirmOverwrite(true);
 
-        QList<QUrl> urls = getStdUrls();
-        urls.append(QUrl::fromLocalFile(io.getInputPath()));
+        QList<QUrl> urls = getStdUrls(io.getInputPath());
         saveDialog.setSidebarUrls(urls);
 
         if (saveDialog.exec()) {

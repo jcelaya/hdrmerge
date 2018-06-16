@@ -28,7 +28,8 @@
 
 namespace hdrmerge {
 
-QList<QUrl> getStdUrls();
+// additionalPath: a non standard path that will be inserted in the url list
+QList<QUrl> getStdUrls(const QString additionalPath = "");
 
 }
 

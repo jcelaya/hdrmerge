@@ -33,7 +33,7 @@
 using namespace std;
 using namespace hdrmerge;
 
-Image ImageIO::loadRawImage(RawParameters & rawParameters, int shot_select) {
+Image ImageIO::loadRawImage(const QString& filename, RawParameters & rawParameters, int shot_select) {
     LibRaw rawProcessor;
     auto & d = rawProcessor.imgdata;
     d.params.shot_select = shot_select;
@@ -54,7 +54,7 @@ Image ImageIO::loadRawImage(RawParameters & rawParameters, int shot_select) {
     } else {
         Log::msg(Log::DEBUG, "LibRaw::open_file(", rawParameters.fileName, ") failed.");
     }
-    return Image(d.rawdata.raw_image, rawParameters);
+    return Image(d.rawdata.raw_image, rawParameters, filename);
 }
 
 int ImageIO::getFrameCount(RawParameters & rawParameters) {
@@ -90,7 +90,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
     {
         Timer t("Load files");
         if(numImages == 1) { // check for multiframe raw files
-            QString name = options.fileNames[0];
+            const QString name = options.fileNames[0];
             unique_ptr<RawParameters> params(new RawParameters(name));
             int frameCount = getFrameCount(*params);
             step = 100 / (frameCount + 1);
@@ -101,7 +101,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
                     p += step;
                     unique_ptr<RawParameters> params(new RawParameters(name));
 
-                    Image image = loadRawImage(*params, i);
+                    Image image = loadRawImage(name, *params, i);
                     if (!image.good()) {
                         error = 1;
                         failedImage = i;
@@ -121,12 +121,12 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
         } else {
             step = 100 / (numImages + 1);
             for (int i = 0; i < numImages; ++i) {
-                QString name = options.fileNames[i];
+                const QString name = options.fileNames[i];
                 progress.advance(p, "Loading %1", name.toLocal8Bit().constData());
                 p += step;
                 unique_ptr<RawParameters> params(new RawParameters(name));
 
-                Image image = loadRawImage(*params);;
+                Image image = loadRawImage(name, *params);
                 if (!image.good()) {
                     error = 1;
                     failedImage = i;

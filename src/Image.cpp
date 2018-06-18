@@ -60,6 +60,7 @@ void Image::buildImage(uint16_t * rawImage, const RawParameters & params) {
 
 Image & Image::operator=(Image && move) {
     *static_cast<Array2D<uint16_t> *>(this) = (Array2D<uint16_t> &&)std::move(move);
+    filename = move.filename;
     scaled.swap(move.scaled);
     satThreshold = move.satThreshold;
     max = move.max;

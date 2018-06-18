@@ -29,6 +29,7 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QMenuBar>
 #include <QProgressDialog>
 #include <QSettings>
@@ -308,7 +309,7 @@ void MainWindow::createLayerSelector() {
             QAction * action = new QAction(QIcon(getColorIcon(i)), QString::number(i), layerSelectorGroup);
             action->setCheckable(true);
             double logExp = logLeastExp - std::log2(images.getImage(i - 1).getRelativeExposure());
-            action->setToolTip(QString("+%1 EV").arg(logExp, 0, 'f', 2));
+            action->setToolTip(QString("%1: +%2 EV").arg(QFileInfo(images.getImage(i - 1).getFilename()).baseName()).arg(logExp, 0, 'f', 2));
             if (i < 10)
                 action->setShortcut(Qt::Key_0 + i);
             else if (i == 10)
@@ -325,6 +326,7 @@ void MainWindow::createLayerSelector() {
         lastLayer->setLayout(new QHBoxLayout());
         QLabel * lastIcon = new QLabel(lastLayer);
         lastIcon->setPixmap(getColorIcon(numImages));
+        lastIcon->setToolTip(QString("%1: +0 EV").arg(QFileInfo(images.getImage(numImages - 1).getFilename()).baseName()));
         lastLayer->layout()->addWidget(lastIcon);
         lastLayer->layout()->addWidget(new QLabel(QString::number(numImages)));
         //lastLayer->setMinimumHeight(layerSelector->widgetForAction(firstAction)->height());

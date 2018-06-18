@@ -24,7 +24,11 @@
 #define _IMAGE_H_
 
 #include <memory>
+
+#include <QString>
+
 #include <interpolation.h>
+
 #include "Array2D.hpp"
 
 
@@ -37,7 +41,9 @@ public:
     static const int scaleSteps = 6;
 
     Image() : Array2D<uint16_t>() {}
-    Image(uint16_t * rawImage, const RawParameters & params) {
+    Image(uint16_t * rawImage, const RawParameters & params, const QString& _filename) :
+        filename(_filename)
+    {
         buildImage(rawImage, params);
     }
     Image(const Image & copy) = delete;
@@ -46,6 +52,11 @@ public:
         (*this) = std::move(move);
     }
     Image & operator=(Image && move);
+
+    const QString& getFilename() const
+    {
+        return filename;
+    }
 
     bool good() const {
         return width > 0;
@@ -89,6 +100,8 @@ private:
         }
         void setLinear(double slope);
     };
+
+    QString filename;
 
     std::unique_ptr<Array2D<uint16_t>[]> scaled;
     uint16_t satThreshold, max;

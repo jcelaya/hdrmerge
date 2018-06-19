@@ -42,6 +42,7 @@
 #include "DraggableScrollArea.hpp"
 #include "DngPropertiesDialog.hpp"
 #include "LoadOptionsDialog.hpp"
+#include "FileSystem.hpp"
 using namespace std;
 using namespace hdrmerge;
 
@@ -346,12 +347,12 @@ void MainWindow::saveResult() {
         }
 
         QFileDialog saveDialog(this, tr("Save DNG file"), name, tr("Digital Negatives (*.dng)"));
+        saveDialog.setOptions(QFileDialog::DontUseNativeDialog);
         saveDialog.setAcceptMode(QFileDialog::AcceptSave);
         saveDialog.setFileMode(QFileDialog::AnyFile);
         saveDialog.setConfirmOverwrite(true);
-        QList<QUrl> urls, urlsBak;
-        urlsBak = saveDialog.sidebarUrls();
-        urls << urlsBak << QUrl::fromLocalFile(io.getInputPath());
+
+        QList<QUrl> urls = getStdUrls(io.getInputPath());
         saveDialog.setSidebarUrls(urls);
 
         if (saveDialog.exec()) {
@@ -373,7 +374,6 @@ void MainWindow::saveResult() {
                     QApplication::instance()->processEvents(QEventLoop::ExcludeUserInputEvents);
             }
         }
-        saveDialog.setSidebarUrls(urlsBak);
     }
     setToolFromKey();
 }

@@ -89,7 +89,7 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
         }
     }
 
-    const size_t threshold = width * height / 1000;
+    const size_t threshold = width * height / 10000;
 
     uint16_t maxPerColor[4] = {0, 0, 0, 0};
 
@@ -109,6 +109,10 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
 
     if(maxPerColors > 0) {
         satThreshold = std::min(satThreshold, maxPerColors);
+    }
+
+    if (!useCustomWl) { // only scale when no custom white level was specified
+        satThreshold *= 0.99;
     }
 
     Log::debug( "Using white level ", satThreshold );

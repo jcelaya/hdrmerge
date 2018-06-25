@@ -122,3 +122,54 @@ make
 
 The result of the compilation should be the binaries `hdrmerge.exe` and `hdrmerge-nogui.exe`.
 You have finished.
+
+## Compilation in macOS
+
+These steps don't include things like getting Xcode, a MacOS SDK, **Qt5.11.0**, cmake, clang++-mp-3.9, etc.
+
+1a. Dependencies. Get the dependencies listed above.
+
+1b. [Download ALGLIB 3.13.0 for C++](http://www.alglib.net/download.php) and extract to ~/alglib
+
+1c. Clone HDRMerge into ~/hdrmerge and checkout master branch
+```
+git clone https://github.com/jcelaya/hdrmerge.git ~/hdrmerge
+cd ~/hdrmerge
+git checkout master
+```
+2. Set the environment variable for alglib:
+```
+export ALGLIB_ROOT=~/alglib/cpp
+```
+3. Make and goto the build directory. 
+```
+mkdir ~/hdrmerge/build && cd ~/hdrmerge/build
+```
+4. Issue cmake command
+```
+sudo cmake .. -DQt5_DIR=$HOME/Qt/5.11.0/clang_64/lib/cmake/Qt5 -DCMAKE_BUILD_TYPE=Release -DOpenMP_C_FLAGS=-fopenmp="libiomp5" -DOpenMP_CXX_FLAGS=-fopenmp="libiomp5" -DOpenMP_C_LIB_NAMES="libiomp5" -DOpenMP_CXX_LIB_NAMES="libiomp5" -DOpenMP_libiomp5_LIBRARY="/opt/local" -DCMAKE_C_COMPILER="clang-mp-3.9"       -DCMAKE_CXX_COMPILER="clang++-mp-3.9" -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk" -DALGLIB_ROOT=$ALGLIB_ROOT -DALGLIB_INCLUDES=$ALGLIB_ROOT/src -DALGLIB_LIBRARIES=$ALGLIB_ROOT/src -DCMAKE_INSTALL_BINDIR=$HOME/hdrmerge/build/install
+```
+5. compile
+```
+sudo make -j4 install
+```
+6. Copy two of the dependencies into Frameworks.
+```
+sudo mkdir ~/hdrmerge/build/install/hdrmerge.app/Contents/Frameworks
+sudo cp /opt/local/lib/libomp/libiomp5.dylib ~/hdrmerge/build/install/hdrmerge.app/Contents/Frameworks/.
+sudo cp /usr/local/lib/libexiv2.26.dylib ~/hdrmerge/build/install/hdrmerge.app/Contents/Frameworks/.
+```
+7. Run Qt5's macdeployqt
+```
+sudo  ~/Qt/5.11.0/clang_64/bin/macdeployqt ~/hdrmerge/build/install/hdrmerge.app -no-strip -verbose=3
+```
+8. Install an rpath
+```
+sudo install_name_tool -add_rpath "@executable_path/../Frameworks" ~/hdrmerge/build/install/hdrmerge.app/Contents/MacOS/hdrmerge
+```
+9. Make the .dmg
+```
+sudo hdiutil create -ov -srcfolder ~/hdrmerge/build/install/hdrmerge.app ~/hdrmerge/build/install/HDRMerge.dmg
+```
+
+

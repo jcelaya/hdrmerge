@@ -26,6 +26,10 @@
 #include <QDateTime>
 #include <QImageWriter>
 #include <zlib.h>
+#ifdef __SSE2__
+    #include <x86intrin.h>
+#endif
+
 #include "config.h"
 #include "DngFloatWriter.hpp"
 #include "RawParameters.hpp"
@@ -460,10 +464,31 @@ inline void DNG_FloatToFP24(uint32_t input, uint8_t *output) {
 static void compressFloats(Bytef * dst, int tileWidth, int bytesps) {
     if (bytesps == 2) {
         uint16_t * dst16 = (uint16_t *) dst;
+#ifndef __F16C__
         uint32_t * dst32 = (uint32_t *) dst;
         for (int i = 0; i < tileWidth; ++i) {
             dst16[i] = DNG_FloatToHalf(dst32[i]);
         }
+#else
+        float * dst32 = (float *) dst;
+        int i = 0;
+        for (; i < tileWidth - 7; i += 8) {
+            __m128 singleFloat1 = _mm_loadu_ps(&dst32[i]);
+            __m128i halfFloat1 = _mm_cvtps_ph(singleFloat1, 0);
+            __m128 singleFloat2 = _mm_loadu_ps(&dst32[i + 4]);
+            __m128i halfFloat2 = _mm_cvtps_ph(singleFloat2, 0);
+            _mm_storeu_si128((__m128i*)&dst16[i], (__m128i)_mm_shuffle_ps((__m128)halfFloat1, (__m128)halfFloat2, _MM_SHUFFLE(1, 0, 1, 0)));
+        }
+        for (; i < tileWidth - 3; i += 4) {
+            __m128 singleFloat1 = _mm_loadu_ps(&dst32[i]);
+            __m128i halfFloat1 = _mm_cvtps_ph(singleFloat1, 0);
+            _mm_storeu_si128((__m128i*)&dst16[i], halfFloat1);
+        }
+        for (; i < tileWidth; ++i) {
+            dst16[i] = _cvtss_sh(dst32[i], 0);
+        }
+
+#endif
     } else if (bytesps == 3) {
         uint8_t  * dst8  = (uint8_t *)  dst;
         uint32_t * dst32 = (uint32_t *) dst;

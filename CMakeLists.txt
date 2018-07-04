@@ -253,6 +253,7 @@ elseif(APPLE)
     add_executable(hdrmerge ${PLATFORM}
         src/main.cpp
         src/Launcher.cpp
+        data/resources.qrc
         $<TARGET_OBJECTS:alglib-objects>
         ${hdrmerge_translations}
         ${hdrmerge_sources}

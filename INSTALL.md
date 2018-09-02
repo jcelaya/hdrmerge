@@ -54,7 +54,7 @@ Once you have installed the dependencies, run the following to clone and compile
 mkdir ~/programs
 git clone https://github.com/jcelaya/hdrmerge.git ~/programs/code-hdrmerge
 cd ~/programs/code-hdrmerge
-./build-hdrmerge
+./scripts/build-hdrmerge
 ```
 
 HDRMerge will be ready for use in `~/programs/hdrmerge/hdrmerge`

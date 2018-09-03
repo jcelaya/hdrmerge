@@ -77,6 +77,10 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     cropBox->setChecked(settings.value("cropOnLoad", true).toBool());
     layout->addWidget(cropBox, 0);
 
+    caCorrectionBox = new QCheckBox(tr("Chromatic aberration correction."), this);
+    caCorrectionBox->setChecked(settings.value("useCaCorrectionOnLoad", false).toBool());
+    layout->addWidget(caCorrectionBox, 0);
+
     customWhiteLevelBox = new QCheckBox(tr("Use custom white level."), this);
     customWhiteLevelBox->setChecked(settings.value("useCustomWlOnLoad", false).toBool());
     layout->addWidget(customWhiteLevelBox, 0);
@@ -86,10 +90,6 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     customWhiteLevelSpinBox->setValue(settings.value("customWlOnLoad", 16383).toInt());
     customWhiteLevelSpinBox->setToolTip(tr("Custom white level."));
     layout->addWidget(customWhiteLevelSpinBox, 0);
-
-    caCorrectionBox = new QCheckBox(tr("Ca correction"), this);
-    caCorrectionBox->setChecked(settings.value("useCaCorrectionOnLoad", false).toBool());
-    layout->addWidget(caCorrectionBox, 0);
 
     QWidget * buttons = new QWidget(this);
     QHBoxLayout * buttonsLayout = new QHBoxLayout(buttons);

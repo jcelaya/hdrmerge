@@ -187,6 +187,8 @@ void Launcher::parseCommandLine() {
                     cerr << tr("Invalid %1 parameter, using default.").arg(argv[i - 1]) << endl;
                 }
             }
+        } else if (string("-c") == argv[i]) {
+            generalOptions.useCaCorrection = true;
         } else if (string("-w") == argv[i]) {
             if (++i < argc) {
                 try {
@@ -257,9 +259,10 @@ void Launcher::showHelp() {
     cout << "    " << "-a            " << tr("Calculates the output file name as") << " %id[-1]/%iF[0]-%in[-1].dng." << endl;
     cout << "    " << "-B|--batch    " << tr("Batch mode: Input images are automatically grouped into bracketed sets,") << endl;
     cout << "    " << "              " << tr("by comparing the creation time. Implies -a if no output file name is given.") << endl;
+    cout << "    " << "-b BPS        " << tr("Bits per sample, can be 16, 24 or 32.") << endl;
+    cout << "    " << "-c            " << tr("Use ca correction.") << endl;
     cout << "    " << "-g gap        " << tr("Batch gap, maximum difference in seconds between two images of the same set.") << endl;
     cout << "    " << "--single      " << tr("Include single images in batch mode (the default is to skip them.)") << endl;
-    cout << "    " << "-b BPS        " << tr("Bits per sample, can be 16, 24 or 32.") << endl;
     cout << "    " << "--no-align    " << tr("Do not auto-align source images.") << endl;
     cout << "    " << "--no-crop     " << tr("Do not crop the output image to the optimum size.") << endl;
     cout << "    " << "-m MASK_FILE  " << tr("Saves the mask to MASK_FILE as a PNG image.") << endl;

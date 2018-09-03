@@ -39,7 +39,7 @@ struct LoadOptions {
     bool withSingles;
     bool useCaCorrection;
     LoadOptions() : align(true), crop(true), useCustomWl(false), customWl(16383), batch(false), batchGap(2.0),
-        withSingles(false), useCaCorrection(true) {}
+        withSingles(false), useCaCorrection(false) {}
 };
 
 

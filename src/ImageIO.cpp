@@ -112,9 +112,9 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
                         failedImage = i;
                         break;
                     } else {
-                        if (options.useCaCorrection) {
-                            RawParameters test = *params;
-                            image.caCorrect(test, fitParams, false);
+                        if (options.useCaCorrection && params->FC.getFilters() != 9) {
+                            RawParameters temp = *params;
+                            image.caCorrect(temp, fitParams, false);
                         }
                         int pos = stack.addImage(std::move(image));
                         rawParameters.emplace_back(std::move(params));
@@ -142,9 +142,9 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
                     failedImage = i;
                     break;
                 } else {
-                    if (options.useCaCorrection) {
-                        RawParameters test = *params;
-                        image.caCorrect(test, fitParams, false);
+                    if (options.useCaCorrection && params->FC.getFilters() != 9) {
+                        RawParameters temp = *params;
+                        image.caCorrect(temp, fitParams, false);
                     }
                     int pos = stack.addImage(std::move(image));
                     rawParameters.emplace_back(std::move(params));

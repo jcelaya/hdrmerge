@@ -215,11 +215,28 @@ void MainWindow::createToolbars() {
 void MainWindow::setPixelStatus(int x, int y) {
     int l = io.getImageStack().getImageAt(x, y);
     Image & img = io.getImageStack().getImage(l);
-    setStatus(tr("Layer %1: displaced %2,%3,%4 cropped | src. value = %5 ; result = %6")
+
+    QString displaced = "";
+    if (statusUseAutoAlign) {
+        displaced = QString(": displaced x = %1 y = %2")
+            .arg(img.getDeltaX())
+            .arg(img.getDeltaY());
+    }
+
+    QString cropped = "";
+    if (statusUseAutoCrop) {
+        cropped = io.getImageStack().isCropped() ? ", cropped" : ", not cropped";
+    }
+
+    setStatus(tr("CA correction: %1 | Auto-align: %2 | Auto-crop: %3 | "
+                "Layer %4%5%6, white level: %7 | Source value = %8 , destination value = %9")
+        .arg(statusUseCaCorrection ? "on" : "off")
+        .arg(statusUseAutoAlign ? "on" : "off")
+        .arg(statusUseAutoCrop ? "on" : "off")
         .arg(l + 1)
-        .arg(img.getDeltaX())
-        .arg(img.getDeltaY())
-        .arg(io.getImageStack().isCropped() ? "" : " not")
+        .arg(displaced)
+        .arg(cropped)
+        .arg(img.getMax())
         .arg(io.getImageStack().getImage(l)(x, y))
         .arg(io.getImageStack().value(x, y)));
 }
@@ -269,6 +286,9 @@ void MainWindow::loadImages() {
         }
 
         numImages = io.getImageStack().size();
+        statusUseAutoAlign = lod.align;
+        statusUseAutoCrop = lod.crop;
+        statusUseCaCorrection = lod.useCaCorrection;
         // Create GUI
         preview->reload();
         mergeAction->setEnabled(numImages > 0);

@@ -112,6 +112,11 @@ private:
 
     ImageIO io;
     std::vector<QString> preloadFiles;
+
+    bool statusUseAutoAlign;
+    bool statusUseAutoCrop;
+    bool statusUseCaCorrection;
+    uint16_t statusWlMax;
 };
 
 } // namespace hdrmerge

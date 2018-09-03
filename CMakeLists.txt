@@ -40,10 +40,12 @@ find_package(Qt5 5.6 REQUIRED Core Widgets)
 #include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 
+find_package(PkgConfig)
 find_package(LibRaw REQUIRED)
 find_package(Exiv2 REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(OpenMP)
+pkg_check_modules(RTPROCESS REQUIRED rtprocess>=0.2)
 
 # Commented-out as it doesn't link
 #find_package(Boost 1.46 COMPONENTS unit_test_framework)
@@ -190,6 +192,7 @@ set(hdrmerge_libs
     "${LibRaw_r_LIBRARIES}"
     "${EXIV2_LIBRARY}"
     "${ZLIB_LIBRARIES}"
+    "${RTPROCESS_LIBRARIES}"
 )
 
 if(WIN32)
@@ -288,7 +291,7 @@ if(WIN32)
         $<TARGET_OBJECTS:alglib-objects>
         "${PLATFORM_SOURCES}"
     )
-    
+
     # WARNING: ImageIO class need QImage which need Qt5::Widgets
     #          Launcher.cpp need QApplication which need Qt5::Widgets
     target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs} Qt5::Widgets Qt5::Core)

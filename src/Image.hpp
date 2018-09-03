@@ -28,7 +28,7 @@
 #include <QString>
 
 #include <interpolation.h>
-
+#include <rtprocess/librtprocess.h>
 #include "Array2D.hpp"
 
 
@@ -89,6 +89,7 @@ public:
     {
         return max;
     }
+    void caCorrect(RawParameters & params, CaFitParams &fitParams, bool fitParamsIn);
 
 private:
     struct ResponseFunction {

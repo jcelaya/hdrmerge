@@ -265,6 +265,7 @@ uint16_t Image::getMaxAround(size_t x, size_t y) const {
 
 #define FCX(a,b) (params.FC(a,b) == 3u ? 1u : params.FC(a,b))
 void Image::caCorrect(RawParameters & params, CaFitParams &fitParams, bool fitParamsIn) {
+    Timer t("caCorrect");
 
     float preMul[4] = {params.preMul[0], params.preMul[1], params.preMul[2], params.preMul[3]};
     if(preMul[3] == 0)
@@ -274,11 +275,6 @@ void Image::caCorrect(RawParameters & params, CaFitParams &fitParams, bool fitPa
     for (int c = 0; c < 4; c++) {
         scale[c] = (preMul[c] / maxpremul) * 65535.0 / (params.max - params.black);
     }
-    std::cout << params.max << " : " << params.black << std::endl;
-    std::cout << scale[0] << std::endl;
-    std::cout << scale[1] << std::endl;
-    std::cout << scale[2] << std::endl;
-    std::cout << scale[3] << std::endl;
 
     array2D<float> temp(width, height);
     for (size_t i = 0; i < height; ++i) {
@@ -292,11 +288,11 @@ void Image::caCorrect(RawParameters & params, CaFitParams &fitParams, bool fitPa
         return false;
     };
 
-    CA_correct(width, height, true, 0.0, 0.0, temp, {{{FCX(0,0), FCX(0,1)},{FCX(1,0),FCX(1,1)}}}, setProgCancel, fitParams, fitParamsIn);
-
-    for (size_t i = 0; i < height; ++i) {
-        for (size_t j = 0; j < width; ++j) {
-            (*this)(j, i) = temp[i][j] / scale[FCX(i,j)];
+    if (CA_correct(width, height, true, 0.0, 0.0, temp, {{{FCX(0,0), FCX(0,1)},{FCX(1,0),FCX(1,1)}}}, setProgCancel, fitParams, fitParamsIn)) {
+        for (size_t i = 0; i < height; ++i) {
+            for (size_t j = 0; j < width; ++j) {
+                (*this)(j, i) = temp[i][j] / scale[FCX(i,j)];
+            }
         }
     }
 

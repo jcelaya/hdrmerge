@@ -87,6 +87,10 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
     customWhiteLevelSpinBox->setToolTip(tr("Custom white level."));
     layout->addWidget(customWhiteLevelSpinBox, 0);
 
+    caCorrectionBox = new QCheckBox(tr("Ca correction"), this);
+    caCorrectionBox->setChecked(settings.value("useCaCorrectionOnLoad", false).toBool());
+    layout->addWidget(caCorrectionBox, 0);
+
     QWidget * buttons = new QWidget(this);
     QHBoxLayout * buttonsLayout = new QHBoxLayout(buttons);
     QPushButton * acceptButton = new QPushButton(tr("Accept"), this);
@@ -176,6 +180,8 @@ void LoadOptionsDialog::accept() {
     settings.setValue("cropOnLoad", crop);
     useCustomWl = customWhiteLevelBox->isChecked();
     settings.setValue("useCustomWlOnLoad", useCustomWl);
+    useCaCorrection = caCorrectionBox->isChecked();
+    settings.setValue("useCaCorrectionOnLoad", useCaCorrection);
     customWl = customWhiteLevelSpinBox->value();
     settings.setValue("customWlOnLoad", customWl);
     for (int i = 0; i < fileList->count(); ++i) {

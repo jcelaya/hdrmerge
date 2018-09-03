@@ -52,6 +52,7 @@ private:
     QCheckBox * alignBox;
     QCheckBox * cropBox;
     QCheckBox * customWhiteLevelBox;
+    QCheckBox * caCorrectionBox;
     QSpinBox * customWhiteLevelSpinBox;
 };
 

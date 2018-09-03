@@ -112,8 +112,10 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
                         failedImage = i;
                         break;
                     } else {
-                        RawParameters test = *params;
-                        image.caCorrect(test, fitParams, false);
+                        if (options.useCaCorrection) {
+                            RawParameters test = *params;
+                            image.caCorrect(test, fitParams, false);
+                        }
                         int pos = stack.addImage(std::move(image));
                         rawParameters.emplace_back(std::move(params));
                         for (int j = rawParameters.size() - 1; j > pos; --j)
@@ -126,7 +128,6 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
             step = 100 / (numImages + 1);
             for (int i = 0; i < numImages; ++i) {
                 const QString name = options.fileNames[i];
-                std::cout << name << "  xxx " << std::endl;
                 progress.advance(p, "Loading %1", name.toLocal8Bit().constData());
                 p += step;
                 unique_ptr<RawParameters> params(new RawParameters(name));
@@ -141,8 +142,10 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
                     failedImage = i;
                     break;
                 } else {
-                    RawParameters test = *params;
-                    image.caCorrect(test, fitParams, false);
+                    if (options.useCaCorrection) {
+                        RawParameters test = *params;
+                        image.caCorrect(test, fitParams, false);
+                    }
                     int pos = stack.addImage(std::move(image));
                     rawParameters.emplace_back(std::move(params));
                     for (int j = rawParameters.size() - 1; j > pos; --j)

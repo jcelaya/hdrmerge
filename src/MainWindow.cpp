@@ -218,7 +218,7 @@ void MainWindow::setPixelStatus(int x, int y) {
 
     QString displaced = "";
     if (statusUseAutoAlign) {
-        displaced = QString(": displaced x = %1 y = %2")
+        displaced = QString(": displaced %1 %2")
             .arg(img.getDeltaX())
             .arg(img.getDeltaY());
     }
@@ -229,7 +229,7 @@ void MainWindow::setPixelStatus(int x, int y) {
     }
 
     setStatus(tr("CA correction: %1 | Auto-align: %2 | Auto-crop: %3 | "
-                "Layer %4%5%6, white level: %7 | Source value = %8 , destination value = %9")
+                "Layer %4%5%6, white level %7 | Source value = %8 , destination value = %9")
         .arg(statusUseCaCorrection ? "on" : "off")
         .arg(statusUseAutoAlign ? "on" : "off")
         .arg(statusUseAutoCrop ? "on" : "off")

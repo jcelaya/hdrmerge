@@ -35,8 +35,10 @@ void DraggableScrollArea::show(int x, int y) {
 
 void DraggableScrollArea::toggleMoveViewport(bool toggle) {
     moveViewport = toggle;
-    if (toggle)
-        widget()->setCursor(QCursor(Qt::CrossCursor));
+    if (toggle) {
+        QPixmap cursor_pixmap = QPixmap(":images/transform-move.png");
+        widget()->setCursor(QCursor(cursor_pixmap, 16, 16));
+    }
 }
 
 
@@ -51,7 +53,8 @@ void DraggableScrollArea::mousePressEvent(QMouseEvent * event) {
 
 void DraggableScrollArea::mouseReleaseEvent(QMouseEvent * event) {
     if (moveViewport && event->button() == Qt::LeftButton) {
-        widget()->setCursor(QCursor(Qt::CrossCursor));
+        QPixmap cursor_pixmap = QPixmap(":images/transform-move.png");
+        widget()->setCursor(QCursor(cursor_pixmap, 16, 16));
         dragging = false;
     }
 }

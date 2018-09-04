@@ -265,7 +265,7 @@ uint16_t Image::getMaxAround(size_t x, size_t y) const {
 
 #define FCX(a,b) (params.FC(a,b) == 3u ? 1u : params.FC(a,b))
 void Image::caCorrect(RawParameters & params, CaFitParams &fitParams, bool fitParamsIn) {
-    Timer t("caCorrect");
+    Timer t("Chromatic aberration correction");
 
     float preMul[4] = {params.preMul[0], params.preMul[1], params.preMul[2], params.preMul[3]};
     if(preMul[3] == 0)

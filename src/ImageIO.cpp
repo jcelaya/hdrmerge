@@ -95,7 +95,7 @@ int ImageIO::load(const LoadOptions & options, ProgressIndicator & progress) {
             int frameCount = getFrameCount(*params);
             step = 100 / (frameCount + 1);
             p = 0;
-            if(frameCount > 0 && frameCount <= 3) {
+            if(frameCount > 0 && frameCount <= 4) {
                 // framecount == 1 => create a dng from a single file with a single frame
                 // framecount == 2 => create a merged dng from a fuji exr file
                 // framecount == 3 => create a merged dng from a pentax hdr file

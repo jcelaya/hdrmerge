@@ -104,16 +104,11 @@ LoadOptionsDialog::LoadOptionsDialog(QWidget * parent, Qt::WindowFlags f)
 
 
 void LoadOptionsDialog::showEvent(QShowEvent * event) {
-    if (fileNames.size() == 0) {
-        addFiles();
-    } else {
+    if (!fileNames.empty()) {
         for (auto & i : fileNames) {
             new FileItem(i, fileList);
         }
         fileNames.clear();
-    }
-    if (fileList->count() == 0) {
-        QMetaObject::invokeMethod(this, "reject", Qt::QueuedConnection);
     }
 }
 
@@ -141,7 +136,7 @@ void LoadOptionsDialog::addFiles() {
     ")"));
 
 
-    QFileDialog loadDialog(this, tr("Open raw images"), lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(), filter);
+    QFileDialog loadDialog(this, tr("Select raw photos"), lastDirSetting.isNull() ? QDir::currentPath() : QDir(lastDirSetting.toString()).absolutePath(), filter);
     loadDialog.setOptions(QFileDialog::DontUseNativeDialog);
     loadDialog.setAcceptMode(QFileDialog::AcceptOpen);
     loadDialog.setFileMode(QFileDialog::ExistingFiles);

@@ -35,9 +35,10 @@ struct LoadOptions {
     bool useCustomWl;
     uint16_t customWl;
     bool batch;
+    int imagesPerBracket;
     double batchGap;
     bool withSingles;
-    LoadOptions() : align(true), crop(true), useCustomWl(false), customWl(16383), batch(false), batchGap(2.0),
+    LoadOptions() : align(true), crop(true), useCustomWl(false), customWl(16383), batch(false), imagesPerBracket(-1), batchGap(2.0),
         withSingles(false) {}
 };
 

@@ -20,8 +20,10 @@
  *
  */
 
+#include <exception>
 #include <iostream>
 #include <iomanip>
+#include <iterator>
 #include <string>
 #include <QApplication>
 #include <QTranslator>
@@ -73,27 +75,45 @@ struct CoutProgressIndicator : public ProgressIndicator {
 
 list<LoadOptions> Launcher::getBracketedSets() {
     list<LoadOptions> result;
-    list<pair<ImageIO::QDateInterval, QString>> dateNames;
-    for (QString & name : generalOptions.fileNames) {
-        ImageIO::QDateInterval interval = ImageIO::getImageCreationInterval(name);
-        if (interval.start.isValid()) {
-            dateNames.emplace_back(interval, name);
-        } else {
-            // We cannot get time information, process it alone
-            result.push_back(generalOptions);
-            result.back().fileNames.clear();
-            result.back().fileNames.push_back(name);
+    if (generalOptions.imagesPerBracket > 0) {
+        if (generalOptions.fileNames.size() % generalOptions.imagesPerBracket != 0) {
+            cerr << QCoreApplication::translate("LoadSave", "Number of files not a multiple of number per bracketed set (-s). Aborting.");
+            exit(EXIT_FAILURE);
         }
-    }
-    dateNames.sort();
-    ImageIO::QDateInterval lastInterval;
-    for (auto & dateName : dateNames) {
-        if (lastInterval.start.isNull() || lastInterval.difference(dateName.first) > generalOptions.batchGap) {
-            result.push_back(generalOptions);
-            result.back().fileNames.clear();
+
+        while(!generalOptions.fileNames.empty()) {
+            LoadOptions opt = generalOptions;
+            auto oIt = opt.fileNames.begin();
+            auto goIt = generalOptions.fileNames.begin();
+            std::advance(oIt, generalOptions.imagesPerBracket);
+            std::advance(goIt, generalOptions.imagesPerBracket);
+            opt.fileNames.erase(oIt, opt.fileNames.end());
+            generalOptions.fileNames.erase(generalOptions.fileNames.begin(), goIt);
+            result.push_back(opt);
         }
-        result.back().fileNames.push_back(dateName.second);
-        lastInterval = dateName.first;
+    } else {
+        list<pair<ImageIO::QDateInterval, QString>> dateNames;
+        for (QString & name : generalOptions.fileNames) {
+            ImageIO::QDateInterval interval = ImageIO::getImageCreationInterval(name);
+            if (interval.start.isValid()) {
+                dateNames.emplace_back(interval, name);
+            } else {
+                // We cannot get time information, process it alone
+                result.push_back(generalOptions);
+                result.back().fileNames.clear();
+                result.back().fileNames.push_back(name);
+            }
+        }
+        dateNames.sort();
+        ImageIO::QDateInterval lastInterval;
+        for (auto & dateName : dateNames) {
+            if (lastInterval.start.isNull() || lastInterval.difference(dateName.first) > generalOptions.batchGap) {
+                result.push_back(generalOptions);
+                result.back().fileNames.clear();
+            }
+            result.back().fileNames.push_back(dateName.second);
+            lastInterval = dateName.first;
+        }
     }
     int setNum = 0;
     for (auto & i : result) {
@@ -175,6 +195,15 @@ void Launcher::parseCommandLine() {
             generalOptions.crop = false;
         } else if (string("--batch") == argv[i] || string("-B") == argv[i]) {
             generalOptions.batch = true;
+        } else if (string("-s") == argv[i]) {
+            if (++i < argc) {
+                try {
+                    int value = stoi(argv[i]);
+                    generalOptions.imagesPerBracket = value;
+                } catch (std::invalid_argument & e) {
+                    cerr << tr("Invalid %1 parameter, falling back to interval-based bracketing set creation.").arg(argv[i - 1]) << endl;
+                }
+            }
         } else if (string("--single") == argv[i]) {
             generalOptions.withSingles = true;
         } else if (string("--help") == argv[i]) {
@@ -258,6 +287,8 @@ void Launcher::showHelp() {
     cout << "    " << "-a            " << tr("Calculates the output file name as") << " %id[-1]/%iF[0]-%in[-1].dng." << endl;
     cout << "    " << "-B|--batch    " << tr("Batch mode: Input images are automatically grouped into bracketed sets,") << endl;
     cout << "    " << "              " << tr("by comparing the creation time. Implies -a if no output file name is given.") << endl;
+    cout << "    " << "-s NUM_IMAGES " << tr("Fixed number of images per bracket set. Use together with -B.") << endl;
+    cout << "    " << "              " << tr("Creation time will be ignored.") << endl;
     cout << "    " << "-g gap        " << tr("Batch gap, maximum difference in seconds between two images of the same set.") << endl;
     cout << "    " << "--single      " << tr("Include single images in batch mode (the default is to skip them.)") << endl;
     cout << "    " << "-b BPS        " << tr("Bits per sample, can be 16, 24 or 32.") << endl;

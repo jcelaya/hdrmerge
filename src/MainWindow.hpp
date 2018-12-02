@@ -46,7 +46,6 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow();
 
-    void showEvent(QShowEvent * event);
     void closeEvent(QCloseEvent * event);
     void preload(const std::vector<QString> & o) {
         preloadFiles = o;

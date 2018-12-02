@@ -51,6 +51,7 @@ int Launcher::startGUI() {
     MainWindow mw;
     mw.preload(generalOptions.fileNames);
     mw.show();
+    QMetaObject::invokeMethod(&mw, "loadImages", Qt::QueuedConnection);
 
     return QApplication::exec();
 #else

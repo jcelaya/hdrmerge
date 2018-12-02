@@ -238,14 +238,6 @@ void MainWindow::about() {
     dialog.exec();
 }
 
-
-void MainWindow::showEvent(QShowEvent * event) {
-    if (io.getImageStack().size() == 0) {
-        loadImages();
-    }
-}
-
-
 void MainWindow::loadImages() {
     LoadOptionsDialog lod(this);
     if (!preloadFiles.empty()) {

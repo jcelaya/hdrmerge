@@ -41,7 +41,7 @@ find_package(Qt5 5.6 REQUIRED Core Widgets)
 add_definitions(${QT_DEFINITIONS})
 
 find_package(LibRaw REQUIRED)
-find_package(Exiv2 REQUIRED)
+find_package(exiv2 REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(OpenMP)
 
@@ -55,8 +55,8 @@ else()
 endif()
 
 include_directories(
-    "${LibRaw_INCLUDE_DIR}"
-    "${EXIV2_INCLUDE_DIR}"
+    "${LibRaw_INCLUDE_DIRS}"
+    exiv2
     "${ZLIB_INCLUDE_DIRS}"
     "${ALGLIB_INCLUDES}"
 )
@@ -188,7 +188,7 @@ endif()
 # Libs
 set(hdrmerge_libs
     "${LibRaw_r_LIBRARIES}"
-    "${EXIV2_LIBRARY}"
+    "${exiv2_LIBRARIES}"
     "${ZLIB_LIBRARIES}"
 )
 
@@ -274,7 +274,7 @@ else()
     )
 endif()
 
-target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs} Qt5::Widgets)
+target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs} Qt5::Widgets exiv2)
 
 if(WIN32)
     # Compile a target without GUI, for the .com executable
@@ -288,7 +288,7 @@ if(WIN32)
         $<TARGET_OBJECTS:alglib-objects>
         "${PLATFORM_SOURCES}"
     )
-    
+
     # WARNING: ImageIO class need QImage which need Qt5::Widgets
     #          Launcher.cpp need QApplication which need Qt5::Widgets
     target_link_libraries(hdrmerge-nogui ${STRIP} ${hdrmerge_libs} Qt5::Widgets Qt5::Core)
@@ -321,9 +321,9 @@ if(WIN32)
                 DEPENDS "${PROJECT_BINARY_DIR}/hdrmerge.exe"
                 WORKING_DIRECTORY "${PROJECT_BINARY_DIR}")
             add_custom_target(hdrmerge-setup ALL DEPENDS "${PROJECT_BINARY_DIR}/${SETUP_PROG}")
-        else(MINGW_LIB_DIR)
+        else()
             message(STATUS "Unable to locate the 'bin' directory to get the dependencies")
-        endif(MINGW_LIB_DIR)
+        endif()
     else()
         message(STATUS "NSIS not found")
     endif()

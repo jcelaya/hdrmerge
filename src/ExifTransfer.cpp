@@ -21,6 +21,7 @@
  */
 
 #include <exiv2/exiv2.hpp>
+#include <iostream>
 #include "ExifTransfer.hpp"
 #include "Log.hpp"
 using namespace hdrmerge;

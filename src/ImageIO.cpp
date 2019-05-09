@@ -34,22 +34,22 @@ using namespace std;
 using namespace hdrmerge;
 
 Image ImageIO::loadRawImage(const QString& filename, RawParameters & rawParameters, int shot_select) {
-    LibRaw rawProcessor;
-    auto & d = rawProcessor.imgdata;
+    std::unique_ptr<LibRaw> rawProcessor(new LibRaw);
+    auto & d = rawProcessor->imgdata;
     d.params.shot_select = shot_select;
-    if (rawProcessor.open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
+    if (rawProcessor->open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
-        rawProcessor.get_decoder_info(&decoder_info);
+        rawProcessor->get_decoder_info(&decoder_info);
         if (d.idata.filters <= 1000 && d.idata.filters != 9) {
             Log::msg(Log::DEBUG, "Unsupported filter array (", d.idata.filters, ").");
 #ifdef LIBRAW_DECODER_FLATFIELD
         } else if (!decoder_info.decoder_flags & LIBRAW_DECODER_FLATFIELD) {
             Log::msg(Log::DEBUG, "LibRaw decoder is not flatfield (", ios::hex, decoder_info.decoder_flags, ").");
 #endif
-        } else if (rawProcessor.unpack() != LIBRAW_SUCCESS) {
+        } else if (rawProcessor->unpack() != LIBRAW_SUCCESS) {
             Log::msg(Log::DEBUG, "LibRaw::unpack() failed.");
         } else {
-            rawParameters.fromLibRaw(rawProcessor);
+            rawParameters.fromLibRaw(*(rawProcessor.get()));
         }
     } else {
         Log::msg(Log::DEBUG, "LibRaw::open_file(", rawParameters.fileName, ") failed.");
@@ -58,9 +58,9 @@ Image ImageIO::loadRawImage(const QString& filename, RawParameters & rawParamete
 }
 
 int ImageIO::getFrameCount(RawParameters & rawParameters) {
-    LibRaw rawProcessor;
-    auto & d = rawProcessor.imgdata;
-    if (rawProcessor.open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
+    std::unique_ptr<LibRaw> rawProcessor(new LibRaw);
+    auto & d = rawProcessor->imgdata;
+    if (rawProcessor->open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
         Log::msg(Log::DEBUG, "Number of frames : ", d.idata.raw_count);
         return d.idata.raw_count;
     } else {
@@ -70,11 +70,11 @@ int ImageIO::getFrameCount(RawParameters & rawParameters) {
 }
 
 ImageIO::QDateInterval ImageIO::getImageCreationInterval(const QString & fileName) {
-    LibRaw rawProcessor;
+    std::unique_ptr<LibRaw> rawProcessor(new LibRaw);
     QDateInterval result;
-    if (rawProcessor.open_file(fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
-        result.end = QDateTime::fromTime_t(rawProcessor.imgdata.other.timestamp);
-        result.start = result.end.addMSecs(-rawProcessor.imgdata.other.shutter * 1000.0);
+    if (rawProcessor->open_file(fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
+        result.end = QDateTime::fromTime_t(rawProcessor->imgdata.other.timestamp);
+        result.start = result.end.addMSecs(-rawProcessor->imgdata.other.shutter * 1000.0);
     }
     return result;
 }
@@ -243,8 +243,8 @@ static void prepareRawBuffer(LibRaw & rawProcessor) {
 
 QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameters & params, float expShift, bool halfSize) {
     Timer t("Render preview");
-    LibRaw rawProcessor;
-    auto & d = rawProcessor.imgdata;
+    std::unique_ptr<LibRaw> rawProcessor(new LibRaw);
+    auto & d = rawProcessor->imgdata;
     d.params.user_sat = 65535;
     d.params.user_black = 0;
     for (int c = 0; c < 4; ++c) {
@@ -259,9 +259,9 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
     d.params.exp_shift = expShift;
     d.params.exp_preser = 1.0;
     d.params.half_size = halfSize ? 1 : 0; // much faster, will be used for preview size 'half' or 'none'
-    if (rawProcessor.open_file(params.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
+    if (rawProcessor->open_file(params.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
 //             && rawProcessor.unpack() == LIBRAW_SUCCESS) {
-        prepareRawBuffer(rawProcessor);
+        prepareRawBuffer(*(rawProcessor.get()));
         // Assume the other sizes are the same as in the raw parameters
         d.sizes.width = params.width;
         d.sizes.height = params.height;
@@ -275,8 +275,8 @@ QImage ImageIO::renderPreview(const Array2D<float> & rawData, const RawParameter
                 d.rawdata.raw_image[pos] = v;
             }
         }
-        rawProcessor.dcraw_process();
-        libraw_processed_image_t * image = rawProcessor.dcraw_make_mem_image();
+        rawProcessor->dcraw_process();
+        libraw_processed_image_t * image = rawProcessor->dcraw_make_mem_image();
         if (image == nullptr) {
             Log::msg(2, "dcraw_make_mem_image() returned NULL");
         } else {

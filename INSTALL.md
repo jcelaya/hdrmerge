@@ -124,52 +124,65 @@ The result of the compilation should be the binaries `hdrmerge.exe` and `hdrmerg
 You have finished.
 
 ## Compilation in macOS
+The first step is to get all the dependencies as well as the sounce code:
 
-These steps don't include things like getting Xcode, a MacOS SDK, **Qt5.11.0**, cmake, clang++-mp-3.9, etc.
+**NOTE:** xCode is not required but recommended. The Command Line tools that are implicitly installed with Homebrew are sufficient.
 
-1a. Dependencies. Get the dependencies listed above.
-
-1b. [Download ALGLIB 3.13.0 for C++](http://www.alglib.net/download.php) and extract to ~/alglib
-
-1c. Clone HDRMerge into ~/hdrmerge and checkout master branch
+1. a. Install the dependencies using [Homebrew](https://brew.sh):
+``` bash
+brew install cmake boost exiv2 libraw qt libomp
 ```
+1. b. alglib is not available on brew (for now) so [Download ALGLIB 3.15.0 for C++](http://www.alglib.net/download.php) and extract to ~/alglib manually or:
+``` bash
+mkdir ~/alglib && cd ~/alglib
+curl http://www.alglib.net/translator/re/alglib-3.15.0.cpp.gpl.zip --output ~/alglib/ALGLIB.zip
+unzip ~/alglib/ALGLIB.zip -d ~/alglib && rm ~/alglib/ALGLIB.zip
+```
+
+1. c. Clone HDRMerge into ~/hdrmerge and checkout master branch
+``` bash
 git clone https://github.com/jcelaya/hdrmerge.git ~/hdrmerge
 cd ~/hdrmerge
 git checkout master
 ```
-2. Set the environment variable for alglib:
-```
-export ALGLIB_ROOT=~/alglib/cpp
-```
-3. Make and goto the build directory. 
-```
+2. Make and go to the build directory.
+``` bash
 mkdir ~/hdrmerge/build && cd ~/hdrmerge/build
 ```
-4. Issue cmake command
+3. Issue cmake command
+``` bash
+cmake .. -DQt5_DIR=/usr/local/Cellar/Qt/5.12.3/lib/cmake/Qt5 -DCMAKE_BUILD_TYPE=Release -DOpenMP_C_FLAGS=-fopenmp=libiomp5 -DOpenMP_CXX_FLAGS=-fopenmp=libiomp5 -DOpenMP_C_LIB_NAMES="libiomp5" -DOpenMP_CXX_LIB_NAMES="libiomp5" -DOpenMP_libiomp5_LIBRARY="/usr/local/lib/libomp.dylib" -DOpenMP_CXX_FLAGS="-Xpreprocessor -fopenmp /usr/local/lib/libomp.dylib -I/usr/local/include" -DOpenMP_CXX_LIB_NAMES="libiomp5" -DOpenMP_C_FLAGS="-Xpreprocessor -fopenmp /usr/local/lib/libomp.dylib -I/usr/local/include" -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_C_COMPILER="clang" -DCMAKE_CXX_COMPILER="clang++" -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk" -DALGLIB_ROOT=$HOME/alglib/cpp -DALGLIB_INCLUDES=$HOME/alglib/cpp/src -DALGLIB_LIBRARIES=$HOME/alglib/cpp/src -DCMAKE_INSTALL_BINDIR=$HOME/hdrmerge/build/install
 ```
-sudo cmake .. -DQt5_DIR=$HOME/Qt/5.11.0/clang_64/lib/cmake/Qt5 -DCMAKE_BUILD_TYPE=Release -DOpenMP_C_FLAGS=-fopenmp="libiomp5" -DOpenMP_CXX_FLAGS=-fopenmp="libiomp5" -DOpenMP_C_LIB_NAMES="libiomp5" -DOpenMP_CXX_LIB_NAMES="libiomp5" -DOpenMP_libiomp5_LIBRARY="/opt/local" -DCMAKE_C_COMPILER="clang-mp-3.9"       -DCMAKE_CXX_COMPILER="clang++-mp-3.9" -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk" -DALGLIB_ROOT=$ALGLIB_ROOT -DALGLIB_INCLUDES=$ALGLIB_ROOT/src -DALGLIB_LIBRARIES=$ALGLIB_ROOT/src -DCMAKE_INSTALL_BINDIR=$HOME/hdrmerge/build/install
-```
-5. compile
-```
+If the command fails then make sure the version of Qt from the command matches the one you have installed.
+
+4. Compile
+``` bash
 sudo make -j4 install
 ```
-6. Copy two of the dependencies into Frameworks.
-```
+
+5. Copy two of the dependencies into Frameworks.
+``` bash
 sudo mkdir ~/hdrmerge/build/install/hdrmerge.app/Contents/Frameworks
-sudo cp /opt/local/lib/libomp/libiomp5.dylib ~/hdrmerge/build/install/hdrmerge.app/Contents/Frameworks/.
-sudo cp /usr/local/lib/libexiv2.26.dylib ~/hdrmerge/build/install/hdrmerge.app/Contents/Frameworks/.
+sudo cp /usr/local/lib/libomp.dylib ~/hdrmerge/build/install/hdrmerge.app/Contents/Frameworks/.
+sudo cp /usr/local/lib/libexiv2.dylib ~/hdrmerge/build/install/hdrmerge.app/Contents/Frameworks/.
 ```
-7. Run Qt5's macdeployqt
+
+6. Run Qt5's macdeployqt (adapt to your Qt version)
+``` bash
+sudo /usr/local/Cellar/qt/5.12.3/bin/macdeployqt ~/hdrmerge/build/install/hdrmerge.app -no-strip -verbose=1
 ```
-sudo  ~/Qt/5.11.0/clang_64/bin/macdeployqt ~/hdrmerge/build/install/hdrmerge.app -no-strip -verbose=3
-```
-8. Install an rpath
-```
+
+7. Install an rpath
+``` bash
 sudo install_name_tool -add_rpath "@executable_path/../Frameworks" ~/hdrmerge/build/install/hdrmerge.app/Contents/MacOS/hdrmerge
 ```
-9. Make the .dmg
-```
+
+8. Make the .dmg for further distribution (optional)
+``` bash
 sudo hdiutil create -ov -srcfolder ~/hdrmerge/build/install/hdrmerge.app ~/hdrmerge/build/install/HDRMerge.dmg
 ```
 
-
+That was it! You can move the hdrmerge.app to you applicotions folder and start using it!
+``` bash
+cp -r ~/hdrmerge/build/install/hdrmerge.app /Applications/HDRMerge.app
+```

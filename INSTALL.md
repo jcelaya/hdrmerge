@@ -124,7 +124,7 @@ The result of the compilation should be the binaries `hdrmerge.exe` and `hdrmerg
 You have finished.
 
 ## Compilation in macOS
-The first step is to get all the dependencies as well as the sounce code:
+The first step is to get all the dependencies as well as the source code:
 
 **NOTE:** xCode is not required but recommended. The Command Line tools that are implicitly installed with Homebrew are sufficient.
 
@@ -182,7 +182,7 @@ sudo install_name_tool -add_rpath "@executable_path/../Frameworks" ~/hdrmerge/bu
 sudo hdiutil create -ov -srcfolder ~/hdrmerge/build/install/hdrmerge.app ~/hdrmerge/build/install/HDRMerge.dmg
 ```
 
-That was it! You can move the hdrmerge.app to you applicotions folder and start using it!
+That was it! You can move the hdrmerge.app to you applications folder and start using it!
 ``` bash
 cp -r ~/hdrmerge/build/install/hdrmerge.app /Applications/HDRMerge.app
 ```

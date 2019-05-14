@@ -5,6 +5,7 @@ Thank you for showing interest in contributing to HDRMerge. It is people such as
 - Announce and discuss your plans in GitHub before starting work.
 - Work in a new branch. Fork if necessary.
 - Keep branches small.
+- Prefer templates and `constexpr` variables over macros. Avoid macros as much as possible (e.g. use `#pragma once` instead of traditional include guards).
 - Use C++11.
 
 ### Naming and Comments

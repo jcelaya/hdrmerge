@@ -1,5 +1,5 @@
 ## Thank You
-Thank you for showing interest in contributing to HDRmerge. It is people such as yourself who make this program and project possible.
+Thank you for showing interest in contributing to HDRMerge. It is people such as yourself who make this program and project possible.
 
 ## Contributing as a Programmer
 - Announce and discuss your plans in GitHub before starting work.
@@ -21,7 +21,7 @@ The naming isn't homogeneous throughout the code but here is a rough guideline:
 ### Refactoring Code
 Don't shy away from refactoring code, it helps more than you think.
 - Change the naming and add comments when they don't match with the guidelines above.
-- C++11 gives many opportunities to simplify code (e.g. default initializing with = {} or default returning with return {};).
+- C++11 gives many opportunities to simplify code (e.g. default initializing with `= {}` or default returning with `return {};`).
 - When using `auto` think a bit about the reviewers reading diffs and guessing types. It's a double-edged sword.
 - Help the compiler and reviewers by using `const` as default for almost anything.
 - Reduce scopes. This also means moving private functions with little or no dependency to `this` to an anonymous namespace inside the implementation.

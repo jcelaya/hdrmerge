@@ -41,6 +41,8 @@ int ImageStack::addImage(Image && i) {
         height = i.getHeight();
     }
     images.push_back(std::move(i));
+
+    // sort image stack from brightest to darkest
     int n = images.size() - 1;
     while (n > 0 && images[n] < images[n - 1]) {
         std::swap(images[n], images[n - 1]);
@@ -50,75 +52,103 @@ int ImageStack::addImage(Image && i) {
 }
 
 
-void ImageStack::calculateSaturationLevel(const RawParameters & params, bool useCustomWl) {
-    // Calculate max value of brightest image and assume it is saturated
-    Image& brightest = images.front();
+void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use_custom_white_level) {
+    /*
+     * This method will approximate a saturation threshold for the brightest
+     * image only. It is sufficient because the calculated threshold will
+     * be translated to the rest of the images in the stack in a relative
+     * manner.
+     *
+     * the saturation threshold has a major role in deciding on which pixels to
+     * use from which image. The better this value is calculated the better the
+     * results.
+     *
+     * Methodology Overwiew:
+     *  1. Generate the 4 histograms (green, blue, green, red) from the
+     *     brightest image
+     *  2. Determine the brightest value per histogram but ignore the outliers
+     *     using the threshold `occurance_threshold` that will discard bright
+     *     pixels that don't have a significant frequency (occurance)
+     *  3. Use vorious attempts to enhance the `saturation_threshold`
+     *
+    */
 
-    std::vector<std::vector<size_t>> histograms(4, std::vector<size_t>(brightest.getMax() + 1));
+    Image& brightest_image = images.front();
+
+    std::vector<std::vector<size_t>> histograms(4, std::vector<size_t>(brightest_image.getMax() + 1));
 
     #pragma omp parallel
     {
-        std::vector<std::vector<size_t>> histogramsThr(4, std::vector<size_t>(brightest.getMax() + 1));
+        std::vector<std::vector<size_t>> histograms_thr(4, std::vector<size_t>(brightest_image.getMax() + 1));
         #pragma omp for schedule(dynamic,16) nowait
         for (size_t y = 0; y < height; ++y) {
             // get the color codes from x = 0 to 5, works for bayer and xtrans
-            uint16_t fcrow[6];
+            uint16_t fc_row[6];
             for (size_t i = 0; i < 6; ++i) {
-                fcrow[i] = params.FC(i, y);
+                fc_row[i] = params.FC(i, y);
             }
             size_t x = 0;
             for (; x < width - 5; x+=6) {
                 for(size_t j = 0; j < 6; ++j) {
-                    uint16_t v = brightest(x + j, y);
-                    ++histogramsThr[fcrow[j]][v];
+                    uint16_t luminance_val = brightest_image(x + j, y);
+                    ++histograms_thr[fc_row[j]][luminance_val];
                 }
             }
             // remaining pixels
             for (size_t j = 0; x < width; ++x, ++j) {
-                uint16_t v = brightest(x, y);
-                ++histogramsThr[fcrow[j]][v];
+                uint16_t luminance_val = brightest_image(x, y);
+                ++histograms_thr[fc_row[j]][luminance_val];
             }
         }
         #pragma omp critical
         {
-            for (int c = 0; c < 4; ++c) {
-                for (std::vector<size_t>::size_type i = 0; i < histograms[c].size(); ++i) {
-                    histograms[c][i] += histogramsThr[c][i];
+            for (int c_channel = 0; c_channel < 4; ++c_channel) {
+                std::vector<size_t>::size_type histogram_size, luminance_val;
+                histogram_size = histograms[c_channel].size();
+                for (luminance_val = 0; luminance_val < histogram_size; ++luminance_val) {
+                    histograms[c_channel][luminance_val] += histograms_thr[c_channel][luminance_val];
                 }
             }
         }
     }
 
-    const size_t threshold = width * height / 10000;
+    // used to ignore luminances with frequentcy less htan 0.0001
+    const size_t occurance_threshold = width * height / 10000;
 
-    uint16_t maxPerColor[4] = {0, 0, 0, 0};
+    // maximum "significant" luminance per color channel
+    uint16_t max_lum_per_color[4] = {0, 0, 0, 0};
 
-    for (int c = 0; c < 4; ++c) {
-        for (int i = histograms[c].size() - 1; i >= 0; --i) {
-            const size_t v = histograms[c][i];
-            if (v > threshold) {
-                maxPerColor[c] = i;
+    for (int c_channel = 0; c_channel < 4; ++c_channel) {
+        // start from the highest value in the histograms (brightest)
+        for (int luminance_val = histograms[c_channel].size() - 1; luminance_val >= 0; --luminance_val) {
+            const size_t frequency = histograms[c_channel][luminance_val];
+            // ignore if it has a low occurance (frequency) in the image
+            if (frequency > occurance_threshold) {
+                max_lum_per_color[c_channel] = luminance_val;
                 break;
             }
         }
     }
 
 
-    uint16_t maxPerColors = std::max(maxPerColor[0], std::max(maxPerColor[1],std::max(maxPerColor[2], maxPerColor[3])));
-    satThreshold = params.max == 0 ? maxPerColors : params.max;
+    uint16_t max_luminance = std::max(max_lum_per_color[0], std::max(max_lum_per_color[1],std::max(
+        max_lum_per_color[2], max_lum_per_color[3])));
+    saturation_threshold = params.max == 0 ? max_luminance : params.max;
 
-    if(maxPerColors > 0) {
-        satThreshold = std::min(satThreshold, maxPerColors);
+    if(max_luminance > 0) {
+        saturation_threshold = std::min(saturation_threshold, max_luminance);
     }
 
-    if (!useCustomWl) { // only scale when no custom white level was specified
-        satThreshold *= 0.99;
+    if (!use_custom_white_level) { // only scale when no custom white level was specified
+        // The saturation threshold needs to go a little bit "before" the
+        // highest notable luminance so that it is considerd over saturated
+        saturation_threshold *= 0.99;
     }
 
-    Log::debug( "Using white level ", satThreshold );
+    Log::debug( "Using white level ", saturation_threshold );
 
     for (auto& i : images) {
-        i.setSaturationThreshold(satThreshold);
+        i.setSaturationThreshold(saturation_threshold);
     }
 }
 
@@ -406,7 +436,7 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
     dst.fillBorders(0.f);
 
     float max = 0.0;
-    double saturatedRange = params.max - satThreshold;
+    double saturatedRange = params.max - saturation_threshold;
     #pragma omp parallel
     {
         float maxthr = 0.0;
@@ -425,7 +455,7 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
                         v /= params.whiteMultAt(x, y);
                         if(p > 0.0001) {
                             uint16_t rawV = images[j].getMaxAround(x, y);
-                            double k = (rawV - satThreshold) / saturatedRange;
+                            double k = (rawV - saturation_threshold) / saturatedRange;
                             if (k > 1.0)
                                 k = 1.0;
                             p += (1.0 - p) * k;

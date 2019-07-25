@@ -13,7 +13,7 @@ HDRMerge is supported in Linux, Windows and macOS.
 
 ## Latest Stable Release
 
-This is [the latest version]({{ site.github }}/releases/latest), ({{ latest_tag }}), recommended for everyday use.
+Version ({{ site.latest_tag }}) is the latest stable release recommended for everyday use.
 
 * [Windows installer]({{ site.github }}/releases/latest)
 * Linux AppImage (not yet)
@@ -37,6 +37,38 @@ File bugs and feature requests in [GitHub]({{ site.github }}/issues). Make sure 
 # Getting Started
 
 You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-07-11-user-manual %}), or jump directly to the command line help with `hdrmerge --help`.
+
+
+# Donations
+
+Do you like HDRMerge? Do you want to keep it under development? You can make a donation through [Flattr](https://flattr.com/) or [PayPal](https://www.paypal.com/):
+
+<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top" style="margin: 0; padding: 0;">
+	<a href="https://flattr.com/submit/auto?user_id=jcelaya&url=http%3A%2F%2Fjcelaya.github.io%2Fhdrmerge%2F&title=HDRMerge" target="_blank" style="border: 0px">
+    	<img src="//api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" style="padding-bottom: 12px;" border="0"></a> 
+    <input type="hidden" name="cmd" value="_s-xclick">
+    <input type="hidden" name="hosted_button_id" value="AB3CAVRH4S24C">
+    <input type="image" src="https://www.paypalobjects.com/en_GB/i/btn/btn_donate_LG.gif" border="0" name="submit"
+        alt="PayPal – The safer, easier way to pay online." style="display: inline;">
+    <img alt="" border="0" src="https://www.paypalobjects.com/es_ES/i/scr/pixel.gif" width="1" height="1">
+</form>
+
+
+# License
+
+HDRMerge is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+HDRMerge is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+
+# Acknowledgments
+
+HDRMerge is what it is thanks to all the people that have contributed ideas, critics and samples to improve it. In particular, thanks to the team of [RawTherapee](http://rawtherapee.com/). Also, HDRMerge implements or is based on the techniques described in the following works:
+
+1. Ward, G. (2003). Fast, robust image registration for compositing high dynamic range photographs from hand-held exposures. *Journal of graphics tools*, 8(2), 17-30.
++  Guillermo Luijk, Zero Noise, <http://www.guillermoluijk.com/tutorial/zeronoise/index.html>
++  Jens Mueller, dngconvert, <https://github.com/jmue/dngconvert>
++  Jarosz, W. (2001). Fast image convolutions. In SIGGRAPH Workshop. Code from Ivan Kuckir, <http://blog.ivank.net/fastest-gaussian-blur.html>
 
 
 # Changelog
@@ -106,35 +138,3 @@ The first public version of HDRMerge.
 * Writes DNG files with 16, 24 and 32 bits per pixel.
 * Writes full, half or no preview to the output image.
 * Copies the EXIF data from the least exposed source image.
-
-
-# Donations
-
-Do you like HDRMerge? Do you want to keep it under development? You can make a donation through [Flattr](https://flattr.com/) or [PayPal](https://www.paypal.com/):
-
-<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top" style="margin: 0; padding: 0;">
-	<a href="https://flattr.com/submit/auto?user_id=jcelaya&url=http%3A%2F%2Fjcelaya.github.io%2Fhdrmerge%2F&title=HDRMerge" target="_blank" style="border: 0px">
-    	<img src="//api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" style="padding-bottom: 12px;" border="0"></a> 
-    <input type="hidden" name="cmd" value="_s-xclick">
-    <input type="hidden" name="hosted_button_id" value="AB3CAVRH4S24C">
-    <input type="image" src="https://www.paypalobjects.com/en_GB/i/btn/btn_donate_LG.gif" border="0" name="submit"
-        alt="PayPal – The safer, easier way to pay online." style="display: inline;">
-    <img alt="" border="0" src="https://www.paypalobjects.com/es_ES/i/scr/pixel.gif" width="1" height="1">
-</form>
-
-
-# License
-
-HDRMerge is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-HDRMerge is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-
-# Acknowledgments
-
-HDRMerge is what it is thanks to all the people that have contributed ideas, critics and samples to improve it. In particular, thanks to the team of [RawTherapee](http://rawtherapee.com/). Also, HDRMerge implements or is based on the techniques described in the following works:
-
-1. Ward, G. (2003). Fast, robust image registration for compositing high dynamic range photographs from hand-held exposures. *Journal of graphics tools*, 8(2), 17-30.
-+  Guillermo Luijk, Zero Noise, <http://www.guillermoluijk.com/tutorial/zeronoise/index.html>
-+  Jens Mueller, dngconvert, <https://github.com/jmue/dngconvert>
-+  Jarosz, W. (2001). Fast image convolutions. In SIGGRAPH Workshop. Code from Ivan Kuckir, <http://blog.ivank.net/fastest-gaussian-blur.html>

@@ -12,7 +12,7 @@ HDRMerge is supported in Linux, Windows and macOS.
 
 ## Latest Stable Release
 
-This is [the latest version]({{ site.github.latest_release }}), recommended for everyday use.
+This is [the latest version]({{ site.latest_release }}), recommended for everyday use.
 
 * [Windows installer]({{ site.github.latest_release }})
 * Linux AppImage (not yet)

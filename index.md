@@ -3,8 +3,9 @@ layout: default
 image: index.jpg
 title: HDRMerge
 ---
-[HDRMerge](https://github.com/jcelaya/hdrmerge) combines two or more raw images into a single raw with an extended dynamic range. It can import any raw image supported by LibRaw, and outputs a DNG 1.4 image with floating point data. The output raw is built from the less noisy pixels of the input, so that shadows maintain as much detail as possible. This tool also offers a GUI to remove 'ghosts' from the resulting image. [Discover more about HDRMerge]({{ site.baseurl }}{% post_url 2014-05-24-what-is-hdrmerge %})
+HDRMerge combines two or more raw images into a single raw with an extended dynamic range. It can import any raw image supported by LibRaw, and outputs a DNG 1.4 image with floating point data. The output raw is built from the less noisy pixels of the input, so that shadows maintain as much detail as possible. This tool also offers a GUI to remove 'ghosts' from the resulting image. [Discover more about HDRMerge]({{ site.baseurl }}{% post_url 2014-05-24-what-is-hdrmerge %})
 
+HDRMerge GitHub project
 
 # Downloads
 
@@ -12,7 +13,7 @@ HDRMerge is supported in Linux, Windows and macOS.
 
 ## Latest Stable Release
 
-This is [the latest version]({{ site.latest_release }}), recommended for everyday use.
+This is [the latest version]({{ site.github }}/releases/latest), x ({{ site.github.releases.name }}) y ({{ site.github.releases.latest.name }}) z ({{ site.github.latest_releases.name }}), recommended for everyday use.
 
 * [Windows installer]({{ site.github.latest_release }})
 * Linux AppImage (not yet)

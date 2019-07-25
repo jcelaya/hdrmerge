@@ -13,12 +13,12 @@ HDRMerge is supported in Linux, Windows and macOS.
 
 ## Latest Stable Release
 
-This is [the latest version]({{ site.github }}/releases/latest), ({{ site.github.latest_release.name }}) ({{ site.github.latest_release.tag_name }}), recommended for everyday use.
+This is [the latest version]({{ site.github }}/releases/latest), ({{ latest_tag }}), recommended for everyday use.
 
-* [Windows installer]({{ site.github.latest_release }})
+* [Windows installer]({{ site.github }}/releases/latest)
 * Linux AppImage (not yet)
-* [macOS DMG]({{ site.github.latest_release }})
-* [Source code]({{ site.github.latest_release }})
+* [macOS DMG]({{ site.github }}/releases/latest)
+* [Source code]({{ site.github }}/releases/latest)
 
 ## Latest Development Builds
 
@@ -31,7 +31,7 @@ These are builds of the latest development code, recommended for testing and bug
 
 # Bugs and Feature Requests
 
-File bugs and feature requests in [GitHub]({{ site.github.issues_url }}). Make sure to provide the necessary information: which version of HDRMerge you're using, the full contents of any error messages, and a link to your sample raw files.
+File bugs and feature requests in [GitHub]({{ site.github }}/issues). Make sure to provide the necessary information: which version of HDRMerge you're using, the full contents of any error messages, and a link to your sample raw files.
 
 
 # Getting Started

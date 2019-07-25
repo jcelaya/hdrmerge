@@ -8,17 +8,46 @@ title: HDRMerge
 
 # Downloads
 
-HDRMerge is currently supported in Linux and Windows, with the Mac version on its way. You can find the archives for [the latest release]({{ site.github }}/releases/latest) in the [GitHub repository]({{ site.github }}). Please, feel free to file bugs/feature requests using GitHub's issues system.
+HDRMerge is supported in Linux, Windows and macOS.
+
+## Latest Stable Release
+
+This is [the latest version]({{ site.github.latest_release }}), recommended for everyday use.
+
+* [Windows installer]({{ site.github.latest_release }})
+* Linux AppImage (not yet)
+* [macOS DMG]({{ site.github.latest_release }})
+* [Source code]({{ site.github.latest_release }})
+
+## Latest Development Builds
+
+These are builds of the latest development code, recommended for testing and bug reporting but not for everyday use.
+
+* Windows installer (not yet)
+* [Linux AppImage]({{ site.github }}/releases/tag/nightly)
+* macOS DMG (not yet)
+* [Source code]({{ site.github }}/releases/tag/nightly)
+
+# Bugs and Feature Requests
+
+File bugs and feature requests in [GitHub]({{ site.github.issues_url }}). Make sure to provide the necessary information: which version of HDRMerge you're using, the full contents of any error messages, and a link to your sample raw files.
 
 
-# Getting started
+# Getting Started
 
 You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-07-11-user-manual %}), or jump directly to the command line help with `hdrmerge --help`.
 
 
-# Feature List
+# Changelog
 
-### v0.4.5:
+These are the most significant improvements by version. For a detailed changelog, see the [git commit history]({{ site.github }}/commits/master).
+
+## v0.5
+
+* Support for macOS.
+* Multiple bug-fixes.
+
+## v0.4.5
 
 * Better compatibility with other programs, by producing a DNG file that maintains the original layout: frame and active area sizes, black and white levels, etc. *Note that, if you use RawTherapee, you need v4.1.23 or higher to open these files.*
 * Batch mode in command line! Merge several sets of HDR images at once.
@@ -27,7 +56,7 @@ You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-07-11-user-
 * Several bug-fixes.
 * Improved accuracy and performance.
 
-### v0.4.4:
+## v0.4.4
 
 * Better support for more camera models.
 * Better rendering of the embedded preview image.
@@ -36,12 +65,12 @@ You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-07-11-user-
   * The original embedded preview is not included in the output anymore.
   * Fixed some glitches with the edit tools.
 
-### v0.4.3:
+## v0.4.3
 
 * Fix segmentation fault error painting the preview of some rotated images.
 * Fix DateTime tag in Windows hosts.
 
-### v0.4.2:
+## v0.4.2
 
 * Improved GUI:
   * A slider to control the brush radius.
@@ -52,11 +81,11 @@ You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-07-11-user-
   * Posibility of saving the output options.
 * First release with a Windows version, both 32- and 64-bit.
 
-### v0.4.1:
+## v0.4.1
 
 * Bugfixes release
 
-### v0.4:
+## v0.4
 
 * Great performance improvements with OpenMP.
 * Not depend anymore on DNG & XMP SDK! Windows and Mac version soon...
@@ -64,7 +93,9 @@ You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-07-11-user-
 * More control on the logging output.
 * The user may disable alignment and/or cropping. This is most useful to obtain an image of the same size as the inputs. Some programs have this requirement to apply a flat-field image, for instance.
 
-### v0.3: The first public version of HDRMerge
+## v0.3
+
+The first public version of HDRMerge.
 
 * Supports most raw format supported by LibRaw (No foveon of Fuji formats for the moment).
 * Automatic alignment of small translations.

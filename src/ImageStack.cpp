@@ -57,7 +57,7 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
      * This method will approximate a saturation threshold for the brightest
      * image only. It is sufficient because the calculated threshold will
      * be translated to the rest of the images in the stack in a relative
-     * manner thans each image's response function being pre-calculated.
+     * manner thanks each image's response function being pre-calculated.
      *
      * The saturation threshold has a major role in deciding on which pixels to
      * use from which image. The better this value is calculated the better the

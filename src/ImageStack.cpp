@@ -141,7 +141,7 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
     // only scale when no custom white level was specified
     if (!use_custom_white_level) {
         // The saturation threshold needs to go a little bit "before" the
-        // highest notable luminance so that it is considerd over saturated
+        // highest notable luminance so that it is considered oversaturated
         saturation_threshold *= 0.99;
     }
 

@@ -53,6 +53,7 @@ int ImageStack::addImage(Image && i) {
 
 
 void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use_custom_white_level) {
+
     /*
      * This method will approximate a saturation threshold for the brightest
      * image only. It is sufficient because the calculated threshold will
@@ -71,7 +72,7 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
      *     pixels that don't have a significant frequency (occurance)
      *  3. Use vorious attempts to enhance the `saturation_threshold`
      *
-    */
+     */
 
     Image& brightest_image = images.front();
 
@@ -139,7 +140,8 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
         saturation_threshold = std::min(saturation_threshold, max_luminance);
     }
 
-    if (!use_custom_white_level) { // only scale when no custom white level was specified
+    // only scale when no custom white level was specified
+    if (!use_custom_white_level) {
         // The saturation threshold needs to go a little bit "before" the
         // highest notable luminance so that it is considerd over saturated
         saturation_threshold *= 0.99;
@@ -203,6 +205,23 @@ void ImageStack::computeResponseFunctions() {
 
 
 void ImageStack::generateMask() {
+
+    /*
+     * This method generates the multi-colored mask in the GUI. The way the
+     * the mask is generated is by starting from the brightest image and
+     * checking every pixel if it or one of it's surrounding pixels are
+     * saturated, if so then test against the same pixel (x, y) but from the
+     * next image which is darker.
+     *
+     * Methodology: if possible get all the pixels from the brightest image
+     * because it has the least amount of noise. only clipped data will be
+     * taken from the darker images
+     *
+     * Result: we end up with a map (matrix) that dictates from which layer of
+     * the stack should each pixel be taken from for the HDR merging. Exapmle:
+     * map(154, 445) -> 2, 2 is the index of the image.
+     */
+
     Timer t("Generate mask");
     mask.resize(width, height);
     if(images.size() == 1) {
@@ -214,20 +233,26 @@ void ImageStack::generateMask() {
         for (size_t y = 0; y < height; ++y) {
             for (size_t x = 0; x < width; ++x) {
                 size_t i = 0;
-                while (i < images.size() - 1 &&
-                    (!images[i].contains(x, y) ||
-                    images[i].isSaturatedAround(x, y))) ++i;
+                while (i < images.size() - 1 && (!images[i].contains(x, y) ||
+                    images[i].isSaturatedAround(x, y))) {
+                    // skip if the pixel is not in image or clipped
+                    ++i;
+                }
                 mask(x, y) = i;
             }
         }
     }
-    // The mask can be used in compose to get the information about saturated pixels
+    // The mask can be used in compose() to get the information about saturated pixels
     // but the mask can be modified in gui, so we have to make a copy to represent the original state
-    origMask = mask;
+    original_mask = mask;
 }
 
 
 double ImageStack::value(size_t x, size_t y) const {
+    /*
+     * Get the exposure value (luminance) of the stack at any given pixel
+     * using the generated mask from generateMask()
+     */
     const Image & img = images[mask(x, y)];
     return img.exposureAt(x, y);
 }
@@ -451,7 +476,7 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
                     p = p - j;
                     v = images[j].exposureAt(x, y);
                     // Adjust false highlights
-                    if (j < origMask(x,y)) { // SaturatedAround
+                    if (j < original_mask(x,y)) { // SaturatedAround
                         v /= params.whiteMultAt(x, y);
                         if(p > 0.0001) {
                             uint16_t rawV = images[j].getMaxAround(x, y);
@@ -467,7 +492,7 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
                 }
                 if (p > 0.0001 && j < imageMax && images[j + 1].contains(x, y)) {
                     vv = images[j + 1].exposureAt(x, y);
-                    if (j + 1 < origMask(x,y)) { // SaturatedAround
+                    if (j + 1 < original_mask(x,y)) { // SaturatedAround
                         vv /= params.whiteMultAt(x, y);
                     }
                 } else {

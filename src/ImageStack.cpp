@@ -42,7 +42,7 @@ int ImageStack::addImage(Image && i) {
     }
     images.push_back(std::move(i));
 
-    // sort image stack from brightest to darkest
+    // sort image stack from brightest to darkest ([0] being the brightest)
     int n = images.size() - 1;
     while (n > 0 && images[n] < images[n - 1]) {
         std::swap(images[n], images[n - 1]);
@@ -58,9 +58,9 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
      * This method will approximate a saturation threshold for the brightest
      * image only. It is sufficient because the calculated threshold will
      * be translated to the rest of the images in the stack in a relative
-     * manner.
+     * manner thans each image's response function being pre-calculated.
      *
-     * the saturation threshold has a major role in deciding on which pixels to
+     * The saturation threshold has a major role in deciding on which pixels to
      * use from which image. The better this value is calculated the better the
      * results.
      *
@@ -71,7 +71,6 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
      *     using the threshold `occurance_threshold` that will discard bright
      *     pixels that don't have a significant frequency (occurance)
      *  3. Use vorious attempts to enhance the `saturation_threshold`
-     *
      */
 
     Image& brightest_image = images.front();
@@ -149,8 +148,8 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
 
     Log::debug( "Using white level ", saturation_threshold );
 
-    for (auto& i : images) {
-        i.setSaturationThreshold(saturation_threshold);
+    for (auto& img : images) {
+        img.setSaturationThreshold(saturation_threshold);
     }
 }
 
@@ -197,8 +196,19 @@ void ImageStack::crop() {
 
 
 void ImageStack::computeResponseFunctions() {
+
+    /*
+     * Computes the repsonse function for every image (excluding the darkest).
+     * We compute the rosponse for an image img by comparing it to the next
+     * image in the stack. That is why there is no point to compute the
+     * response for the darkest image becuase there is no other image to
+     * compare it to.
+     */
+
     Timer t("Compute response functions");
     for (int i = images.size() - 2; i >= 0; --i) {
+        // images[i] = the brighter image
+        // images[i + 1] = the darker image
         images[i].computeResponseFunction(images[i + 1]);
     }
 }

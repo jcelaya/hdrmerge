@@ -31,7 +31,6 @@
     #include <x86intrin.h>
 #endif
 
-using namespace std;
 using namespace hdrmerge;
 
 
@@ -180,12 +179,12 @@ void ImageStack::align() {
 void ImageStack::crop() {
     int dx = 0, dy = 0;
     for (auto & i : images) {
-        int newDx = max(dx, i.getDeltaX());
-        int bound = min(dx + width, i.getDeltaX() + i.getWidth());
+        int newDx = std::max(dx, i.getDeltaX());
+        int bound = std::min(dx + width, i.getDeltaX() + i.getWidth());
         width = bound > newDx ? bound - newDx : 0;
         dx = newDx;
-        int newDy = max(dy, i.getDeltaY());
-        bound = min(dy + height, i.getDeltaY() + i.getHeight());
+        int newDy = std::max(dy, i.getDeltaY());
+        bound = std::min(dy + height, i.getDeltaY() + i.getHeight());
         height = bound > newDy ? bound - newDy : 0;
         dy = newDy;
     }

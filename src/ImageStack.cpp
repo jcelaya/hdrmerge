@@ -21,6 +21,7 @@
  */
 
 #include <algorithm>
+#include <array>
 
 #include "BoxBlur.hpp"
 #include "ImageStack.hpp"
@@ -74,7 +75,8 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
 
     Image& brightest_image = images.front();
 
-    std::vector<std::vector<size_t>> histograms(4, std::vector<size_t>(brightest_image.getMax() + 1));
+    std::array<std::vector<size_t>, 4> histograms;
+    std::fill(histograms.begin(), histograms.end(), std::vector<size_t>(brightest_image.getMax() + 1));
 
     #pragma omp parallel
     {
@@ -89,22 +91,21 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
             size_t x = 0;
             for (; x < width - 5; x+=6) {
                 for(size_t j = 0; j < 6; ++j) {
-                    uint16_t luminance_val = brightest_image(x + j, y);
+                    const uint16_t luminance_val = brightest_image(x + j, y);
                     ++histograms_thr[fc_row[j]][luminance_val];
                 }
             }
             // remaining pixels
             for (size_t j = 0; x < width; ++x, ++j) {
-                uint16_t luminance_val = brightest_image(x, y);
+                const uint16_t luminance_val = brightest_image(x, y);
                 ++histograms_thr[fc_row[j]][luminance_val];
             }
         }
         #pragma omp critical
         {
             for (int c_channel = 0; c_channel < 4; ++c_channel) {
-                std::vector<size_t>::size_type histogram_size, luminance_val;
-                histogram_size = histograms[c_channel].size();
-                for (luminance_val = 0; luminance_val < histogram_size; ++luminance_val) {
+                const std::vector<size_t>::size_type histogram_size = histograms[c_channel].size();
+                for (std::vector<size_t>::size_type luminance_val = 0; luminance_val < histogram_size; ++luminance_val) {
                     histograms[c_channel][luminance_val] += histograms_thr[c_channel][luminance_val];
                 }
             }
@@ -112,15 +113,15 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
     }
 
     // used to ignore luminances with frequentcy less htan 0.0001
-    const size_t occurance_threshold = width * height / 10000;
+    const std::size_t occurance_threshold = width * height / 10000;
 
     // maximum "significant" luminance per color channel
-    uint16_t max_lum_per_color[4] = {0, 0, 0, 0};
+    std::uint16_t max_lum_per_color[4] = {};
 
     for (int c_channel = 0; c_channel < 4; ++c_channel) {
         // start from the highest value in the histograms (brightest)
         for (int luminance_val = histograms[c_channel].size() - 1; luminance_val >= 0; --luminance_val) {
-            const size_t frequency = histograms[c_channel][luminance_val];
+            const std::size_t frequency = histograms[c_channel][luminance_val];
             // ignore if it has a low occurance (frequency) in the image
             if (frequency > occurance_threshold) {
                 max_lum_per_color[c_channel] = luminance_val;
@@ -130,11 +131,11 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
     }
 
 
-    uint16_t max_luminance = std::max(max_lum_per_color[0], std::max(max_lum_per_color[1],std::max(
-        max_lum_per_color[2], max_lum_per_color[3])));
+    const std::uint16_t max_luminance = *std::max_element(
+        std::begin(max_lum_per_color), std::end(max_lum_per_color));
     saturation_threshold = params.max == 0 ? max_luminance : params.max;
 
-    if(max_luminance > 0) {
+    if (max_luminance > 0) {
         saturation_threshold = std::min(saturation_threshold, max_luminance);
     }
 
@@ -147,8 +148,8 @@ void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use
 
     Log::debug( "Using white level ", saturation_threshold );
 
-    for (auto& img : images) {
-        img.setSaturationThreshold(saturation_threshold);
+    for (auto& image : images) {
+        image.setSaturationThreshold(saturation_threshold);
     }
 }
 
@@ -226,16 +227,16 @@ void ImageStack::generateMask() {
      *
      * Methodology: if possible get all the pixels from the brightest image
      * because it has the least amount of noise. only clipped data will be
-     * taken from the darker images
+     * taken from the darker images.
      *
-     * Result: we end up with a map (matrix) that dictates from which layer of
-     * the stack should each pixel be taken from for the HDR merging. Exapmle:
-     * map(154, 445) -> 2, 2 is the index of the image.
+     * Result: we end up with a map (matrix) that looks like the following:
+     * mask(154, 445) -> 2; here the pixel at (154, 455) of the final merged
+     * HDR would be extracted from the `images[2]`
      */
 
     Timer t("Generate mask");
     mask.resize(width, height);
-    if(images.size() == 1) {
+    if (images.size() == 1) {
         // single image, fill in zero values
         std::fill_n(&mask[0], width*height, 0);
     } else {
@@ -244,8 +245,13 @@ void ImageStack::generateMask() {
         for (size_t y = 0; y < height; ++y) {
             for (size_t x = 0; x < width; ++x) {
                 size_t i = 0;
-                while (i < images.size() - 1 && (!images[i].contains(x, y) ||
-                    images[i].isSaturatedAround(x, y))) {
+                while (
+                    i < images.size() - 1
+                    && (
+                        !images[i].contains(x, y)
+                        || images[i].isSaturatedAround(x, y)
+                    )
+                ) {
                     // skip if the pixel is not in image or clipped
                     ++i;
                 }

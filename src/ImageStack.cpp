@@ -205,6 +205,8 @@ void ImageStack::computeResponseFunctions() {
      */
 
     Timer t("Compute response functions");
+
+    // loop from darker to brighter
     for (int i = images.size() - 2; i >= 0; --i) {
         // images[i] = the brighter image
         // images[i + 1] = the darker image

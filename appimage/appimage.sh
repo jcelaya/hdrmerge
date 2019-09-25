@@ -3,18 +3,18 @@
 # Move blacklisted files to a special folder
 move_blacklisted()
 {
-  mkdir -p ./usr/lib-blacklisted
-  #BLACKLISTED_FILES=$(wget -q https://github.com/probonopd/AppImages/raw/master/excludelist -O - | sed '/^\s*$/d' | sed '/^#.*$/d')
-  BLACKLISTED_FILES=$(cat $APPIMAGEBASE/AppImages/excludelist | sed '/^\s*$/d' | sed '/^#.*$/d')
-  echo $BLACKLISTED_FILES
-  for FILE in $BLACKLISTED_FILES ; do
-    FOUND=$(find . -type f -name "${FILE}" 2>/dev/null)
-    if [ ! -z "$FOUND" ] ; then
-      echo "Deleting blacklisted ${FOUND}"
-      #rm -f "${FOUND}"
-      mv "${FOUND}" ./usr/lib-blacklisted
-    fi
-  done
+    mkdir -p ./usr/lib-blacklisted
+    #BLACKLISTED_FILES=$(wget -q https://github.com/probonopd/AppImages/raw/master/excludelist -O - | sed '/^\s*$/d' | sed '/^#.*$/d')
+    BLACKLISTED_FILES=$(cat $APPIMAGEBASE/AppImages/excludelist | sed '/^\s*$/d' | sed '/^#.*$/d')
+    echo $BLACKLISTED_FILES
+    for FILE in $BLACKLISTED_FILES ; do
+        FOUND=$(find . -type f -name "${FILE}" 2>/dev/null)
+        if [ ! -z "$FOUND" ] ; then
+            echo "Deleting blacklisted ${FOUND}"
+            #rm -f "${FOUND}"
+            mv "${FOUND}" ./usr/lib-blacklisted
+        fi
+    done
 }
 
 

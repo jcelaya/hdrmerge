@@ -3,14 +3,17 @@
 HDRMerge combines two or more raw images into a single raw with an extended dynamic range. It can import any raw image supported by LibRaw, and outputs a DNG 1.4 image with floating point data. The output raw is built from the less noisy pixels of the input, so that shadows maintain as much detail as possible. This tool also offers a GUI to remove ghosts from the resulting image.
 
 ## Download & Installation
+
 Find the latest builds on our [releases page](https://github.com/jcelaya/hdrmerge/releases).
 
 Linux users can get HDRMerge from their package manager. If your package manager does not ship the latest version of HDRMerge, file a bug report using your distribution's bug tracker asking them to ship the latest version.
 
 ## Compilation
+
 If you would like to compile HDRMerge yourself, follow the instructions in the `INSTALL.md` file.
 
 ## Usage
+
 Source images can be loaded from the Open option in the File menu, or passed as arguments in the command line. They must be made with the same camera. After loading them, HDRMerge will correct small misalignments by translation. So, if your camera allows it, you can take the shots with bracketing in burst mode. I have successfully done this just holding the camera with my hands, but using a tripod is highly recommended to obtain the best results.
 
 Once the input images are loaded, the interface presents you with a 100% preview of the result. The selected pixels from each input image are painted with a different color. You can then pan the result to inspect it.
@@ -24,18 +27,22 @@ The program can also be run without GUI, in batch mode. This is accomplished eit
 HDRMerge merges raw files to produce an HDR image in DNG format. Once you have obtained your image from HDRMerge, you need to further process it in an application that supports HDR images in the DNG format, such as [RawTherapee](https://rawtherapee.com) or [darktable](https://darktable.org). 
 
 ## Licence
+
 HDRMerge is released under the GNU General Public License v3.0.
 See the file `LICENSE`.
 
 ## Contributing
+
 Fork the project and send pull requests, or send patches by creating a new issue on our GitHub page:
 https://github.com/jcelaya/hdrmerge/issues
 
 ## Reporting Bugs
+
 Report bugs by creating a new issue on our GitHub page:
 https://github.com/jcelaya/hdrmerge/issues
 
 ## Changelog:
+
 - v1.0 (not released yet)
   - Allow user to specify custom white level in case of artifacts with automatically computed white level from LibRaw.
   - Added support for raw files from Fufjifilm X-Trans sensors.
@@ -97,6 +104,7 @@ https://github.com/jcelaya/hdrmerge/issues
   - Copies the EXIF data from the least exposed source image.
 
 ## Acknowledgments
+
 I would like to thank all the people that have contributed ideas, critics and samples to improve HDRMerge. In particular, to the team of [RawTherapee](https://github.com/Beep6581/RawTherapee).
 
 Also, HDRMerge implements or is based on the techniques described in the following works:
@@ -108,6 +116,7 @@ Also, HDRMerge implements or is based on the techniques described in the followi
 There is also a community forum for discussions and connecting with other users (as well as other Free Software projects) at <https://discuss.pixls.us>, hosted by [PIXLS.US](https://pixls.us).
 
 ## Links
+
 Website and documentation: http://jcelaya.github.io/hdrmerge/
 Forum: https://discuss.pixls.us/c/software/hdrmerge
 GitHub: https://github.com/jcelaya/hdrmerge

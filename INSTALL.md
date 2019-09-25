@@ -1,7 +1,9 @@
 # Compilation
+
 This document explains how to compile HDRMerge.
 
 ## Dependencies
+
 - [ALGLIB](http://www.alglib.net/)
 - [Boost](http://www.boost.org/)
 - [CMake](https://cmake.org/) 3.4
@@ -16,6 +18,7 @@ This document explains how to compile HDRMerge.
 Install the dependencies and proceed to the next section.
 
 ### Arch and derivatives
+
 ```bash
 sudo pacman -Syy
 sudo pacman -S --needed cmake libraw pacaur qt5
@@ -23,17 +26,20 @@ pacaur -S alglib
 ```
 
 ### Debian/Ubuntu and derivatives
+
 ```bash
 sudo apt update
 sudo apt install build-essential cmake git libalglib-dev libboost-all-dev libexiv2-dev libexpat-dev libraw-dev qt5-default zlib1g-dev
 ```
 
 ### Gentoo and derivatives
+
 ```bash
 sudo emerge -uva sci-libs/alglib dev-libs/boost dev-util/cmake media-gfx/exiv2 dev-vcs/git media-libs/libraw sys-devel/gettext dev-libs/expat virtual/libiconv dev-qt/qtcore:5 sys-libs/zlib
 ```
 
 ## Compilation in Windows
+
 - Download ALGLIB from http://www.alglib.net/download.php and set the base path in `ALGLIB_ROOT`.
 - Install NSIS from http://nsis.sourceforge.net/Download
   If you install it to a custom folder, make sure it is accessible from your `PATH` environment variable.
@@ -49,7 +55,9 @@ Now you can `make install`.
 You have finished.
 
 ## Compilation in Linux for Linux
+
 Once you have installed the dependencies, run the following to clone and compile HDRMerge:
+
 ```bash
 mkdir ~/programs
 git clone https://github.com/jcelaya/hdrmerge.git ~/programs/code-hdrmerge
@@ -61,6 +69,7 @@ HDRMerge will be ready for use in `~/programs/hdrmerge/hdrmerge`
 You have finished.
 
 ## Compilation in Linux for Windows
+
 These instructions are meant to be a guide to cross-compile HDRMerge on Debian for the Windows platform, both 32- and 64-bit editions.
 
 It is assumed that you are installing your cross-compiled libraries in `$HOME/usr/x86_64-w64-mingw32`.
@@ -124,10 +133,10 @@ The result of the compilation should be the binaries `hdrmerge.exe` and `hdrmerg
 You have finished.
 
 ## Compilation in macOS
+
 The first step is to get all the dependencies as well as the source code:
 
 **NOTE:** xCode is not required but recommended. The Command Line tools that are implicitly installed with Homebrew are sufficient.
-
 
 1. Install [Homebrew](https://brew.sh):
 https://brew.sh

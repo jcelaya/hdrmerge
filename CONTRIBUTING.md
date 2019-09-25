@@ -1,7 +1,9 @@
 ## Thank You
+
 Thank you for showing interest in contributing to HDRMerge. It is people such as yourself who make this program and project possible.
 
 ## Contributing as a Programmer
+
 - Announce and discuss your plans in GitHub before starting work.
 - Work in a new branch. Fork if necessary.
 - Keep branches small.
@@ -9,7 +11,9 @@ Thank you for showing interest in contributing to HDRMerge. It is people such as
 - Use C++11.
 
 ### Naming and Comments
+
 The naming isn't homogeneous throughout the code but here is a rough guideline:
+
 - *Identifiers* (variables, functions, methods, keys, enums, etc.) should be clear and unambiguous. Make them as long as necessary to ensure that your code is understandable to others and to your future self.
 - *Types* (classes, structs, enums, typedefs...) should be named with `UpperCamelCase`.
 - *Functions* and *methods* should be named with `lowerCamelCase`.
@@ -20,7 +24,9 @@ The naming isn't homogeneous throughout the code but here is a rough guideline:
 - Be consistent, even when not sticking to the rules.
 
 ### Refactoring Code
+
 Don't shy away from refactoring code, it helps more than you think.
+
 - Change the naming and add comments when they don't match with the guidelines above.
 - C++11 gives many opportunities to simplify code (e.g. default initializing with `= {}` or default returning with `return {};`).
 - When using `auto` think a bit about the reviewers reading diffs and guessing types. It's a double-edged sword.

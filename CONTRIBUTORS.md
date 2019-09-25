@@ -1,5 +1,7 @@
 # Contributors
+
 People who made significant contributions, in last name alphabetical order:
+
 - Pat David https://github.com/patdavid
 - Maciej Dworak https://github.com/Beep6581
 - Andrea Ferrero https://github.com/aferrero2707

@@ -43,7 +43,7 @@ https://github.com/jcelaya/hdrmerge/issues
 
 ## Changelog:
 
-- v0.6 (not released yet)
+- v0.6
   - Allow user to specify custom white level in case of artifacts with automatically computed white level from LibRaw.
   - Added support for raw files from Fufjifilm X-Trans sensors.
   - Speed optimization.

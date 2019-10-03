@@ -25,11 +25,12 @@
 
 #include <vector>
 #include <QString>
+#include <QStringList>
 
 namespace hdrmerge {
 
 struct LoadOptions {
-    std::vector<QString> fileNames;
+    QStringList fileNames;
     bool align;
     bool crop;
     bool useCustomWl;

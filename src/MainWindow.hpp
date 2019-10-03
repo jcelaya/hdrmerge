@@ -25,6 +25,7 @@
 
 #include <list>
 #include <QString>
+#include <QStringList>
 #include <QAction>
 #include <QLabel>
 #include <QMainWindow>
@@ -47,7 +48,7 @@ public:
     MainWindow();
 
     void closeEvent(QCloseEvent * event);
-    void preload(const std::vector<QString> & o) {
+    void preload(QStringList & o) {
         preloadFiles = o;
     }
 
@@ -110,7 +111,7 @@ private:
     QLabel * statusLabel;
 
     ImageIO io;
-    std::vector<QString> preloadFiles;
+    QStringList preloadFiles;
 };
 
 } // namespace hdrmerge

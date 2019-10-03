@@ -48,7 +48,7 @@ private:
     char ** argv;
     LoadOptions generalOptions;
     SaveOptions saveOptions;
-    bool help;
+    bool useGui;
 };
 
 } // namespace hdrmerge

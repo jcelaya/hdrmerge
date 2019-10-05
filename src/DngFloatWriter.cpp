@@ -333,7 +333,7 @@ void DngFloatWriter::renderPreviews() {
     if (previewWidth > 0) {
         QBuffer buffer(&jpegPreviewData);
         buffer.open(QIODevice::WriteOnly);
-        QImageWriter writer(&buffer, "JPEG");
+        QImageWriter writer(&buffer, "JPG");
         writer.setQuality(85);
         if (!writer.write(preview)) {
             cerr << "Error converting the preview to JPEG: " << writer.errorString() << endl;

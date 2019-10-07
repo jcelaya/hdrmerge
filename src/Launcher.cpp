@@ -38,17 +38,15 @@
 #include "Log.hpp"
 #include <libraw.h>
 
-using namespace std;
-
 namespace hdrmerge {
 
 Launcher::Launcher(int argc, char * argv[]) : argc(argc), argv(argv), useGui(true) {
-    Log::setOutputStream(cout);
+    Log::setOutputStream(std::cout);
     saveOptions.previewSize = 2;
 }
 
 
-int Launcher::startGUI() {
+int Launcher::startGUI() const {
 #ifndef NO_GUI
     // Create main window
     MainWindow mw;
@@ -66,35 +64,42 @@ int Launcher::startGUI() {
 struct CoutProgressIndicator : public ProgressIndicator {
     virtual void advance(int percent, const char * message, const char * arg) {
         if (arg) {
-            Log::progress('[', setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message).arg(arg));
+            Log::progress('[', std::setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message).arg(arg));
         } else {
-            Log::progress('[', setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message));
+            Log::progress('[', std::setw(3), percent, "%] ", QCoreApplication::translate("LoadSave", message));
         }
     }
 };
 
 
-list<LoadOptions> Launcher::getBracketedSets() {
-    list<LoadOptions> result;
-    if (generalOptions.imagesPerBracket > 0) {
-        if (generalOptions.fileNames.size() % generalOptions.imagesPerBracket != 0) {
-            cerr << QCoreApplication::translate("LoadSave", "Number of files not a multiple of number per bracketed set (-s). Aborting.");
-            exit(EXIT_FAILURE);
-        }
+std::list<LoadOptions> Launcher::getBracketedSets() const {
+    std::list<LoadOptions> result;
+    if (generalOptions.grouping == LoadOptions::Grouping::MANUAL) {
+        LoadOptions globalOptions = generalOptions;
+        while(!globalOptions.fileNames.empty()) {
+            LoadOptions opt = globalOptions;
 
-        while(!generalOptions.fileNames.empty()) {
-            LoadOptions opt = generalOptions;
-            auto oIt = opt.fileNames.begin();
-            auto goIt = generalOptions.fileNames.begin();
-            std::advance(oIt, generalOptions.imagesPerBracket);
-            std::advance(goIt, generalOptions.imagesPerBracket);
-            opt.fileNames.erase(oIt, opt.fileNames.end());
-            generalOptions.fileNames.erase(generalOptions.fileNames.begin(), goIt);
+            // opt.fileNames and globalOptions.fileNames are equal
+            // *optIt == *globaloptIt
+            auto optIt = opt.fileNames.begin();
+            auto globaloptIt = globalOptions.fileNames.begin();
+
+            // move both iterators by the number of images per bracket
+            std::advance(optIt, globalOptions.imagesPerBracket);
+            std::advance(globaloptIt, globalOptions.imagesPerBracket);
+
+            // we want to keep only the first imagesPerBracket file names
+            // erase the tail
+            opt.fileNames.erase(optIt, opt.fileNames.end());
+
+            // the first imagesPerBracket file names found their new home in opt
+            // Erase them from globalOptions
+            globalOptions.fileNames.erase(globalOptions.fileNames.begin(), globaloptIt);
             result.push_back(opt);
         }
     } else {
-        list<pair<ImageIO::QDateInterval, QString>> dateNames;
-        for (QString & name : generalOptions.fileNames) {
+        std::list<std::pair<ImageIO::QDateInterval, QString>> dateNames;
+        for (const QString & name : generalOptions.fileNames) {
             ImageIO::QDateInterval interval = ImageIO::getImageCreationInterval(name);
             if (interval.start.isValid()) {
                 dateNames.emplace_back(interval, name);
@@ -128,10 +133,10 @@ list<LoadOptions> Launcher::getBracketedSets() {
 }
 
 
-int Launcher::automaticMerge() {
+int Launcher::automaticMerge() const {
     auto tr = [&] (const char * text) { return QCoreApplication::translate("LoadSave", text); };
-    list<LoadOptions> optionsSet;
-    if (generalOptions.batch) {
+    std::list<LoadOptions> optionsSet;
+    if (generalOptions.grouping > LoadOptions::Grouping::ALL) {
         optionsSet = getBracketedSets();
     } else {
         optionsSet.push_back(generalOptions);
@@ -150,9 +155,9 @@ int Launcher::automaticMerge() {
             int format = result & 1;
             int i = result >> 1;
             if (format) {
-                cerr << tr("Error loading %1, it has a different format.").arg(options.fileNames[i]) << endl;
+                std::cerr << tr("Error loading %1, it has a different format.").arg(options.fileNames[i]) << std::endl;
             } else {
-                cerr << tr("Error loading %1, file not found.").arg(options.fileNames[i]) << endl;
+                std::cerr << tr("Error loading %1, file not found.").arg(options.fileNames[i]) << std::endl;
             }
             result = 1;
             continue;
@@ -181,14 +186,14 @@ void Launcher::parseCommandLine() {
     parser.setApplicationDescription(
             tr("Merges raw_files into an HDR DNG raw image.\n") +
 #ifndef NO_GUI
-            tr("If neither -o nor --batch options are given, the GUI will be presented.\n") +
+            tr("If neither -o nor --group options are given, the GUI will be presented.\n") +
 #endif
             tr("If similar options are specified, only the last one prevails.\n")
     );
 
     parser.addPositionalArgument("files", "The input raw files", "[raw_files...]");
 
-    QCommandLineOption outputOpt("o",
+    const QCommandLineOption outputOption("o",
             tr("Sets <file> as the output file name. "
             "If not set it falls back to '%1'.\n"
             "The following parameters are accepted, most useful in batch mode:").arg("%id[-1]/%iF[0]-%in[-1].dng") +
@@ -197,169 +202,189 @@ void Launcher::parseCommandLine() {
             "last image, n = -2 is the previous to the last image, and so on.") +
             "\n- %iF[n]: " + tr("Replaced by the base file name of image n without the extension.") +
             "\n- %id[n]: " + tr("Replaced by the directory name of image n.") +
-            "\n- %in[n]: " + tr("Replaced by the numerical suffix of image n, if it exists."
+            "\n- %in[n]: " + tr("Replaced by the numerical suffix of image n, if it exists. "
             "For instance, in IMG_1234.CR2, the numerical suffix would be 1234.") +
             "\n- %%: " + tr("Replaced by a single %."),
             "file");
-    parser.addOption(outputOpt);
+    parser.addOption(outputOption);
 
-    QCommandLineOption maskFileOpt("m",
+    const QCommandLineOption maskFileOption("m",
             tr("Saves the mask to <file> as a PNG image.\n"
             "Besides the parameters accepted by -o, it also accepts:") +
             "\n- %of: " + tr("Replaced by the base file name of the output file.") +
             "\n- %od: " + tr("Replaced by the directory name of the output file."),
             "file");
-    parser.addOption(maskFileOpt);
+    parser.addOption(maskFileOption);
 
-    QCommandLineOption logLevelOpt({"l", "loglevel"},
-            tr("The level of logging output you want to recieve."),
+    const QCommandLineOption logLevelOption({"l", "loglevel"},
+            tr("The level of logging output you want to receive."),
             "verbose|debug");
-    parser.addOption(logLevelOpt);
+    parser.addOption(logLevelOption);
 
-    QCommandLineOption noAlignOpt("no-align",
+    const QCommandLineOption noAlignOption("no-align",
             tr("Do not auto-align source images."));
-    parser.addOption(noAlignOpt);
+    parser.addOption(noAlignOption);
 
-    QCommandLineOption noCropOpt("no-crop",
+    const QCommandLineOption noCropOption("no-crop",
             tr("Do not crop the output image to the optimum size."));
-    parser.addOption(noCropOpt);
+    parser.addOption(noCropOption);
 
-    QCommandLineOption batchOpt({"B","batch"},
-            tr("Batch mode: Input images are automatically grouped into bracketed sets, "
-            "by comparing the creation time.")
-            );
-    parser.addOption(batchOpt);
+    const QCommandLineOption groupOption({"G", "group"},
+            tr("Determines how the input images are grouped.") +
+               "\n- all, a: " + tr("Process all input images as a single group. Default.") +
+               "\n- auto, t: " + tr("Group images automatically based on their time of creation (Exif DateTimeOriginal).") +
+               "\n- manual, m: " + tr("Group images manually based on a number of images per group."),
+            "all|auto|manual",
+            "all");
+    parser.addOption(groupOption);
 
-    QCommandLineOption bracketSizeOpt({"s", "bracket-size"},
-            tr("Fixed number of images per bracket set. Use together with -B. "
-               "Creation time and --single option will be ignored."),
-            "integer", QString::number(-1));
-    parser.addOption(bracketSizeOpt);
+    const QCommandLineOption bracketSizeOption({"s", "bracket-size"},
+            tr("Fixed number of images per bracket set. "
+               "Only used when grouping manually. " 
+               "Creation time and --single option will be ignored. "
+               "The total number of images passed to HDRMerge must be a multiple of this number.") +
+               " Default: 3",
+            "integer", QString::number(3));
+    parser.addOption(bracketSizeOption);
 
-    QCommandLineOption singleOpt("single",
-            tr("Include single images in batch mode (the default is to skip them.)"));
-    parser.addOption(singleOpt);
+    const QCommandLineOption gapOption({"g", "gap"},
+            tr("Maximum gap in seconds between chronologically adjacent images. "
+               "If the gap is larger, a new group is created. "
+               "Only used when grouping automatically or all.") +
+               " Default: 3.0",
+            "double", QString::number(3.0));
+    parser.addOption(gapOption);
 
-    QCommandLineOption helpOpt = parser.addHelpOption();
+    const QCommandLineOption singleOption("single",
+            tr("Include single images when specified. Only used when grouping automatically. "
+               "Off by default."));
+    parser.addOption(singleOption);
 
-    QCommandLineOption bitOpt("b",
+    const QCommandLineOption helpOption = parser.addHelpOption();
+
+    const QCommandLineOption bitOption("b",
             tr("Bits per sample."),
             "16|24|32", QString::number(16));
-    parser.addOption(bitOpt);
+    parser.addOption(bitOption);
 
-    QCommandLineOption whiteLevelOpt("w",
+    const QCommandLineOption whiteLevelOption("w",
             tr("Use custom white level."), "integer", "16383");
-    parser.addOption(whiteLevelOpt);
+    parser.addOption(whiteLevelOption);
 
-    QCommandLineOption gapOpt("g",
-            tr("Batch gap, maximum difference in seconds between two images of the same set."),
-            "double", QString::number(2.0));
-    parser.addOption(gapOpt);
-
-    QCommandLineOption featherRadiusOpt("r",
+    const QCommandLineOption featherRadiusOption("r",
             tr("Mask blur radius, to soften transitions between images. Default is 3 pixels."),
             "integer", QString::number(3));
-    parser.addOption(featherRadiusOpt);
+    parser.addOption(featherRadiusOption);
 
-    QCommandLineOption previewSizeOpt("p",
+    const QCommandLineOption previewSizeOption("p",
             tr("Size of the preview. Default is none."),
             "full|half|none", "none");
-    parser.addOption(previewSizeOpt);
+    parser.addOption(previewSizeOption);
 
     parser.process(QCoreApplication::arguments());
 
     bool ok; // to check conversions from QString
 
-    char const * errorStart = ">>> ERROR >>> ERROR >>> ERROR >>>\n";
-    char const * errorStop  = "\n<<< ERROR <<< ERROR <<< ERROR <<<";
+    const char* const errorHint = "There were errors in your commandline options:";
 
     /**
      * Use this when the user passes an invalid parameter, like "-b=17" (b:16;24;32)
      */
-    auto invalidParamHandler = [&] (const QCommandLineOption& opt) {
-        cerr << errorStart <<
+    const auto invalidParameterHandler =
+        [&tr, &parser, errorHint] (const QCommandLineOption& opt) {
+        std::cerr << parser.helpText() << '\n' <<
+                tr(errorHint) << '\n' <<
                 tr("Invalid parameter '%1' for option '-%2'. "
                    "Please read the help for valid parameters.")
                   .arg(parser.value(opt))
-                  .arg(opt.names().at(0))
-             << errorStop << endl;
+                  .arg(opt.names().at(0)) << std::endl;
         // exit right away, creating HDR takes a lot of time
         // and just falling back to default is probably not what the user wants...
-        parser.showHelp(EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     };
 
     /**
      * Use this when the user passes an invalid type, like "-b=sixteen" (b:integer)
      */
-    auto invalidParamTypeHandler = [&] (const QCommandLineOption& opt) {
-        cerr << errorStart <<
+    const auto invalidParameterTypeHandler =
+        [&tr, &parser, errorHint] (const QCommandLineOption& opt) {
+        std::cerr << parser.helpText() << '\n' <<
+                tr(errorHint) << '\n' <<
                 tr("Invalid parameter type for option '-%1'. "
                    "Please read the help for the valid type.")
-                  .arg(opt.names().at(0))
-             << errorStop << endl;
-        parser.showHelp(EXIT_FAILURE);
+                  .arg(opt.names().at(0)) << std::endl;
+        exit(EXIT_FAILURE);
     };
 
     generalOptions.fileNames = parser.positionalArguments();
 
-    saveOptions.fileName = parser.value(outputOpt);
-    if (parser.isSet(maskFileOpt)) {
+    saveOptions.fileName = parser.value(outputOption);
+    if (parser.isSet(maskFileOption)) {
         saveOptions.saveMask = true;
-        saveOptions.maskFileName = parser.value(outputOpt);
+        saveOptions.maskFileName = parser.value(outputOption);
     }
-    if (parser.isSet(logLevelOpt)) {
-        QString value = parser.value(logLevelOpt);
+    if (parser.isSet(logLevelOption)) {
+        const QString value = parser.value(logLevelOption);
         if (value == "verbose" || value == "v") {
             Log::setMinimumPriority(1);
         } else if (value == "debug" || value == "d") {
             Log::setMinimumPriority(0);
         } else {
-            invalidParamHandler(logLevelOpt);
+            invalidParameterHandler(logLevelOption);
         }
     }
-    generalOptions.align = !parser.isSet(noAlignOpt);
-    generalOptions.crop = !parser.isSet(noCropOpt);
-    generalOptions.batch = parser.isSet(batchOpt);
-    {
-        QString value = parser.value(bracketSizeOpt);
-        int iVal = value.toInt(&ok);
-        if (ok) {
-            generalOptions.imagesPerBracket = iVal;
+    generalOptions.align = !parser.isSet(noAlignOption);
+    generalOptions.crop = !parser.isSet(noCropOption);
+
+    if (parser.isSet(groupOption) || parser.isSet(outputOption)) {
+        const QString value = parser.value(groupOption);
+        if (value == "all" || value == "a") {
+            generalOptions.grouping = LoadOptions::Grouping::ALL;
+        } else if (value == "auto" || value == "t") {
+            generalOptions.grouping = LoadOptions::Grouping::AUTO;
+        } else if (value == "manual" || value == "m") {
+            generalOptions.grouping = LoadOptions::Grouping::MANUAL;
         } else {
-            invalidParamTypeHandler(bracketSizeOpt);
+            invalidParameterHandler(groupOption);
         }
     }
-    generalOptions.withSingles = parser.isSet(singleOpt);
+
     {
-        QString value = parser.value(gapOpt);
-        double dVal = value.toDouble(&ok);
+        const int value = parser.value(bracketSizeOption).toInt(&ok);
         if (ok) {
-            generalOptions.batchGap = dVal;
+            generalOptions.imagesPerBracket = value;
         } else {
-            invalidParamTypeHandler(gapOpt);
+            invalidParameterTypeHandler(bracketSizeOption);
         }
     }
+    generalOptions.withSingles = parser.isSet(singleOption);
     {
-        QString value = parser.value(featherRadiusOpt);
-        int iVal = value.toInt(&ok);
+        const double value = parser.value(gapOption).toDouble(&ok);
         if (ok) {
-            saveOptions.featherRadius = iVal;
+            generalOptions.batchGap = value;
         } else {
-            invalidParamTypeHandler(featherRadiusOpt);
+            invalidParameterTypeHandler(gapOption);
         }
     }
     {
-        generalOptions.useCustomWl = parser.isSet(whiteLevelOpt);
-        QString value = parser.value(whiteLevelOpt);
-        uint iVal = value.toUInt(&ok);
+        const int value = parser.value(featherRadiusOption).toInt(&ok);
         if (ok) {
-            generalOptions.customWl = iVal;
+            saveOptions.featherRadius = value;
         } else {
-            invalidParamTypeHandler(whiteLevelOpt);
+            invalidParameterTypeHandler(featherRadiusOption);
         }
     }
     {
-        QString previewSize = parser.value(previewSizeOpt);
+        generalOptions.useCustomWl = parser.isSet(whiteLevelOption);
+        const uint value = parser.value(whiteLevelOption).toUInt(&ok);
+        if (ok) {
+            generalOptions.customWl = value;
+        } else {
+            invalidParameterTypeHandler(whiteLevelOption);
+        }
+    }
+    {
+        const QString previewSize = parser.value(previewSizeOption);
         if (previewSize == "none" || previewSize == "n") {
             saveOptions.previewSize = 0;
         } else if (previewSize == "half" || previewSize =="h") {
@@ -367,27 +392,32 @@ void Launcher::parseCommandLine() {
         } else if (previewSize == "full" || previewSize == "f") {
             saveOptions.previewSize = 2;
         } else {
-            invalidParamHandler(previewSizeOpt);
+            invalidParameterHandler(previewSizeOption);
         }
     }
     {
-        QString value = parser.value(bitOpt);
-        int iVal = value.toInt(&ok);
+        const int value = parser.value(bitOption).toInt(&ok);
         if (ok) {
-            if (iVal == 32 || iVal == 24 || iVal == 16) {
-                saveOptions.bps = iVal;
+            if (value == 32 || value == 24 || value == 16) {
+                saveOptions.bps = value;
             } else {
-                invalidParamHandler(bitOpt);
+                invalidParameterHandler(bitOption);
             }
         } else {
-            invalidParamTypeHandler(bitOpt);
+            invalidParameterTypeHandler(bitOption);
         }
+    }
+
+    if (generalOptions.grouping == LoadOptions::Grouping::MANUAL &&
+        generalOptions.fileNames.size() % generalOptions.imagesPerBracket != 0) {
+        std::cerr << tr("Number of files not a multiple of number per bracketed set (-s). Aborting.");
+        exit(EXIT_FAILURE);
     }
 
 #ifdef NO_GUI
     useGui = false;
 #else
-    if (parser.isSet(outputOpt) || parser.isSet(batchOpt)) {
+    if (generalOptions.grouping > LoadOptions::Grouping::UNSET) {
         useGui = false;
     }
 #endif

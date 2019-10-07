@@ -38,11 +38,9 @@ public:
     int run();
 
 private:
-    bool checkGUI();
-    int startGUI();
-    int automaticMerge();
-    void showHelp();
-    std::list<LoadOptions> getBracketedSets();
+    int startGUI() const;
+    int automaticMerge() const;
+    std::list<LoadOptions> getBracketedSets() const;
 
     int argc;
     char ** argv;

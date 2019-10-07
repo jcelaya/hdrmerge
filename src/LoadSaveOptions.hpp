@@ -35,11 +35,17 @@ struct LoadOptions {
     bool crop;
     bool useCustomWl;
     uint16_t customWl;
-    bool batch;
+    enum class Grouping {
+        UNSET,
+        ALL,
+        AUTO,
+        MANUAL
+    };
+    Grouping grouping;
     int imagesPerBracket;
     double batchGap;
     bool withSingles;
-    LoadOptions() : align(true), crop(true), useCustomWl(false), customWl(16383), batch(false), imagesPerBracket(-1), batchGap(2.0),
+    LoadOptions() : align(true), crop(true), useCustomWl(false), customWl(16383), grouping(Grouping::UNSET), imagesPerBracket(3), batchGap(3.0),
         withSingles(false) {}
 };
 

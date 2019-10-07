@@ -48,7 +48,7 @@ public:
     MainWindow();
 
     void closeEvent(QCloseEvent * event);
-    void preload(QStringList & o) {
+    void preload(const QStringList & o) {
         preloadFiles = o;
     }
 

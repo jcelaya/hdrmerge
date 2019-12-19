@@ -30,7 +30,7 @@ HDRMerge also allows you to treat HDR images as any other raw image, introducing
 
 In the last revision of the DNG SDK, version 1.4, Adobe introduced the possibility of encoding the data as 16-, 24- and 32-bit floating point numbers, instead of the usual 16-bit integers. In this way, the dynamic range that can be represented with such an encoding is vastly increased. Furthermore, the floating point encoding dedicates the same number of levels to each exposure step.
 
-The drawback is that very few programs read this format. [RawTherapee][5] (as for v4.1) and [darktable][6] support these formats, as do recent versions of Adobe products.
+The drawback is that very few programs read this format. [RawTherapee][5] (as of v4.1) and [darktable][6] support these formats, as do recent versions of Adobe products.
 
 If you want to tone-map an image resulting from HDRMerge with a program like Luminance HDR or Photomatix, a solution would be to develop it first (using RawTherapee, darktable or Lightroom) as a 16- or 32-bit TIFF image. Then, open the TIFF with your tone-mapping program. 16-bit integers, along with a gamma correction, are usually enough to encode most HDR images with detailed shadows free of noise (after all, the dynamic range is all about [noise][7]). You can also pull the shadows up yourself during raw development.
 

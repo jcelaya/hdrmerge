@@ -3,15 +3,11 @@ layout: default
 image: index.jpg
 title: HDRMerge
 ---
-HDRMerge combines two or more raw images into a single raw with an extended dynamic range. It can import any raw image supported by LibRaw, and outputs a DNG 1.4 image with floating point data. The output raw is built from the less noisy pixels of the input, so that shadows maintain as much detail as possible. This tool also offers a GUI to remove 'ghosts' from the resulting image. [Discover more about HDRMerge]({{ site.baseurl }}{% post_url 2014-05-24-what-is-hdrmerge %})
 
-HDRMerge GitHub project
+HDRMerge creates raw images with an extended dynamic range. It does so using either multiple exposure-bracketed raw files (any camera), or a single raw file which contains multiple exposure-bracketed frames (Fuji EXR and some Pentax cameras). It can import any raw format supported by LibRaw, and outputs a DNG 1.4 image with floating point data. The output raw is built from the less noisy pixels of the input, so that shadows maintain as much detail as possible. This tool also offers a GUI to remove 'ghosts' from the resulting image.
 
-# Downloads
-
-HDRMerge is supported in Linux, Windows and macOS.
-
-## Latest Stable Release
+## Downloads
+### Latest Stable Release
 
 Version {{ site.latest_tag }} is the latest stable release recommended for everyday use.
 
@@ -20,7 +16,7 @@ Version {{ site.latest_tag }} is the latest stable release recommended for every
 * [macOS DMG]({{ site.github }}/releases/latest)
 * [Source code]({{ site.github }}/releases/latest)
 
-## Latest Development Builds
+### Latest Development Builds
 
 These are builds of the latest development code, recommended for testing and bug reporting but not for everyday use.
 
@@ -29,17 +25,17 @@ These are builds of the latest development code, recommended for testing and bug
 * macOS DMG (not yet)
 * [Source code]({{ site.github }}/releases/tag/nightly)
 
-# Bugs and Feature Requests
+## Bugs and Feature Requests
 
 File bugs and feature requests in [GitHub]({{ site.github }}/issues). Make sure to provide the necessary information: which version of HDRMerge you're using, the full contents of any error messages, and a link to your sample raw files.
 
 
-# Getting Started
+## Getting Started
 
 You may want to read the [manual]({{ site.baseurl }}{% post_url 2014-07-11-user-manual %}), or jump directly to the command line help with `hdrmerge --help`.
 
 
-# Donations
+## Donations
 
 Do you like HDRMerge? Do you want to keep it under development? You can make a donation through [Flattr](https://flattr.com/) or [PayPal](https://www.paypal.com/):
 
@@ -54,14 +50,14 @@ Do you like HDRMerge? Do you want to keep it under development? You can make a d
 </form>
 
 
-# License
+## License
 
 HDRMerge is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
 HDRMerge is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 
-# Acknowledgments
+## Acknowledgments
 
 HDRMerge is what it is thanks to all the people that have contributed ideas, critics and samples to improve it. In particular, thanks to the team of [RawTherapee](http://rawtherapee.com/). Also, HDRMerge implements or is based on the techniques described in the following works:
 
@@ -71,16 +67,27 @@ HDRMerge is what it is thanks to all the people that have contributed ideas, cri
 +  Jarosz, W. (2001). Fast image convolutions. In SIGGRAPH Workshop. Code from Ivan Kuckir, <http://blog.ivank.net/fastest-gaussian-blur.html>
 
 
-# Changelog
+## Changelog
 
 These are the most significant improvements by version. For a detailed changelog, see the [git commit history]({{ site.github }}/commits/master).
 
-## v0.5
+### v0.6
+
+* Allow user to specify custom white level in case of artifacts with automatically computed white level from LibRaw.
+* Added support for raw files from Fufjifilm X-Trans sensors.
+* Speed optimization.
+* Assume aperture of f/8 if the aperture is invalid.
+* Migrated from Qt4 to Qt5.
+* Enable compilation in Windows.
+* Documentation updated.
+* Repository tree restructured.
+
+### v0.5
 
 * Support for macOS.
 * Multiple bug-fixes.
 
-## v0.4.5
+### v0.4.5
 
 * Better compatibility with other programs, by producing a DNG file that maintains the original layout: frame and active area sizes, black and white levels, etc. *Note that, if you use RawTherapee, you need v4.1.23 or higher to open these files.*
 * Batch mode in command line! Merge several sets of HDR images at once.
@@ -89,7 +96,7 @@ These are the most significant improvements by version. For a detailed changelog
 * Several bug-fixes.
 * Improved accuracy and performance.
 
-## v0.4.4
+### v0.4.4
 
 * Better support for more camera models.
 * Better rendering of the embedded preview image.
@@ -98,12 +105,12 @@ These are the most significant improvements by version. For a detailed changelog
   * The original embedded preview is not included in the output anymore.
   * Fixed some glitches with the edit tools.
 
-## v0.4.3
+### v0.4.3
 
 * Fix segmentation fault error painting the preview of some rotated images.
 * Fix DateTime tag in Windows hosts.
 
-## v0.4.2
+### v0.4.2
 
 * Improved GUI:
   * A slider to control the brush radius.
@@ -114,11 +121,11 @@ These are the most significant improvements by version. For a detailed changelog
   * Posibility of saving the output options.
 * First release with a Windows version, both 32- and 64-bit.
 
-## v0.4.1
+### v0.4.1
 
 * Bugfixes release
 
-## v0.4
+### v0.4
 
 * Great performance improvements with OpenMP.
 * Not depend anymore on DNG & XMP SDK! Windows and Mac version soon...
@@ -126,7 +133,7 @@ These are the most significant improvements by version. For a detailed changelog
 * More control on the logging output.
 * The user may disable alignment and/or cropping. This is most useful to obtain an image of the same size as the inputs. Some programs have this requirement to apply a flat-field image, for instance.
 
-## v0.3
+### v0.3
 
 The first public version of HDRMerge.
 

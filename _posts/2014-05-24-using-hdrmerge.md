@@ -4,52 +4,33 @@ image: using-hdrmerge.jpg
 title: HDRMerge User Manual v0.4.4
 categories: documentation
 ---
-# Understanding HDRMerge
 
-HDRMerge function is very simple in its core.
-It takes a set of raw images of the same subject, but different levels of exposure.
-It stacks them into layers, with the most exposed shot at the top.
-Then, it removes the burnt areas of each layer, revealing the details of the layers underneath it.
-As a result, you obtain a new raw image, with the most exposed pixels of each original image that are not saturated.
-It contains as much detail and as less noise as possible.
-HDRMerge provides tools to control the details of this process.
+## Understanding HDRMerge
 
-# Usage
+HDRMerge's functionality is very simple in its core. You take a set of raw images of the same subject but with different levels of exposure. You feed these raw images into HDRMerge. It stacks them into layers, with the most-exposed shot at the top. Then, it removes the clipped areas (where the photosites were saturated) of each layer, revealing details of the layers beneath it. As a result, you obtain a new raw image, with the most-exposed pixels of each original image that are not saturated. This raw image contains as much detail and as little noise as possible. HDRMerge provides tools to control the details of this process.
 
-HDRMerge has both a graphical and a command line interface.
-The GUI contains a set of edit tools that allow you to decide what part of each image gets into the final output.
-This is mainly useful to remove ghosts created by moving objects between images.
-If there are no such moving objects, the command line interface is intended to be used in batch processing, e.g. from a script.
-You can start the batch process either by providing an output file name with the "-o" switch, or by generating an automatic one with the "-a" switch.
-Other switches control the input and output parameters.
-If neither "-o" nor "-a" is given, the program will show the GUI and load the files given in the command line, if any, but ignoring all other options.
+## Usage
 
-## Load the input raw images
+HDRMerge has both a graphical (GUI) and a command-line (CLI) interface.
+
+The GUI contains a set of editing tools which allow you to decide which parts of each image get transferred into the final output. This is mainly useful for removing ghosts created by objects which moved between images. If there are no such moving objects, the command-line interface is intended to be used in batch processing, e.g. from a script. You can start the batch process either by providing an output filename with the `-o` switch, or by generating an automatic one with the `-a` switch. Other switches control the input and output parameters. If neither `-o` nor `-a` is given, the program will show the GUI and load the files specified in the command line, if any, but ignoring all other options.
+
+### Loading raw images
 
 When the GUI is invoked, the program will directly present you the Open dialog:
 
 ![Load dialog]({{ site.baseurl }}/images/load_dialog.png)
 
-This dialog can also be shown later with the `Open` command in the `File` menu.
-The Open dialog allows you to select multiple raw images.
-It also has two checkboxes to decide whether to apply the MBT alignment algorithm and to crop the resulting image to its optimal size.
+The Open dialog allows you to select multiple raw images. This dialog can also be shown later with the `Open` command in the `File` menu.
 
-The MBT alignment algorithm can correct small misalignments by translation.
-Given the nature of the color organization in a raw image (only a Bayer matrix is supported by HDRMerge) rotations cannot be compensated and translations must be performed in steps of 2 pixels.
-However, this should be enough even for steady handheld shots in burst mode.
-A tripod is highly recommended to obtain the best results, anyway.
-Once aligned, the program can crop the output image to just the area of the image that is shared by all the input raw files.
-You can select not to do so, in which case the output image will cover the same area as the least exposed input, to avoid burnt areas of more exposed shots.
-The main reasons for not aligning and/or cropping the images are:
+Options:
+- Align source images. If your images do not align perfectly, check this option to apply the MBT alignment algorithm. The MBT alignment algorithm can correct small misalignments by "translation". Given the nature of the color organization in a raw image (only Bayer and X-Trans type raw files are supported by HDRMerge) rotations cannot be compensated and translations must be performed in steps of 2 pixels. However, this should be enough, even for steady handheld shots in burst mode, though a tripod is highly recommended to obtain the best results. The alignment algorithm can sometimes fail to detect perfectly aligned images, mostly with highly exposed shots.
+- Crop result image to optimal size. If you enabled "align source images" and if your images were actually aligned, check this option to have HDRMerge retain only the common area shared by all images, and crop off the rest. Not doing so could result in artifacts around the periphery, depending on the mask. You can select not crop the image, in which case the output image will cover the same area as the least exposed input, to avoid burnt areas of more exposed shots. One reason for not cropping is if you want to apply a flat-field correction later, as RawTherapee only applies this correction to images that have the same dimensions as the flat-field image.
+- Use custom white level. What is a white level? A sensor is made of millions of tiny photo-sensitive elements called photosites or sensels. Each one measures the intensity of the light which falls upon it, and records that intensity as a number - the more light, the higher the number. The bulk of the raw file consists of these recorded measurements. Each photosite has a level beyond which the photosite will not register a change in light intensity even if the light does keep getting brighter - this is the white level. A photosite which cannot record any brighter light is said to be fully saturated, and in post-processing this state is called clipping. For most camera models you do not need to provide a custom white level as one is automatically detected, but for some models the automatic white level is detected incorrectly and so you must provide one manually. You will know when the automatic white level is incorrect when parts of the resulting HDR DNG image which should be clipped white appear as not so - they usually have a strong magenta color cast. Finding the raw white level requires some knowledge - read more about it in RawTherapee's "[Adding support for new raw formats](http://rawpedia.rawtherapee.com/Adding_Support_for_New_Raw_Formats)" documentation -- or just start at 16000, create a HDR DNG, and if the areas which should be clipped white are not white then subtract 500 and try again - repeat until success.
 
-* Because the alignment algorithm can sometimes fail to detect perfectly aligned images, mostly with highly exposed shots.
-* Because the user wants to apply a flat-field correction later. RawTherapee only applies this correction to images that have the same dimensions as the flat-field image.
+When you accept a list of input images, the application will show a progress dialog with information of each load step. The process will only succeed if images are _compatible_. The size, orientation, color filter array pattern and black and white levels must be the same, which generally means that they have been made with the same camera.
 
-When you accept a list of input images, the application will show a progress dialog with information of each load step.
-The process will only succeed if images are _compatible_.
-The size, orientation, Bayer pattern and black and white levels must be the same, which mostly means that they have been made with the same camera.
-
-## Editing
+### Editing
 
 Once the input images are loaded, the interface presents you with the main window:
 

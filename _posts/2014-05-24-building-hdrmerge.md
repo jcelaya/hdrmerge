@@ -1,7 +1,7 @@
 ---
 layout: post
 image: museum.jpg
-title: Building HDRMerge
+title: Getting HDRMerge
 categories: internals
 ---
 

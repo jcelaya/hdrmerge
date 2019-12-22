@@ -3,6 +3,7 @@ layout: post
 image: museum.jpg
 title: Compile
 categories: internals
+date: 2019-12-23
 ---
 
 # Compile

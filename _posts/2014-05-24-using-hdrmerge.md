@@ -1,7 +1,7 @@
 ---
 layout: post
 image: using-hdrmerge.jpg
-title: HDRMerge User Manual v0.4.4
+title: HDRMerge User Manual v0.6
 categories: documentation
 ---
 

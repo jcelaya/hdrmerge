@@ -15,7 +15,7 @@ HDRMerge has both a graphical (GUI) and a command-line (CLI) interface.
 
 The GUI contains a set of editing tools which allow you to decide which parts of each image get transferred into the final output. This is mainly useful for removing ghosts created by objects which moved between images. If there are no such moving objects, the command-line interface is intended to be used in batch processing, e.g. from a script. You can start the batch process either by providing an output filename with the `-o` switch, or by generating an automatic one with the `-a` switch. Other switches control the input and output parameters. If neither `-o` nor `-a` is given, the program will show the GUI and load the files specified in the command line, if any, but ignoring all other options.
 
-### Loading raw images
+### Loading Raw Images
 
 When the GUI is invoked, the program will directly present you the Open dialog:
 
@@ -34,7 +34,7 @@ When you accept a list of input images, the application will show a progress dia
 
 Once the input images are loaded, the interface presents you with the main window:
 
-![Main window]({{ site.baseurl }}/images/main_window.jpg)
+![Main window]({{ site.baseurl }}/images/main_window.png)
 
 Most of its space is occupied by a 100% preview of the result.
 There, input images are stacked on top of each other, and you can see the selected pixels from each layer painted with a different color.
@@ -67,12 +67,12 @@ Adding too many pixels to a layer may result in burned areas appearing in the re
 On the other hand, the pixels of the first layers contain less noise in the shadows.
 These operations can be undone and redone with the actions of the `Edit` menu, or by pressing `Ctrl+Z` and `Ctrl+Shift+Z`, respectively.
 
-## Save the result
+## Saving the Result
 
 Once you are satisfied with the preview, the `Save HDR` command of the `File` menu generates the output DNG file.
 It will first ask you for a file name, and then it will present the Save dialog:
 
-![Save dialog]({{ site.baseurl }}/images/save_dialog_0.4.4.png)
+![Save dialog]({{ site.baseurl }}/images/save_dialog.png)
 
 You can select the number of bits per sample (16, 24 or 32), the size of the embedded preview (full, half or no preview) and whether to save an image with the mask that was used to merge the input files.
 The number of bits per sample has an important impact in the output file size.
@@ -81,7 +81,7 @@ Empirical tests (thanks to DrSlony) show no apparent difference between 16- and 
 Nevertheless, if you see some unexpected noise in the shadows of the output image, you can try a 24-bit output.
 32 bits will almost never be necessary, but it can be selected anyway.
 
-## The command line interface
+## The Command Line Interface
 
 You can also run HDRMerge without GUI, in batch mode.
 With the command line switches, you can control all the process described before, except for the edition tools.

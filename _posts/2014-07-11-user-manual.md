@@ -53,7 +53,7 @@ The size, orientation, Bayer pattern and black and white levels must be the same
 
 Once the input images are loaded, the interface presents you with the main window:
 
-![Main window]({{ site.baseurl }}/images/main_window.jpg)
+![Main window]({{ site.baseurl }}/images/main_window.png)
 
 Most of its space is occupied by a 100% preview of the result.
 There, input images are stacked on top of each other, and you can see the selected pixels from each layer painted with a different color.
@@ -92,7 +92,7 @@ These operations can be undone and redone with the actions of the `Edit` menu, o
 Once you are satisfied with the preview, the `Save HDR` command of the `File` menu generates the output DNG file.
 It will first ask you for a file name, and then it will present the Save dialog:
 
-![Save dialog]({{ site.baseurl }}/images/save_dialog_0.4.5.png)
+![Save dialog]({{ site.baseurl }}/images/save_dialog.png)
 
 You can first select the number of bits per sample (16, 24 or 32).
 The number of bits per sample has an important impact in the output file size.

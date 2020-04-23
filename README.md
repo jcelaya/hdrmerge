@@ -8,6 +8,10 @@ Find the latest builds on our [releases page](https://github.com/jcelaya/hdrmerg
 
 Linux users can get HDRMerge from their package manager. If your package manager does not ship the latest version of HDRMerge, file a bug report using your distribution's bug tracker asking them to ship the latest version.
 
+## Binaries are provided by some distributions
+
+https://repology.org/project/hdrmerge/versions
+
 ## Compilation
 
 If you would like to compile HDRMerge yourself, follow the instructions in the `INSTALL.md` file.

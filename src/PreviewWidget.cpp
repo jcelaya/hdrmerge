@@ -219,8 +219,8 @@ void PreviewWidget::wheelEvent(QWheelEvent * event) {
     Qt::KeyboardModifiers mods = QApplication::queryKeyboardModifiers();
     if (mods & Qt::AltModifier) {
         event->accept();
-        int step = event->delta() / 24;
-        if (step == 0) step = event->delta() > 0 ? 1 : -1;
+        int step = event->angleDelta().y() / 24;
+        if (step == 0) step = event->angleDelta().y() > 0 ? 1 : -1;
         setRadius(radius - step);
         emit radiusChanged(radius);
     } else {

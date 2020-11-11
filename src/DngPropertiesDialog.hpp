@@ -32,7 +32,7 @@ namespace hdrmerge {
 
 class DngPropertiesDialog : public QDialog, public SaveOptions {
 public:
-    DngPropertiesDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
+    DngPropertiesDialog(QWidget * parent = 0, Qt::WindowFlags f = {});
 
     void closeEvent(QCloseEvent * event) { reject(); }
 

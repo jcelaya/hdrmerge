@@ -54,7 +54,6 @@ enum {
     PHOTOINTERPRETATION = 262,
     SAMPLESPERPIXEL = 277,
     BITSPERSAMPLE = 258,
-    FILLORDER = 266,
     ACTIVEAREA = 50829,
     MASKEDAREAS = 50830,
     CROPORIGIN = 50719,
@@ -270,9 +269,6 @@ void DngFloatWriter::createRawIFD() {
     rawIFD.addEntry(WHITELEVEL, IFD::SHORT, params->max);
     rawIFD.addEntry(SAMPLESPERPIXEL, IFD::SHORT, 1);
     rawIFD.addEntry(BITSPERSAMPLE, IFD::SHORT, bps);
-    if (bps == 24) {
-        rawIFD.addEntry(FILLORDER, IFD::SHORT, 1);
-    }
     rawIFD.addEntry(PLANARCONFIG, IFD::SHORT, 1);
     rawIFD.addEntry(COMPRESSION, IFD::SHORT, TIFF_DEFLATE);
     rawIFD.addEntry(PREDICTOR, IFD::SHORT, TIFF_FP2XPREDICTOR);

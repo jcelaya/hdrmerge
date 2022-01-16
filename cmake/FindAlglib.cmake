@@ -26,13 +26,23 @@ find_path (ALGLIB_INCLUDES
     statistics.h
     stdafx.h
     PATHS
+    ${ALGLIB_DIR}/include/alglib
+    $ENV{ALGLIB_DIR}/include/alglib
+    ${ALGLIB_DIR}/include/libalglib
+    $ENV{ALGLIB_DIR}/include/libalglib
+    ${ALGLIB_DIR}/include/alglib3
+    $ENV{ALGLIB_DIR}/include/alglib3
     /usr/include/alglib/
     /usr/include/libalglib/
     /usr/local/include/alglib3/
     /usr/local/include/libalglib/
     )
 
-find_library (ALGLIB_LIBRARIES NAMES alglib alglib3)
+find_library (ALGLIB_LIBRARIES NAMES alglib alglib3
+    PATHS
+    ${ALGLIB_DIR}/lib
+    $ENV{ALGLIB_DIR}/lib
+    )
 
 # handle the QUIETLY and REQUIRED arguments and set ALGLIB_FOUND to TRUE if
 # all listed variables are TRUE

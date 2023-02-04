@@ -32,6 +32,13 @@ sudo apt update
 sudo apt install build-essential cmake git libalglib-dev libboost-all-dev libexiv2-dev libexpat-dev libraw-dev qt5-default zlib1g-dev
 ```
 
+### Fedora
+
+```bash
+sudo dnf upgrade
+sudo dnf install cmake git alglib-devel exiv2-devel LibRaw-devel qt5-qtbase-devel zlib-devel
+```
+
 ### Gentoo and derivatives
 
 ```bash

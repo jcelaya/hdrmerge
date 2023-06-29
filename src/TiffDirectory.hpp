@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
 
 #ifndef _TIFFDIRECTORY_HPP_
 #define _TIFFDIRECTORY_HPP_

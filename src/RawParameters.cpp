@@ -49,7 +49,11 @@ void RawParameters::loadCamXyzFromDng() {
                 cc[j][i] = i == j ? 1.0 : 0.0;
             }
         }
+#if EXIV2_TEST_VERSION(0,28,0)
+        Exiv2::Image::UniquePtr src = Exiv2::ImageFactory::open(fileName.toLocal8Bit().constData());
+#else
         Exiv2::Image::AutoPtr src = Exiv2::ImageFactory::open(fileName.toLocal8Bit().constData());
+#endif
         src->readMetadata();
         const Exiv2::ExifData & srcExif = src->exifData();
 

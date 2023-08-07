@@ -36,7 +36,11 @@ using namespace hdrmerge;
 Image ImageIO::loadRawImage(const QString& filename, RawParameters & rawParameters, int shot_select) {
     std::unique_ptr<LibRaw> rawProcessor(new LibRaw);
     auto & d = rawProcessor->imgdata;
+#if LIBRAW_VERSION >= LIBRAW_MAKE_VERSION(0, 21, 0)
+    d.rawparams.shot_select = shot_select;
+#else
     d.params.shot_select = shot_select;
+#endif
     if (rawProcessor->open_file(rawParameters.fileName.toLocal8Bit().constData()) == LIBRAW_SUCCESS) {
         libraw_decoder_info_t decoder_info;
         rawProcessor->get_decoder_info(&decoder_info);

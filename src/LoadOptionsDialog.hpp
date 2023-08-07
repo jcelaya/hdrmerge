@@ -33,7 +33,7 @@ namespace hdrmerge {
 
 class LoadOptionsDialog : public QDialog, public LoadOptions {
 public:
-    LoadOptionsDialog(QWidget * parent = 0, Qt::WindowFlags f = 0);
+    LoadOptionsDialog(QWidget * parent = 0, Qt::WindowFlags f = {});
 
     void closeEvent(QCloseEvent * event) { reject(); }
 

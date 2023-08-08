@@ -38,6 +38,14 @@ void convert(std::string filename) {
     params.aperture = 2.8;
     params.colors = 3;
     params.black = 0;
+    params.flip = 0;
+    switch (params.flip) {
+        case 0: params.tiffOrientation = 1; break; // 0°
+        case 3: params.tiffOrientation = 3; break; // 180°
+        case 5: params.tiffOrientation = 8; break; //
+        case 6: params.tiffOrientation = 6; break; // 270°
+        default: params.tiffOrientation = 9; break; // 90°
+    }
 
 
     //QImage q_preview = hdrmerge::ImageIO::renderPreview(arr, params, 1.0);

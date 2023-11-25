@@ -41,7 +41,7 @@ private:
     QString srcFile, dstFile;
     const uint8_t * data;
     size_t dataSize;
-    Exiv2::Image::AutoPtr src, dst;
+    Exiv2::Image::UniquePtr src, dst;
 
     void copyXMP();
     void copyIPTC();
@@ -58,7 +58,7 @@ void hdrmerge::Exif::transfer(const QString & srcFile, const QString & dstFile,
 
 void ExifTransfer::copyMetadata() {
     try {
-        dst = Exiv2::ImageFactory::open(BasicIo::AutoPtr(new MemIo(data, dataSize)));
+        dst = Exiv2::ImageFactory::open(BasicIo::UniquePtr(new MemIo(data, dataSize)));
         dst->readMetadata();
     } catch (Exiv2::Error & e) {
         std::cerr << "Exiv2 error: " << e.what() << std::endl;

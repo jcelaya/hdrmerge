@@ -23,7 +23,6 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
-#include <functional>
 #include <QDateTime>
 #include <QFileInfo>
 #include <libraw.h>

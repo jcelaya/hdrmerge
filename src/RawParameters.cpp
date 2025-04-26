@@ -82,7 +82,7 @@ void RawParameters::loadCamXyzFromDng() {
         if (cmData == srcExif.end()) {
             cmData = srcExif.findKey(Exiv2::ExifKey("Exif.Image.ColorMatrix2"));
         }
-        if (cmData != srcExif.end() && cmData->count() == 3*colors) {
+        if (cmData != srcExif.end() && cmData->count() == static_cast<size_t>(3*colors)) {
             for (int c = 0; c < colors; ++c) {
                 for (int i = 0; i < 3; ++i) {
                     camXyz[c][i] = 0.0;

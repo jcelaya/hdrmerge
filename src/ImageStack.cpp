@@ -21,6 +21,7 @@
  */
 
 #include <algorithm>
+#include <array>
 
 #include "BoxBlur.hpp"
 #include "ImageStack.hpp"
@@ -31,7 +32,6 @@
     #include <x86intrin.h>
 #endif
 
-using namespace std;
 using namespace hdrmerge;
 
 
@@ -41,6 +41,8 @@ int ImageStack::addImage(Image && i) {
         height = i.getHeight();
     }
     images.push_back(std::move(i));
+
+    // sort image stack from brightest to darkest ([0] being the brightest)
     int n = images.size() - 1;
     while (n > 0 && images[n] < images[n - 1]) {
         std::swap(images[n], images[n - 1]);
@@ -50,75 +52,104 @@ int ImageStack::addImage(Image && i) {
 }
 
 
-void ImageStack::calculateSaturationLevel(const RawParameters & params, bool useCustomWl) {
-    // Calculate max value of brightest image and assume it is saturated
-    Image& brightest = images.front();
+void ImageStack::calculateSaturationLevel(const RawParameters & params, bool use_custom_white_level) {
 
-    std::vector<std::vector<size_t>> histograms(4, std::vector<size_t>(brightest.getMax() + 1));
+    /*
+     * This method will approximate a saturation threshold for the brightest
+     * image only. It is sufficient because the calculated threshold will
+     * be translated to the rest of the images in the stack in a relative
+     * manner thanks to each image's response function being pre-calculated.
+     *
+     * The saturation threshold has a major role in deciding on which pixels to
+     * use from which image. The better this value is calculated the better the
+     * results.
+     *
+     * Methodology Overwiew:
+     *  1. Generate the 4 histograms (green, blue, green, red) from the
+     *     brightest image
+     *  2. Determine the brightest value per histogram but ignore the outliers
+     *     using the threshold `occurance_threshold` that will discard bright
+     *     pixels that don't have a significant frequency (occurance)
+     *  3. Use vorious attempts to enhance the `saturation_threshold`
+     */
+
+    Image& brightest_image = images.front();
+
+    std::array<std::vector<size_t>, 4> histograms;
+    std::fill(histograms.begin(), histograms.end(), std::vector<size_t>(brightest_image.getMax() + 1));
 
     #pragma omp parallel
     {
-        std::vector<std::vector<size_t>> histogramsThr(4, std::vector<size_t>(brightest.getMax() + 1));
+        std::vector<std::vector<size_t>> histograms_thr(4, std::vector<size_t>(brightest_image.getMax() + 1));
         #pragma omp for schedule(dynamic,16) nowait
         for (size_t y = 0; y < height; ++y) {
             // get the color codes from x = 0 to 5, works for bayer and xtrans
-            uint16_t fcrow[6];
+            uint16_t fc_row[6];
             for (size_t i = 0; i < 6; ++i) {
-                fcrow[i] = params.FC(i, y);
+                fc_row[i] = params.FC(i, y);
             }
             size_t x = 0;
             for (; x < width - 5; x+=6) {
                 for(size_t j = 0; j < 6; ++j) {
-                    uint16_t v = brightest(x + j, y);
-                    ++histogramsThr[fcrow[j]][v];
+                    const uint16_t luminance_val = brightest_image(x + j, y);
+                    ++histograms_thr[fc_row[j]][luminance_val];
                 }
             }
             // remaining pixels
             for (size_t j = 0; x < width; ++x, ++j) {
-                uint16_t v = brightest(x, y);
-                ++histogramsThr[fcrow[j]][v];
+                const uint16_t luminance_val = brightest_image(x, y);
+                ++histograms_thr[fc_row[j]][luminance_val];
             }
         }
         #pragma omp critical
         {
-            for (int c = 0; c < 4; ++c) {
-                for (std::vector<size_t>::size_type i = 0; i < histograms[c].size(); ++i) {
-                    histograms[c][i] += histogramsThr[c][i];
+            for (int c_channel = 0; c_channel < 4; ++c_channel) {
+                const std::vector<size_t>::size_type histogram_size = histograms[c_channel].size();
+                for (std::vector<size_t>::size_type luminance_val = 0; luminance_val < histogram_size; ++luminance_val) {
+                    histograms[c_channel][luminance_val] += histograms_thr[c_channel][luminance_val];
                 }
             }
         }
     }
 
-    const size_t threshold = width * height / 10000;
+    // used to ignore luminances with frequentcy less htan 0.0001
+    const std::size_t occurance_threshold = width * height / 10000;
 
-    uint16_t maxPerColor[4] = {0, 0, 0, 0};
+    // maximum "significant" luminance per color channel
+    std::uint16_t max_lum_per_color[4] = {};
 
-    for (int c = 0; c < 4; ++c) {
-        for (int i = histograms[c].size() - 1; i >= 0; --i) {
-            const size_t v = histograms[c][i];
-            if (v > threshold) {
-                maxPerColor[c] = i;
+    for (int c_channel = 0; c_channel < 4; ++c_channel) {
+        // start from the highest value in the histograms (brightest)
+        for (int luminance_val = histograms[c_channel].size() - 1; luminance_val >= 0; --luminance_val) {
+            const std::size_t frequency = histograms[c_channel][luminance_val];
+            // ignore if it has a low occurance (frequency) in the image
+            if (frequency > occurance_threshold) {
+                max_lum_per_color[c_channel] = luminance_val;
                 break;
             }
         }
     }
 
 
-    uint16_t maxPerColors = std::max(maxPerColor[0], std::max(maxPerColor[1],std::max(maxPerColor[2], maxPerColor[3])));
-    satThreshold = params.max == 0 ? maxPerColors : params.max;
+    const std::uint16_t max_luminance = *std::max_element(
+        std::begin(max_lum_per_color), std::end(max_lum_per_color));
+    saturation_threshold = params.max == 0 ? max_luminance : params.max;
 
-    if(maxPerColors > 0) {
-        satThreshold = std::min(satThreshold, maxPerColors);
+    if (max_luminance > 0) {
+        saturation_threshold = std::min(saturation_threshold, max_luminance);
     }
 
-    if (!useCustomWl) { // only scale when no custom white level was specified
-        satThreshold *= 0.99;
+    // only scale when no custom white level was specified
+    if (!use_custom_white_level) {
+        // The saturation threshold needs to go a little bit "before" the
+        // highest notable luminance so that it is considered oversaturated
+        saturation_threshold *= 0.99;
     }
 
-    Log::debug( "Using white level ", satThreshold );
+    Log::debug( "Using white level ", saturation_threshold );
 
-    for (auto& i : images) {
-        i.setSaturationThreshold(satThreshold);
+    for (auto& image : images) {
+        image.setSaturationThreshold(saturation_threshold);
     }
 }
 
@@ -149,12 +180,12 @@ void ImageStack::align() {
 void ImageStack::crop() {
     int dx = 0, dy = 0;
     for (auto & i : images) {
-        int newDx = max(dx, i.getDeltaX());
-        int bound = min(dx + width, i.getDeltaX() + i.getWidth());
+        int newDx = std::max(dx, i.getDeltaX());
+        int bound = std::min(dx + width, i.getDeltaX() + i.getWidth());
         width = bound > newDx ? bound - newDx : 0;
         dx = newDx;
-        int newDy = max(dy, i.getDeltaY());
-        bound = min(dy + height, i.getDeltaY() + i.getHeight());
+        int newDy = std::max(dy, i.getDeltaY());
+        bound = std::min(dy + height, i.getDeltaY() + i.getHeight());
         height = bound > newDy ? bound - newDy : 0;
         dy = newDy;
     }
@@ -165,17 +196,47 @@ void ImageStack::crop() {
 
 
 void ImageStack::computeResponseFunctions() {
+
+    /*
+     * Computes the repsonse function for every image (excluding the darkest).
+     * We compute the rosponse for an image img by comparing it to the next
+     * image in the stack. That is why there is no point to compute the
+     * response for the darkest image becuase there is no other image to
+     * compare it to.
+     */
+
     Timer t("Compute response functions");
+
+    // loop from darker to brighter
     for (int i = images.size() - 2; i >= 0; --i) {
+        // images[i] = the brighter image
+        // images[i + 1] = the darker image
         images[i].computeResponseFunction(images[i + 1]);
     }
 }
 
 
 void ImageStack::generateMask() {
+
+    /*
+     * This method generates the multi-colored mask in the GUI. The way the
+     * the mask is generated is by starting from the brightest image and
+     * checking every pixel if it or one of it's surrounding pixels are
+     * saturated, if so then test against the same pixel (x, y) but from the
+     * next image which is darker.
+     *
+     * Methodology: if possible get all the pixels from the brightest image
+     * because it has the least amount of noise. only clipped data will be
+     * taken from the darker images.
+     *
+     * Result: we end up with a map (matrix) that looks like the following:
+     * mask(154, 445) -> 2; here the pixel at (154, 455) of the final merged
+     * HDR would be extracted from the `images[2]`
+     */
+
     Timer t("Generate mask");
     mask.resize(width, height);
-    if(images.size() == 1) {
+    if (images.size() == 1) {
         // single image, fill in zero values
         std::fill_n(&mask[0], width*height, 0);
     } else {
@@ -184,20 +245,31 @@ void ImageStack::generateMask() {
         for (size_t y = 0; y < height; ++y) {
             for (size_t x = 0; x < width; ++x) {
                 size_t i = 0;
-                while (i < images.size() - 1 &&
-                    (!images[i].contains(x, y) ||
-                    images[i].isSaturatedAround(x, y))) ++i;
+                while (
+                    i < images.size() - 1
+                    && (
+                        !images[i].contains(x, y)
+                        || images[i].isSaturatedAround(x, y)
+                    )
+                ) {
+                    // skip if the pixel is not in image or clipped
+                    ++i;
+                }
                 mask(x, y) = i;
             }
         }
     }
-    // The mask can be used in compose to get the information about saturated pixels
+    // The mask can be used in compose() to get the information about saturated pixels
     // but the mask can be modified in gui, so we have to make a copy to represent the original state
-    origMask = mask;
+    original_mask = mask;
 }
 
 
 double ImageStack::value(size_t x, size_t y) const {
+    /*
+     * Get the exposure value (luminance) of the stack at any given pixel
+     * using the generated mask from generateMask()
+     */
     const Image & img = images[mask(x, y)];
     return img.exposureAt(x, y);
 }
@@ -406,7 +478,7 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
     dst.fillBorders(0.f);
 
     float max = 0.0;
-    double saturatedRange = params.max - satThreshold;
+    double saturatedRange = params.max - saturation_threshold;
     #pragma omp parallel
     {
         float maxthr = 0.0;
@@ -421,11 +493,11 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
                     p = p - j;
                     v = images[j].exposureAt(x, y);
                     // Adjust false highlights
-                    if (j < origMask(x,y)) { // SaturatedAround
+                    if (j < original_mask(x,y)) { // SaturatedAround
                         v /= params.whiteMultAt(x, y);
                         if(p > 0.0001) {
                             uint16_t rawV = images[j].getMaxAround(x, y);
-                            double k = (rawV - satThreshold) / saturatedRange;
+                            double k = (rawV - saturation_threshold) / saturatedRange;
                             if (k > 1.0)
                                 k = 1.0;
                             p += (1.0 - p) * k;
@@ -437,7 +509,7 @@ Array2D<float> ImageStack::compose(const RawParameters & params, int featherRadi
                 }
                 if (p > 0.0001 && j < imageMax && images[j + 1].contains(x, y)) {
                     vv = images[j + 1].exposureAt(x, y);
-                    if (j + 1 < origMask(x,y)) { // SaturatedAround
+                    if (j + 1 < original_mask(x,y)) { // SaturatedAround
                         vv /= params.whiteMultAt(x, y);
                     }
                 } else {

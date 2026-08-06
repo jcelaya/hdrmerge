@@ -104,11 +104,11 @@ private:
 
     std::vector<Image> images;   ///< Images, from most to least exposed
     EditableMaskImpl mask;
-    Array2D<uint8_t> origMask;
+    Array2D<uint8_t> original_mask;
     size_t width;
     size_t height;
     int flip;
-    uint16_t satThreshold;
+    uint16_t saturation_threshold;
 };
 
 } // namespace hdrmerge

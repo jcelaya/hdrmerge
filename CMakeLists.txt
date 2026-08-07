@@ -40,6 +40,15 @@ set(CMAKE_AUTORCC ON)
 
 find_package(Qt5 5.6 REQUIRED Core Widgets)
 
+message(STATUS "QT_DEFINITIONS: ${QT_DEFINITIONS}")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC ")
+
+include_directories(/usr/include/x86_64-linux-gnu/qt5/QtCore)
+include_directories(/usr/include/x86_64-linux-gnu/qt5/QtGui)
+include_directories(/usr/include/x86_64-linux-gnu/qt5)
+
+
 #include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 
@@ -277,7 +286,7 @@ else()
     )
 endif()
 
-target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs} Qt5::Widgets)
+
 
 if(WIN32)
     # Compile a target without GUI, for the .com executable
@@ -357,3 +366,30 @@ if(Boost_FOUND)
     add_subdirectory(test)
 endif()
 
+add_executable(tiff2dng tiff2dng.cpp)
+
+find_package(OpenCV REQUIRED)
+
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+find_package(ZLIB REQUIRED)
+
+include_directories(${ZLIB_INCLUDE_DIRS})
+
+add_library(hdrmerge_lib
+    ${hdrmerge_sources}
+    )
+
+target_link_libraries(hdrmerge_lib
+    ${hdrmerge_libs} Qt5::Widgets Qt5::Core
+    )
+
+target_link_libraries(tiff2dng
+    Qt5::Widgets
+    ${hdrmerge_libs}
+    ${OpenCV_LIBS}
+    hdrmerge_lib
+    ${ZLIB_LIBRARIES}
+    )
+
+target_link_libraries(hdrmerge ${STRIP} ${hdrmerge_libs} Qt5::Widgets)

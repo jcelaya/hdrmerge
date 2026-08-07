@@ -41,6 +41,13 @@ public:
         }
     }
 
+    void setPattern(uint32_t f) {
+        filters = f;
+        if (filters == 9) {
+            throw std::runtime_error("need fcol function for Fujifilm X-Trans sensor");
+        }
+    }
+
     bool operator==(const CFAPattern & r) const {
         return filters == r.filters;
     }
